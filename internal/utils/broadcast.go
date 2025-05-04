@@ -1,0 +1,45 @@
+package utils
+
+import (
+	"context"
+	"log/slog"
+)
+
+func Broadcaster[T any](ctx context.Context, logger *slog.Logger, input <-chan T, total int) []<-chan T {
+	var (
+		outputs []chan T
+		results []<-chan T
+	)
+	for i := 0; i < total; i++ {
+		ch := make(chan T, cap(input))
+		outputs = append(outputs, ch)
+		results = append(results, ch)
+	}
+
+	go func() {
+		defer func() {
+			logger.ErrorContext(ctx, "[Broadcaster] Shutting down...")
+			for _, output := range outputs {
+				close(output)
+			}
+		}()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case msg := <-input:
+				for i, output := range outputs {
+					select {
+					case output <- msg:
+						continue
+					default:
+						logger.ErrorContext(ctx, "[Broadcaster] Message dropped", "output", i)
+					}
+				}
+			}
+		}
+	}()
+
+	return results
+}
