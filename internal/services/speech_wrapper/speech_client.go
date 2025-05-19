@@ -14,7 +14,7 @@ type speechClient struct {
 func NewClient(ctx context.Context) (Client, error) {
 	sc, err := speech.NewClient(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("could not create speech client: %w", err)
+		return nil, fmt.Errorf("cannot create speech client: %w", err)
 	}
 
 	return &speechClient{sc}, nil
@@ -23,7 +23,7 @@ func NewClient(ctx context.Context) (Client, error) {
 func (sc *speechClient) StreamingRecognize(ctx context.Context) (speechpb.Speech_StreamingRecognizeClient, error) {
 	stream, err := sc.c.StreamingRecognize(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("could not streaming recognize: %w", err)
+		return nil, fmt.Errorf("cannot streaming recognize: %w", err)
 	}
 
 	return stream, nil

@@ -1,0 +1,72 @@
+{{- define "log" }}
+{{- if .Debug }}
+echo "$(date +"%Y-%m-%d %H:%M:%S.%N") Called: {{ .Name }}" >> ~/.btt/btt.log
+{{- end }}
+{{- end }}
+
+{{- define "print_status" }}
+{{- template "log" . }}
+
+ok=$(curl -sSLf "http://{{ .AppAddress }}/api/health" 2>/dev/null)
+[[ -n "${ok}" ]] && echo "✅" || echo "⚠️"
+{{- end }}
+
+{{- define "print_selected_device" }}
+{{- template "log" . }}
+
+ok=$(curl -sSLf "http://{{ .AppAddress }}/api/health" 2>/dev/null)
+[[ -z "${ok}" ]] && echo "⚠️ {{ .AppName}} is not running!" && exit 1
+
+device=$(curl -sSLf 'http://{{ .AppAddress }}/api/selected-device')
+[[ -z "${device}" ]] && echo "⚠️ No device selected" || echo "✅ ${device}"
+{{- end }}
+
+{{- define "print_selected_language" }}
+{{- template "log" . }}
+
+ok=$(curl -sSLf "http://{{ .AppAddress }}/api/health" 2>/dev/null)
+[[ -z "${ok}" ]] && echo "⚠️ {{ .AppName}} is not running!" && exit 1
+
+language=$(curl -sSLf 'http://{{ .AppAddress }}/api/selected-language')
+[[ -z "${language}" ]] && echo "⚠️ No language selected" || echo "✅ ${language}"
+{{- end }}
+
+{{- define "select_device" }}
+{{- template "log" . }}
+
+curl -X POST -H 'Content-Type: application/json' -sSLf --data-raw '{"device": "{{ .Device }}"}' \
+  http://{{ .AppAddress }}/api/select-device
+{{- end }}
+
+{{- define "select_language" }}
+{{- template "log" . }}
+
+curl -X POST -H 'Content-Type: application/json' -sSLf --data-raw '{"language": "{{ .Language }}"}' \
+  http://{{ .AppAddress }}/api/select-language
+{{- end }}
+
+{{- define "open_settings" }}
+{{- template "log" . }}
+
+# Must not make calls to the app
+curl -sSLf http://{{ .BttAddress }}/trigger_action/?{{ .Query }}
+curl -sSLf -X POST http://{{ .AppAddress }}/api/load-devices
+{{- end }}
+
+{{- define "toggle" }}
+{{- template "log" . }}
+
+ok=$(curl -sSLf "http://{{ .AppAddress }}/api/health" 2>/dev/null)
+[[ -z "${ok}" ]] && echo "{{ .AppName}} is not running!" && exit 1
+
+curl -X POST -sSLf "http://{{ .AppAddress }}/api/toggle-listening"
+{{- end }}
+
+{{- define "listen_socket" }}
+{{ with index . "SocketPath" }}
+subs="$(nc -U "{{ . }}")"
+[[ -n "${subs}" ]] && echo "${subs}" || echo "no subs"
+{{ else }}
+echo "{{ .AppName}} App"
+{{ end }}
+{{- end }}

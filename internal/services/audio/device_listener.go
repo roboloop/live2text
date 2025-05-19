@@ -56,18 +56,18 @@ func (dl *DeviceListener) Listen(ctx context.Context) error {
 		FramesPerBuffer: bufferSize,
 	}, &buffer)
 	if err != nil {
-		return fmt.Errorf("could not open the stream: %w", err)
+		return fmt.Errorf("cannot open the stream: %w", err)
 	}
 	defer stream.Close()
 
 	if err = stream.Start(); err != nil {
-		return fmt.Errorf("could not start the stream: %w", err)
+		return fmt.Errorf("cannot start the stream: %w", err)
 	}
 	defer stream.Stop()
 
 	for {
 		if err = stream.Read(); err != nil {
-			return fmt.Errorf("could not read stream: %w", err)
+			return fmt.Errorf("cannot read stream: %w", err)
 		}
 		clone := make([]int16, len(buffer))
 		copy(clone, buffer)

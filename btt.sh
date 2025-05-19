@@ -289,9 +289,9 @@ select_device() {
   device="<device>"
   device="$(sed -E "s/ /%20/g" <<< "${device}")"
 
-  selected_device_uuid=$(curl -sSLf "http://127.0.0.1:64444/get_string_variable/?variableName=RECOGNIZER_SELECTED_DEVICE_UUID")
-  curl -sSLf "http://127.0.0.1:64444/set_string_variable/?variableName=RECOGNIZER_DEVICE&to=${device}"
-  curl -sSLf "http://127.0.0.1:64444/refresh_widget/?uuid=${selected_device_uuid}"
+  selected_device_uuid=$(curl -sSLf "http://127.0.0.1:44444/get_string_variable/?variableName=RECOGNIZER_SELECTED_DEVICE_UUID")
+  curl -sSLf "http://127.0.0.1:44444/set_string_variable/?variableName=RECOGNIZER_DEVICE&to=${device}"
+  curl -sSLf "http://127.0.0.1:44444/refresh_widget/?uuid=${selected_device_uuid}"
 
 #  selected_device_uuid="$(btt "get_string_variable \"RECOGNIZER_SELECTED_DEVICE_UUID\"")"
 #  btt "set_persistent_string_variable \"RECOGNIZER_DEVICE\" to \"${device}\""
@@ -302,9 +302,9 @@ select_language() {
   local language selected_language_uuid
   language="<language>"
 
-  selected_language_uuid=$(curl -sSLf "http://127.0.0.1:64444/get_string_variable/?variableName=RECOGNIZER_SELECTED_LANGUAGE_UUID")
-  curl -sSLf "http://127.0.0.1:64444/set_string_variable/?variableName=RECOGNIZER_LANGUAGE&to=${language}"
-  curl -sSLf "http://127.0.0.1:64444/refresh_widget/?uuid=${selected_language_uuid}"
+  selected_language_uuid=$(curl -sSLf "http://127.0.0.1:44444/get_string_variable/?variableName=RECOGNIZER_SELECTED_LANGUAGE_UUID")
+  curl -sSLf "http://127.0.0.1:44444/set_string_variable/?variableName=RECOGNIZER_LANGUAGE&to=${language}"
+  curl -sSLf "http://127.0.0.1:44444/refresh_widget/?uuid=${selected_language_uuid}"
 }
 
 open_settings() {

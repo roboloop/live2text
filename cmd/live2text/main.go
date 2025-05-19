@@ -9,13 +9,15 @@ import (
 	"live2text/internal/services"
 	"live2text/internal/services/audio"
 	"live2text/internal/services/audio_wrapper"
+	"live2text/internal/services/btt"
+	bttexec "live2text/internal/services/btt/exec"
+	btthttp "live2text/internal/services/btt/http"
 	"live2text/internal/services/burner"
 	"live2text/internal/services/metrics"
 	"live2text/internal/services/recognition"
 	"live2text/internal/services/speech_wrapper"
 	"log"
 	"log/slog"
-	"net"
 	"net/http"
 	"net/http/pprof"
 	"os"
@@ -70,17 +72,18 @@ func run(ctx context.Context, args []string) error {
 	}
 	defer awClose()
 
-	sl, l := newLoggers(slog.LevelInfo)
+	sl, l := newLoggers(cfg.LogLevel)
 	tm := background.NewTaskManager(ctx)
 	sm := background.NewSocketManager(ctx, sl)
 	m := metrics.NewMetrics()
 	a := audio.NewAudio(sl, m, aw)
 	b := burner.NewBurner(sl, m)
 	r := recognition.NewRecognition(sl, m, a, b, sc, tm, sm)
-	s := services.NewServices(a, aw, b, r, m)
+	b2 := newBtt(sl, a, r, cfg)
+	s := services.NewServices(a, aw, b, r, m, b2)
 
 	server := &http.Server{
-		Addr:     net.JoinHostPort(cfg.Host, cfg.Port),
+		Addr:     cfg.AppAddress,
 		Handler:  api.NewHandler(sl, s),
 		ErrorLog: l,
 	}
@@ -114,4 +117,15 @@ func newLoggers(level slog.Level) (*slog.Logger, *log.Logger) {
 	})
 
 	return slog.New(handler), slog.NewLogLogger(handler, level)
+}
+
+func newBtt(logger *slog.Logger, audio audio.Audio, recognition recognition.Recognition, cfg *config.Config) btt.Btt {
+	// TODO: duplicates
+	const bttName = "BetterTouchTool"
+	const appName = "live2text"
+
+	httpClient := btthttp.NewClient(logger, cfg.BttAddress)
+	execClient := bttexec.NewClient(logger, appName, bttName)
+
+	return btt.NewBtt(logger, audio, recognition, httpClient, execClient, cfg)
 }

@@ -19,12 +19,20 @@ func NewHandler(logger *slog.Logger, services services.Services) http.Handler {
 	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/api/health", server.Health)
-	mux.HandleFunc("/api/devices", server.Devices)
-	mux.HandleFunc("/api/start", server.Start)
-	mux.HandleFunc("/api/stop", server.Stop)
-	mux.HandleFunc("/api/subs", server.Subs)
-	mux.HandleFunc("/metrics", server.Metrics)
+	mux.HandleFunc("GET /api/health", server.Health)
+	mux.HandleFunc("GET /api/devices", server.Devices)
+	mux.HandleFunc("POST /api/start", server.Start)
+	mux.HandleFunc("POST /api/stop", server.Stop)
+	mux.HandleFunc("GET /api/subs", server.Subs)
+	mux.HandleFunc("GET /metrics", server.Metrics)
+
+	mux.HandleFunc("GET /api/selected-device", server.SelectedDevice)
+	mux.HandleFunc("GET /api/selected-language", server.SelectedLanguage)
+	mux.HandleFunc("POST /api/select-device", server.SelectDevice)
+	mux.HandleFunc("POST /api/select-language", server.SelectLanguage)
+
+	mux.HandleFunc("POST /api/load-devices", server.LoadDevices)
+	mux.HandleFunc("POST /api/toggle-listening", server.ToggleListening)
 
 	var handler http.Handler = mux
 	handler = middleware.ErrorMiddleware(handler)

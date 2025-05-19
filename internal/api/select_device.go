@@ -1,0 +1,45 @@
+package api
+
+import (
+	"context"
+	"fmt"
+	"github.com/gordonklaus/portaudio"
+	"net/http"
+	"slices"
+)
+
+type selectDeviceRequest struct {
+	Device string `json:"device"`
+}
+
+func (r selectDeviceRequest) Valid(_ context.Context, api *Server) (map[string]string, error) {
+	problems := make(map[string]string)
+
+	devices, err := api.services.Audio().List()
+	if err != nil {
+		return nil, fmt.Errorf("cannot get list of devices: %w", err)
+	}
+	if !slices.ContainsFunc(devices, func(device *portaudio.DeviceInfo) bool {
+		return device.Name == r.Device
+	}) {
+		problems["device"] = "device not found"
+	}
+
+	return problems, nil
+}
+
+func (s *Server) SelectDevice(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	request, responded := decode[selectDeviceRequest](s, w, r)
+	if responded {
+		return
+	}
+
+	err := s.services.Btt().SelectDevice(r.Context(), request.Device)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	encode("ok", w, http.StatusOK)
+}

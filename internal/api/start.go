@@ -26,7 +26,7 @@ func (r startRequest) Valid(_ context.Context, api *Server) (map[string]string, 
 
 	devices, err := api.services.Audio().List()
 	if err != nil {
-		return nil, fmt.Errorf("could not get list of devices: %w", err)
+		return nil, fmt.Errorf("cannot get list of devices: %w", err)
 	}
 	if !slices.ContainsFunc(devices, func(device *portaudio.DeviceInfo) bool {
 		return device.Name == r.Device

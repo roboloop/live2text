@@ -21,6 +21,7 @@ import (
 	"math/rand"
 	"net"
 	"os"
+	"path"
 	"strings"
 	"sync"
 	"time"
@@ -146,7 +147,7 @@ func (rt *RecognizeTask) Run(ctx context.Context) error {
 
 func (rt *RecognizeTask) burnContent(ctx context.Context, ch <-chan []int16, channels int, sampleRate int) error {
 	name := time.Now().Format("01.02.06 15_04_05 output.wav")
-	file, err := os.Create(name)
+	file, err := os.Create(path.Join("output", name))
 	if err != nil {
 		return fmt.Errorf("cannot create file: %w", err)
 	}
@@ -167,7 +168,7 @@ func (rt *RecognizeTask) stream(ctx context.Context, ch <-chan []int16, sampleRa
 
 	stream, err := rt.speechClient.StreamingRecognize(streamCtx)
 	if err != nil {
-		return fmt.Errorf("could not streaming recognize: %w", err)
+		return fmt.Errorf("cannot streaming recognize: %w", err)
 	}
 	defer stream.CloseSend()
 	if err = stream.Send(&speechpb.StreamingRecognizeRequest{
@@ -183,7 +184,7 @@ func (rt *RecognizeTask) stream(ctx context.Context, ch <-chan []int16, sampleRa
 			},
 		},
 	}); err != nil {
-		return fmt.Errorf("could not send config request: %w", err)
+		return fmt.Errorf("cannot send config request: %w", err)
 	}
 
 	g, errCtx := errgroup.WithContext(streamCtx)
@@ -236,7 +237,7 @@ func (rt *RecognizeTask) streamContent(ctx context.Context, stream speechpb.Spee
 					AudioContent: content,
 				},
 			}); err != nil {
-				return fmt.Errorf("could not send audio: %w", err)
+				return fmt.Errorf("cannot send audio: %w", err)
 			}
 
 			rt.metrics.AddBytesSentToGoogleSpeech(len(content))
@@ -265,7 +266,7 @@ func (rt *RecognizeTask) readRecognized(ctx context.Context, stream speechpb.Spe
 			if err.Code == 3 || err.Code == 11 {
 				log.Print("WARNING: Speech recognition request exceeded limit of 60 seconds.")
 			}
-			return fmt.Errorf("could not recognize: %v", err)
+			return fmt.Errorf("cannot recognize: %v", err)
 		}
 
 		if resp.GetSpeechEventType() != speechpb.StreamingRecognizeResponse_SPEECH_EVENT_UNSPECIFIED {
@@ -297,9 +298,10 @@ func (rt *RecognizeTask) storeSubs(_ context.Context, sectionsCh <-chan recogniz
 }
 
 func (rt *RecognizeTask) printSubs(_ context.Context, recognizedCh <-chan recognized) error {
-	fd := os.NewFile(uintptr(3), "fd3")
+	// TODO: make clear work with file descriptors
+	fd := os.NewFile(uintptr(20), "fd20")
 	if fd == nil {
-		return errors.New("could not open fd")
+		return errors.New("cannot open fd")
 	}
 	defer fd.Close()
 

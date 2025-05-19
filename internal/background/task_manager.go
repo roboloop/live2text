@@ -77,7 +77,7 @@ func (tm *TaskManager) Go(name string, runnableTask RunnableTask) error {
 		t.err = runnableTask.Run(taskCtx)
 
 		t.status = statusFinished
-		tm.Cancel(name)
+		//tm.Cancel(name)
 	}()
 
 	return nil

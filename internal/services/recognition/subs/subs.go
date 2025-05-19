@@ -2,6 +2,7 @@ package subs
 
 import (
 	"strings"
+	"unicode/utf8"
 )
 
 type section struct {
@@ -60,28 +61,29 @@ func (w *Writer) AddSection(text string, isFinal bool) {
 	if len(w.newLines) > 0 {
 		sectionID := w.newLines[len(w.newLines)-1].sectionID
 		offset := w.newLines[len(w.newLines)-1].offset
-		lineLength = len(w.sections[sectionID].text) - offset
+		lineLength = utf8.RuneCountInString(w.sections[sectionID].text) - offset
 		startSectionID = sectionID + 1
 	}
 	for i := startSectionID; i < len(w.sections)-1; i++ {
-		lineLength += separatorLength + len(w.sections[i].text)
+		lineLength += separatorLength + utf8.RuneCountInString(w.sections[i].text)
 	}
 
 	words := strings.Fields(text)
 	newSectionID := len(w.sections) - 1
 	offset := 0
 	for i, word := range words {
-		if len(word) > w.perLine {
-			word = word[:w.perLine]
+		if utf8.RuneCountInString(word) > w.perLine {
+			wordRunes := []rune(word)
+			word = string(wordRunes[:w.perLine])
 		}
-		partLength := len(word)
+		partLength := utf8.RuneCountInString(word)
 		if i > 0 {
 			partLength += separatorLength
 		}
 		lineLength += partLength
 		if lineLength > w.perLine {
 			w.newLines = append(w.newLines, lineBreak{sectionID: newSectionID, offset: offset})
-			lineLength = len(word)
+			lineLength = utf8.RuneCountInString(word)
 		}
 		offset += partLength
 	}
@@ -125,6 +127,8 @@ func (w *Writer) Format() string {
 			}
 		}
 
+		runes := []rune(text)
+
 		if len(offsets) == 0 {
 			lines[lineIndex] = append(lines[lineIndex], text)
 			continue
@@ -137,11 +141,11 @@ func (w *Writer) Format() string {
 		}
 
 		for j := 0; j < len(offsets)-1; j++ {
-			segment := strings.TrimLeft(text[offsets[j]:offsets[j+1]], " ")
+			segment := strings.TrimLeft(string(runes[offsets[j]:offsets[j+1]]), " ")
 			lines[lineIndex] = append(lines[lineIndex], segment)
 			lineIndex++
 		}
-		lines[lineIndex] = append(lines[lineIndex], strings.TrimLeft(text[offsets[len(offsets)-1]:], " "))
+		lines[lineIndex] = append(lines[lineIndex], strings.TrimLeft(string(runes[offsets[len(offsets)-1]:]), " "))
 	}
 
 	start := 0

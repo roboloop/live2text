@@ -1,4 +1,4 @@
-# Recognizer
+# Live2Text
 
 Converts speech to text using Google Cloud Speech-to-Text and shows the live transcription on the MacBook Touch Bar with BetterTouchTool.
 

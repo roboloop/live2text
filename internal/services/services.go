@@ -3,6 +3,7 @@ package services
 import (
 	"live2text/internal/services/audio"
 	"live2text/internal/services/audio_wrapper"
+	"live2text/internal/services/btt"
 	"live2text/internal/services/burner"
 	"live2text/internal/services/metrics"
 	"live2text/internal/services/recognition"
@@ -14,6 +15,7 @@ type services struct {
 	burner       burner.Burner
 	recognition  recognition.Recognition
 	metrics      metrics.Metrics
+	btt          btt.Btt
 }
 
 func NewServices(
@@ -22,8 +24,9 @@ func NewServices(
 	burner burner.Burner,
 	recognition recognition.Recognition,
 	metrics metrics.Metrics,
+	btt btt.Btt,
 ) Services {
-	return &services{audio, audioWrapper, burner, recognition, metrics}
+	return &services{audio, audioWrapper, burner, recognition, metrics, btt}
 }
 
 func (s *services) Audio() audio.Audio {
@@ -44,4 +47,8 @@ func (s *services) Recognition() recognition.Recognition {
 
 func (s *services) Metrics() metrics.Metrics {
 	return s.metrics
+}
+
+func (s *services) Btt() btt.Btt {
+	return s.btt
 }

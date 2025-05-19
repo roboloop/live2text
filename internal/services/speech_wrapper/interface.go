@@ -11,7 +11,7 @@ type Client interface {
 }
 
 //type StreamingClient interface {
-//	Send() (*speechpb.StreamingRecognizeRequest, error)
+//	Exec() (*speechpb.StreamingRecognizeRequest, error)
 //	Recv() (*speechpb.StreamingRecognizeResponse, error)
 //	CloseSend() error
 //}

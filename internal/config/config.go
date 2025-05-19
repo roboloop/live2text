@@ -3,72 +3,59 @@ package config
 import (
 	"flag"
 	"fmt"
+	"log/slog"
+	"net"
+	"strings"
 )
 
-type Config2 struct {
-	Devices      []string
-	SocketOutput string
-	Languages    []string
-}
-
 type Config struct {
-	Host string
-	Port string
+	AppAddress string
+	BttAddress string
+	Languages  []string
+	LogLevel   slog.Level
 }
 
 func Initialize(args []string) (*Config, error) {
 	var (
-		host string
-		port string
+		appHost   string
+		appPort   string
+		bttHost   string
+		bttPort   string
+		languages string
+		logLevel  string
 	)
 
 	fs := flag.NewFlagSet("live2text", flag.ContinueOnError)
-	fs.StringVar(&host, "host", "127.0.0.1", "Host address")
-	fs.StringVar(&port, "port", "8000", "Port address")
+	fs.StringVar(&appHost, "app-host", "127.0.0.1", "App server host")
+	fs.StringVar(&appPort, "app-port", "8080", "App server host")
+	fs.StringVar(&bttHost, "btt-host", "127.0.0.1", "BetterTouchTool webserver host")
+	fs.StringVar(&bttPort, "btt-port", "44444", "BetterTouchTool webserver port")
+	fs.StringVar(&languages, "languages", "en-US,es-ES,fr-FR,pt-BR,ru-RU,ja-JP,de-DE", "List of available languages")
+	fs.StringVar(&logLevel, "log-level", "info", "Log level: debug, info, warn, error")
 
 	if err := fs.Parse(args); err != nil {
 		return nil, fmt.Errorf("cannot parse agruments: %w", err)
 	}
 
-	return &Config{host, port}, nil
+	return &Config{
+		net.JoinHostPort(appHost, appPort),
+		net.JoinHostPort(bttHost, bttPort),
+		strings.Split(languages, ","),
+		parseLogLevel(logLevel),
+	}, nil
 }
 
-func Initialize2(args []string) (*Config2, error) {
-	var (
-		devices      []string
-		socketOutput string
-		languages    []string
-	)
-
-	fs := flag.NewFlagSet("live2text", flag.ContinueOnError)
-	fs.Func("device", "Device name (multiple allowed)", func(deviceName string) error {
-		devices = append(devices, deviceName)
-		return nil
-	})
-	fs.StringVar(&socketOutput, "output", "/tmp/live2text", "socket path for the output")
-	fs.Func("language", "Language of speech (multiple allowed)", func(code string) error {
-		//if !validation.ValidateCode(code) {
-		//	return fmt.Errorf("%s is not valid code", code)
-		//}
-		languages = append(languages, code)
-		return nil
-	})
-
-	if err := fs.Parse(args); err != nil {
-		return nil, fmt.Errorf("cannot parse agruments: %w", err)
+func parseLogLevel(levelStr string) slog.Level {
+	switch strings.ToLower(levelStr) {
+	case "debug":
+		return slog.LevelDebug
+	case "info":
+		return slog.LevelInfo
+	case "warn":
+		return slog.LevelWarn
+	case "error":
+		return slog.LevelError
+	default:
+		return slog.LevelInfo
 	}
-
-	if len(devices) == 0 {
-		devices = append(devices, "Loopback Audio")
-	}
-
-	if len(languages) == 0 {
-		languages = append(languages, "en-US")
-	}
-
-	return &Config2{
-		Devices:      devices,
-		SocketOutput: socketOutput,
-		Languages:    languages,
-	}, nil
 }

@@ -1,12 +1,13 @@
-package subs
+package subs_test
 
 import (
+	"live2text/internal/services/recognition/subs"
 	"strings"
 	"testing"
 )
 
 func TestAddNonFinalText(t *testing.T) {
-	writer := NewWriter(2, 10)
+	writer := subs.NewWriter(2, 10)
 
 	writer.AddSection("foo", false)
 	assertEqual(t, "foo", writer.Format())
@@ -25,13 +26,13 @@ func TestAddNonFinalText(t *testing.T) {
 }
 
 func TestAddLongText(t *testing.T) {
-	writer := NewWriter(2, 10)
+	writer := subs.NewWriter(2, 10)
 	writer.AddSection("foobarbazabcdefgeh", false)
 	assertEqual(t, "foobarbazabcdefgeh", writer.Format())
 }
 
 func TestAddFinalText(t *testing.T) {
-	writer := NewWriter(2, 10)
+	writer := subs.NewWriter(2, 10)
 
 	writer.AddSection("foo bar baz", true)
 	assertEqual(t, "foo bar\nbaz.", writer.Format())
@@ -47,22 +48,22 @@ func TestAddFinalText(t *testing.T) {
 }
 
 func TestEdgeWords(t *testing.T) {
-	writer := NewWriter(2, 10)
+	writer := subs.NewWriter(2, 10)
 	writer.AddSection("123456789", true)
 	writer.AddSection("0", true)
 	assertEqual(t, "123456789.\n0.", writer.Format())
 
-	writer = NewWriter(2, 10)
+	writer = subs.NewWriter(2, 10)
 	writer.AddSection("123456789", true)
 	writer.AddSection("1 2 3 4 5", true)
 	assertEqual(t, "123456789.\n1 2 3 4 5.", writer.Format())
 
-	writer = NewWriter(2, 10)
+	writer = subs.NewWriter(2, 10)
 	writer.AddSection("123456789", true)
 	writer.AddSection("1 2 3 4 56", true)
 	assertEqual(t, "1 2 3 4\n56.", writer.Format())
 
-	writer = NewWriter(2, 10)
+	writer = subs.NewWriter(2, 10)
 	writer.AddSection("123456789", true)
 	writer.AddSection("1 2 3 4 5 6", false)
 	assertEqual(t, "1 2 3 4 5\n6", writer.Format())
@@ -93,7 +94,7 @@ func TestEdgeWords(t *testing.T) {
 }
 
 func TestAddMixText(t *testing.T) {
-	writer := NewWriter(2, 10)
+	writer := subs.NewWriter(2, 10)
 
 	writer.AddSection("foo", true)
 	assertEqual(t, "foo.", writer.Format())
