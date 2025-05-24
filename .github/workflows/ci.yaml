@@ -25,4 +25,12 @@ jobs:
         run: | 
           go version
           echo "GOLANG_VERSION: $GOLANG_VERSION"
+          echo "github: ${{ toJSON(github) }}
+          echo "env: ${{ toJSON(env) }}
+          echo "secrets: ${{ toJSON(secrets) }}
+          echo "job: ${{ toJSON(job) }}
+          echo "steps: ${{ toJSON(steps) }}
+          echo "runner: ${{ toJSON(runner) }}
+          echo "matrix: ${{ toJSON(matrix) }}
+          echo "inputs: ${{ toJSON(inputs) }}
 
