@@ -1,12 +1,13 @@
-name: live2text CI_4
+name: live2text CI
 
 on:
   push:
     branches:
       - 'main'
+
   pull_request:
-    tags:
-      - 'v*'
+    paths:
+      - '.github/workflows/**'
     branches-ignore:
       - 'feature/*'
 
