@@ -16,13 +16,13 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-#    container:
-#      image: "golang:1.24"
+    container:
+      image: "golang:1.24"
     services:
       nginx:
         image: nginx:alpine
-        ports:
-          - "80:80"
+#        ports:
+#          - "80:80"
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
