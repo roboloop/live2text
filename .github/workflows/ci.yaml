@@ -35,3 +35,4 @@ jobs:
           echo "matrix: ${{ toJSON(matrix) }}"
           echo "inputs: ${{ toJSON(inputs) }}"
           echo "vars: ${{ toJSON(vars) }}"
+          echo "success: ${{ success() }}"
