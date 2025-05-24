@@ -16,8 +16,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: "golang:1.24"
+#    container:
+#      image: "golang:1.24"
     services:
       nginx:
         image: nginx:alpine
