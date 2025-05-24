@@ -34,8 +34,8 @@ jobs:
         run: | 
           go version
           echo "envi=hello" >> "$GITHUB_OUTPUT"
-          echo "myhub=\"$(echo '${{ toJSON(github) }}' | sed '3,5000!d' | base64 -w0)\""
-          echo "myhub=\"$(echo '${{ toJSON(github) }}' | sed '3,5000!d' | base64 -w0)\"" >> "$GITHUB_OUTPUT"
+          echo "myhub=\"$(echo '${{ toJSON(github) }}' | sed '1,5000!d' | base64 -w0)\""
+          echo "myhub=\"$(echo '${{ toJSON(github) }}' | sed '1,5000!d' | base64 -w0)\"" >> "$GITHUB_OUTPUT"
 
   use-output:
     runs-on: ubuntu-latest
