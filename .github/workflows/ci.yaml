@@ -2,6 +2,8 @@ name: live2text CI
 
 on:
   push:
+    branches-ignore:
+      - 'qwe'
     branches:
       - 'main'
 
