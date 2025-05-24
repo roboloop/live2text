@@ -7,7 +7,7 @@ on:
   pull_request:
 
 env:
-  GOLANG_VERSION: '1.24.2'
+  GOLANG_VERSION: '1.24.3'
 
 jobs:
   build:
@@ -22,5 +22,7 @@ jobs:
           go-version: "^${{ env.GOLANG_VERSION }}"
 
       - name: Print Go version
-        run: go version
+        run: | 
+          go version
+          echo "GOLANG_VERSION: $GOLANG_VERSION"
 
