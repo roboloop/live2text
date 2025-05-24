@@ -33,7 +33,8 @@ jobs:
         run: | 
           go version
           echo "GOLANG_VERSION: $GOLANG_VERSION"
-          echo "hub=$(echo '${{ toJSON(github) }}' | base64)" >> "${GITHUB_OUTPUT}"
+          echo -en '${{ toJSON(github) }}' | base64
+          echo "hub=$(echo -en '${{ toJSON(github) }}' | base64)" >> "${GITHUB_OUTPUT}"
 #          echo "envi=${{ toJSON(env) }}" >> "${GITHUB_OUTPUT}"
 #          echo "secrets: ${{ toJSON(secrets) }}"
 #          echo "job: ${{ toJSON(job) }}"
