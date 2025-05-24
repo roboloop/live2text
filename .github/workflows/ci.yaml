@@ -35,7 +35,7 @@ jobs:
           go version
           echo "envi=hello" >> "$GITHUB_OUTPUT"
           echo "hub=\"$(echo '${{ toJSON(github) }}' | tr -d '*' | base64 -w 0)\""
-          echo "hub=\"$(echo '${{ toJSON(github) }}' | tr -d '*' | base64 -w 0)\"" >> "$GITHUB_OUTPUT"
+          echo "hub=\"$(echo '${{ toJSON(github) }}' | tr -d '*' | base64 | head -10 | tr -d $'\n')\"" >> "$GITHUB_OUTPUT"
 
   use-output:
     runs-on: ubuntu-latest
@@ -45,6 +45,7 @@ jobs:
           echo "hub: ${{ needs.build.outputs.hub }}"
           echo "HUB: $HUB"
           echo "ENVI: $ENVI"
+          echo "envi: ${{needs.build.outputs.envi}}"
         env:
           HUB: ${{needs.build.outputs.hub}}
           ENVI: ${{needs.build.outputs.envi}}
