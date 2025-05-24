@@ -8,7 +8,6 @@ on:
 
 env:
   GOLANG_VERSION: '1.24.3'
-  ACTIONS_STEP_DEBUG: true
 
 concurrency:
   cancel-in-progress: true
