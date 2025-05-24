@@ -40,4 +40,4 @@ jobs:
       - name: Connect to Nginx
         run: |
           echo "Nginx available on 127.0.0.1:${{ job.services.nginx.ports['80'] }}"
-          curl -sSL 127.0.0.1:${{ job.services.nginx.ports['80'] }}"
+          curl -sSL 127.0.0.1:${{ job.services.nginx.ports['80'] }}
