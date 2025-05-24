@@ -2,10 +2,10 @@ name: live2text CI
 
 on:
   push:
-    branches-ignore:
-      - 'qwe'
-    branches:
-      - 'main'
+    paths:
+      - 'internal/**'
+    paths-ignore:
+      - 'internal2/**'
 
   pull_request:
     paths:
