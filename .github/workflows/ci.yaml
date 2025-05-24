@@ -19,7 +19,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       hub: ${{ steps.print.outputs.hub }}
-      envi: ${{ steps.print.outputs.envi }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -34,21 +33,20 @@ jobs:
         run: | 
           go version
           echo "GOLANG_VERSION: $GOLANG_VERSION"
-          echo "hub=${{ toJSON(github) }}" >> "${GITHUB_OUTPUT}"
-          echo "envi=${{ toJSON(env) }}" >> "${GITHUB_OUTPUT}"
-          echo "secrets: ${{ toJSON(secrets) }}"
-          echo "job: ${{ toJSON(job) }}"
-          echo "steps: ${{ toJSON(steps) }}"
-          echo "runner: ${{ toJSON(runner) }}"
-          echo "matrix: ${{ toJSON(matrix) }}"
-          echo "inputs: ${{ toJSON(inputs) }}"
-          echo "vars: ${{ toJSON(vars) }}"
+          echo "hub=$(echo '${{ toJSON(github) }}' | base64)" >> "${GITHUB_OUTPUT}"
+#          echo "envi=${{ toJSON(env) }}" >> "${GITHUB_OUTPUT}"
+#          echo "secrets: ${{ toJSON(secrets) }}"
+#          echo "job: ${{ toJSON(job) }}"
+#          echo "steps: ${{ toJSON(steps) }}"
+#          echo "runner: ${{ toJSON(runner) }}"
+#          echo "matrix: ${{ toJSON(matrix) }}"
+#          echo "inputs: ${{ toJSON(inputs) }}"
+#          echo "vars: ${{ toJSON(vars) }}"
 
   use-output:
     runs-on: ubuntu-latest
     needs: build
     steps:
       - run: |
-          echo "envi: ${{ needs.build.outputs.envi }}"
           echo "hub: ${{ needs.build.outputs.hub }}"
 
