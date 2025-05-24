@@ -16,6 +16,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: "golang:1.24"
     services:
       nginx:
         image: nginx:alpine
@@ -25,15 +27,15 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Setup Go environment
-        uses: actions/setup-go@v5
-        with:
-          go-version: "^${{ env.GOLANG_VERSION }}"
+#      - name: Setup Go environment
+#        uses: actions/setup-go@v5
+#        with:
+#          go-version: "^${{ env.GOLANG_VERSION }}"
 
-      - name: Print Go version
-        id: print
-        run: | 
-          go version
+#      - name: Print Go version
+#        id: print
+#        run: |
+#          go version
 
       - name: Connect to Nginx
         run: |
