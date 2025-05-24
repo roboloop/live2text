@@ -1,8 +1,14 @@
-name: live2text CI_2
+name: live2text CI_3
 
 on:
   push:
+    branches:
+      - 'main'
   pull_request:
+    branches-ignore:
+      - 'main'
+    branches:
+      - '**'
 
 env:
   GOLANG_VERSION: '1.24.3'
