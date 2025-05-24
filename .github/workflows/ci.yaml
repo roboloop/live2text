@@ -10,9 +10,16 @@ env:
   GOLANG_VERSION: '1.24.3'
   ACTIONS_STEP_DEBUG: true
 
+concurrency:
+  cancel-in-progress: true
+  group: ${{ github.ref }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      hub: ${{ steps.print.outputs.hub }}
+      envi: ${{ steps.print.outputs.envi }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -23,11 +30,12 @@ jobs:
           go-version: "^${{ env.GOLANG_VERSION }}"
 
       - name: Print Go version
+        id: print
         run: | 
           go version
           echo "GOLANG_VERSION: $GOLANG_VERSION"
-          echo "github: ${{ toJSON(github) }}"
-          echo "env: ${{ toJSON(env) }}"
+          echo "hub=${{ toJSON(github) }}" >> "${GITHUB_OUTPUT}"
+          echo "envi=${{ toJSON(env) }}" >> "${GITHUB_OUTPUT}"
           echo "secrets: ${{ toJSON(secrets) }}"
           echo "job: ${{ toJSON(job) }}"
           echo "steps: ${{ toJSON(steps) }}"
@@ -35,3 +43,12 @@ jobs:
           echo "matrix: ${{ toJSON(matrix) }}"
           echo "inputs: ${{ toJSON(inputs) }}"
           echo "vars: ${{ toJSON(vars) }}"
+
+  use-output:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - run: |
+          echo "envi: ${{ needs.build.outputs.envi }}"
+          echo "hub: ${{ needs.build.outputs.hub }}"
+
