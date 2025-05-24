@@ -34,4 +34,4 @@ jobs:
           echo "runner: ${{ toJSON(runner) }}"
           echo "matrix: ${{ toJSON(matrix) }}"
           echo "inputs: ${{ toJSON(inputs) }}"
-
+          echo "vars: ${{ toJSON(vars) }}"
