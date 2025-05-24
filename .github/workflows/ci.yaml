@@ -19,6 +19,8 @@ jobs:
     services:
       nginx:
         image: nginx:alpine
+        ports:
+          - "80:80"
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
