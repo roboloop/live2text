@@ -19,6 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       hub: ${{ steps.print.outputs.hub }}
+      envi: ${{ steps.print.outputs.envi }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -32,6 +33,7 @@ jobs:
         id: print
         run: | 
           go version
+          echo "envi=hello" >> "$GITHUB_OUTPUT"
           echo -e "hub=\"$(echo '${{ toJSON(github) }}' | base64 -w 0)\""
           echo -e "hub=\"$(echo '${{ toJSON(github) }}' | base64 -w 0)\"" >> "$GITHUB_OUTPUT"
 
@@ -41,4 +43,9 @@ jobs:
     steps:
       - run: |
           echo "hub: ${{ needs.build.outputs.hub }}"
+          echo "HUB: $HUB"
+          echo "ENVI: $ENVI"
+        env:
+          HUB: ${{needs.build.outputs.hub}}
+          ENVI: ${{needs.build.outputs.envi}}
 
