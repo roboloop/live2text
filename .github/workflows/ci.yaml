@@ -1,0 +1,43 @@
+name: live2text CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+env:
+  GOLANG_VERSION: '1.24.3'
+
+concurrency:
+  cancel-in-progress: true
+  group: ${{ github.ref }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: "golang:1.24"
+    services:
+      nginx:
+        image: nginx:alpine
+#        ports:
+#          - "80:80"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+#      - name: Setup Go environment
+#        uses: actions/setup-go@v5
+#        with:
+#          go-version: "^${{ env.GOLANG_VERSION }}"
+
+#      - name: Print Go version
+#        id: print
+#        run: |
+#          go version
+
+      - name: Connect to Nginx
+        run: |
+          echo "Nginx available on nginx:${{ job.services.nginx.ports['80'] }}"
+          curl -sSL nginx:80
