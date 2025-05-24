@@ -1,7 +1,8 @@
-package api
+package btt
 
 import (
 	"context"
+	"live2text/internal/api/json"
 	"live2text/internal/api/validation"
 	"net/http"
 )
@@ -22,7 +23,7 @@ func (r selectLanguageRequest) Valid(_ context.Context, api *Server) (map[string
 
 func (s *Server) SelectLanguage(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	request, responded := decode[selectLanguageRequest](s, w, r)
+	request, responded := json.Decode[selectLanguageRequest](w, r)
 	if responded {
 		return
 	}
@@ -33,5 +34,5 @@ func (s *Server) SelectLanguage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	encode("ok", w, http.StatusOK)
+	json.Encode("ok", w, http.StatusOK)
 }

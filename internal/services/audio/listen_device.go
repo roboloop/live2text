@@ -13,35 +13,12 @@ func (a *audio) ListenDevice(ctx context.Context, deviceName string) (*DeviceLis
 	var (
 		device *portaudio.DeviceInfo
 		err    error
-		//defaultChunkSizeMs = 100
 	)
 	if device, err = a.FindInputDevice(deviceName); err != nil {
 		return nil, fmt.Errorf("cannot find input device: %w", err)
 	}
 
 	return NewDeviceListener(a.logger, a.metrics, a.externalAudio, device), nil
-
-	//ch := make(chan []int16, 1024)
-	//errCh := make(chan error, 1)
-	//info := &ListenerInfo{
-	//	Device:      device,
-	//	Channels:    1,
-	//	SampleRate:  int(device.DefaultSampleRate),
-	//	ChunkSizeMs: defaultChunkSizeMs,
-	//	Ch:          ch,
-	//	ErrCh:       errCh,
-	//}
-	//
-	//go func() {
-	//	defer close(ch)
-	//	defer close(errCh)
-	//	if err = a.listenDevice(ctx, info, ch); err != nil {
-	//		errCh <- err
-	//	}
-	//	a.logger.InfoContext(ctx, "[Audio] Shutting down...")
-	//}()
-	//
-	//return info, nil
 }
 
 func (a *audio) listenDevice(ctx context.Context, info *ListenerInfo, ch chan []int16) error {

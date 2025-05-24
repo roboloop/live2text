@@ -1,8 +1,8 @@
-package api
+package core
 
 import (
-	"context"
 	"errors"
+	"live2text/internal/api/json"
 	"live2text/internal/services/recognition"
 	"net/http"
 )
@@ -11,14 +11,10 @@ type subsRequest struct {
 	Id string `json:"id"`
 }
 
-func (r subsRequest) Valid(_ context.Context, api *Server) (map[string]string, error) {
-	return nil, nil
-}
-
 func (s *Server) Subs(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	request, responded := decode[subsRequest](s, w, r)
+	request, responded := json.Decode[subsRequest](w, r)
 	if responded {
 		return
 	}
@@ -26,7 +22,7 @@ func (s *Server) Subs(w http.ResponseWriter, r *http.Request) {
 	text, err := s.services.Recognition().Subs(r.Context(), request.Id)
 	if err != nil {
 		if errors.Is(err, recognition.NoTaskError) {
-			encode(errorResponse{err.Error()}, w, http.StatusBadRequest)
+			json.Encode(errorResponse{err.Error()}, w, http.StatusBadRequest)
 			return
 		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)

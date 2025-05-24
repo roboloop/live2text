@@ -1,9 +1,10 @@
-package api
+package btt
 
 import (
 	"context"
 	"fmt"
 	"github.com/gordonklaus/portaudio"
+	"live2text/internal/api/json"
 	"net/http"
 	"slices"
 )
@@ -30,7 +31,7 @@ func (r selectDeviceRequest) Valid(_ context.Context, api *Server) (map[string]s
 
 func (s *Server) SelectDevice(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	request, responded := decode[selectDeviceRequest](s, w, r)
+	request, responded := json.Decode[selectDeviceRequest](w, r)
 	if responded {
 		return
 	}
@@ -41,5 +42,5 @@ func (s *Server) SelectDevice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	encode("ok", w, http.StatusOK)
+	json.Encode("ok", w, http.StatusOK)
 }

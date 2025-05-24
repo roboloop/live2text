@@ -20,7 +20,7 @@ func (b *btt) Clear(ctx context.Context) error {
 	}
 
 	if triggers, err = b.getTriggers(ctx); err != nil {
-		return fmt.Errorf("could no extract triggers' uuids: %w", err)
+		return fmt.Errorf("cannot extract triggers' uuids: %w", err)
 	}
 	for _, trigger := range triggers {
 		uuids = append(uuids, trigger["BTTUUID"].(string))

@@ -44,15 +44,12 @@ func NewBtt(logger *slog.Logger, audio audio.Audio, recognition recognition.Reco
 	debug := logger.Handler().Enabled(context.Background(), slog.LevelDebug)
 
 	return &btt{
-		logger:      logger,
+		logger:      logger.With("service", "Btt"),
 		audio:       audio,
 		recognition: recognition,
-		//httpClient:  http.NewClient(logger, cfg.BttAddress),
-		//execClient:  exec.NewClient(logger, appName, bttName),
-		renderer:   tmpl.NewRenderer(appName, debug),
-		httpClient: httpClient,
-		execClient: execClient,
-		//renderer: renderer,
+		renderer:    tmpl.NewRenderer(appName, debug),
+		httpClient:  httpClient,
+		execClient:  execClient,
 
 		appAddress: cfg.AppAddress,
 		bttAddress: cfg.BttAddress,

@@ -1,6 +1,8 @@
 package api
 
 import (
+	"live2text/internal/api/btt"
+	"live2text/internal/api/core"
 	"live2text/internal/api/middleware"
 	"live2text/internal/services"
 	"log/slog"
@@ -8,31 +10,30 @@ import (
 )
 
 type Server struct {
-	logger   *slog.Logger
-	services services.Services
+	core *core.Server
+	btt  *btt.Server
 }
 
 func NewHandler(logger *slog.Logger, services services.Services) http.Handler {
 	server := &Server{
-		logger,
-		services,
+		core: core.NewServer(logger, services),
+		btt:  btt.NewServer(logger, services),
 	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /api/health", server.Health)
-	mux.HandleFunc("GET /api/devices", server.Devices)
-	mux.HandleFunc("POST /api/start", server.Start)
-	mux.HandleFunc("POST /api/stop", server.Stop)
-	mux.HandleFunc("GET /api/subs", server.Subs)
-	mux.HandleFunc("GET /metrics", server.Metrics)
+	mux.HandleFunc("GET /api/health", server.core.Health)
+	mux.HandleFunc("GET /api/devices", server.core.Devices)
+	mux.HandleFunc("POST /api/start", server.core.Start)
+	mux.HandleFunc("POST /api/stop", server.core.Stop)
+	mux.HandleFunc("GET /api/subs", server.core.Subs)
+	mux.HandleFunc("GET /metrics", server.core.Metrics)
 
-	mux.HandleFunc("GET /api/selected-device", server.SelectedDevice)
-	mux.HandleFunc("GET /api/selected-language", server.SelectedLanguage)
-	mux.HandleFunc("POST /api/select-device", server.SelectDevice)
-	mux.HandleFunc("POST /api/select-language", server.SelectLanguage)
-
-	mux.HandleFunc("POST /api/load-devices", server.LoadDevices)
-	mux.HandleFunc("POST /api/toggle-listening", server.ToggleListening)
+	mux.HandleFunc("GET /api/btt/selected-device", server.btt.SelectedDevice)
+	mux.HandleFunc("GET /api/btt/selected-language", server.btt.SelectedLanguage)
+	mux.HandleFunc("POST /api/btt/select-device", server.btt.SelectDevice)
+	mux.HandleFunc("POST /api/btt/select-language", server.btt.SelectLanguage)
+	mux.HandleFunc("POST /api/btt/load-devices", server.btt.LoadDevices)
+	mux.HandleFunc("POST /api/btt/toggle-listening", server.btt.ToggleListening)
 
 	var handler http.Handler = mux
 	handler = middleware.ErrorMiddleware(handler)

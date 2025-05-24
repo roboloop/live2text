@@ -17,7 +17,7 @@ ok=$(curl -sSLf "http://{{ .AppAddress }}/api/health" 2>/dev/null)
 ok=$(curl -sSLf "http://{{ .AppAddress }}/api/health" 2>/dev/null)
 [[ -z "${ok}" ]] && echo "⚠️ {{ .AppName}} is not running!" && exit 1
 
-device=$(curl -sSLf 'http://{{ .AppAddress }}/api/selected-device')
+device=$(curl -sSLf 'http://{{ .AppAddress }}/api/btt/selected-device')
 [[ -z "${device}" ]] && echo "⚠️ No device selected" || echo "✅ ${device}"
 {{- end }}
 
@@ -27,7 +27,7 @@ device=$(curl -sSLf 'http://{{ .AppAddress }}/api/selected-device')
 ok=$(curl -sSLf "http://{{ .AppAddress }}/api/health" 2>/dev/null)
 [[ -z "${ok}" ]] && echo "⚠️ {{ .AppName}} is not running!" && exit 1
 
-language=$(curl -sSLf 'http://{{ .AppAddress }}/api/selected-language')
+language=$(curl -sSLf 'http://{{ .AppAddress }}/api/btt/selected-language')
 [[ -z "${language}" ]] && echo "⚠️ No language selected" || echo "✅ ${language}"
 {{- end }}
 
@@ -35,14 +35,14 @@ language=$(curl -sSLf 'http://{{ .AppAddress }}/api/selected-language')
 {{- template "log" . }}
 
 curl -X POST -H 'Content-Type: application/json' -sSLf --data-raw '{"device": "{{ .Device }}"}' \
-  http://{{ .AppAddress }}/api/select-device
+  http://{{ .AppAddress }}/api/btt/select-device
 {{- end }}
 
 {{- define "select_language" }}
 {{- template "log" . }}
 
 curl -X POST -H 'Content-Type: application/json' -sSLf --data-raw '{"language": "{{ .Language }}"}' \
-  http://{{ .AppAddress }}/api/select-language
+  http://{{ .AppAddress }}/api/btt/select-language
 {{- end }}
 
 {{- define "open_settings" }}
@@ -50,7 +50,7 @@ curl -X POST -H 'Content-Type: application/json' -sSLf --data-raw '{"language": 
 
 # Must not make calls to the app
 curl -sSLf http://{{ .BttAddress }}/trigger_action/?{{ .Query }}
-curl -sSLf -X POST http://{{ .AppAddress }}/api/load-devices
+curl -sSLf -X POST http://{{ .AppAddress }}/api/btt/load-devices
 {{- end }}
 
 {{- define "toggle" }}
@@ -59,7 +59,7 @@ curl -sSLf -X POST http://{{ .AppAddress }}/api/load-devices
 ok=$(curl -sSLf "http://{{ .AppAddress }}/api/health" 2>/dev/null)
 [[ -z "${ok}" ]] && echo "{{ .AppName}} is not running!" && exit 1
 
-curl -X POST -sSLf "http://{{ .AppAddress }}/api/toggle-listening"
+curl -X POST -sSLf "http://{{ .AppAddress }}/api/btt/toggle-listening"
 {{- end }}
 
 {{- define "listen_socket" }}

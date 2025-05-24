@@ -1,11 +1,13 @@
-package api
+package core
 
 import (
 	"context"
 	"errors"
 	"fmt"
 	"github.com/gordonklaus/portaudio"
+	"live2text/internal/api/json"
 	"live2text/internal/api/validation"
+	"live2text/internal/services"
 	"live2text/internal/services/recognition"
 	"net/http"
 	"slices"
@@ -21,10 +23,10 @@ type startResponse struct {
 	SocketPath string `json:"socketPath"`
 }
 
-func (r startRequest) Valid(_ context.Context, api *Server) (map[string]string, error) {
+func (r startRequest) Valid(_ context.Context, s services.Services) (map[string]string, error) {
 	problems := make(map[string]string)
 
-	devices, err := api.services.Audio().List()
+	devices, err := s.Audio().List()
 	if err != nil {
 		return nil, fmt.Errorf("cannot get list of devices: %w", err)
 	}
@@ -43,20 +45,24 @@ func (r startRequest) Valid(_ context.Context, api *Server) (map[string]string, 
 
 func (s *Server) Start(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	request, responded := decode[startRequest](s, w, r)
-	if responded {
+	var request startRequest
+	var responded bool
+	if request, responded = json.Decode[startRequest](w, r); responded {
+		return
+	}
+	if responded = validation.Validate(request, s.services, w, r); responded {
 		return
 	}
 
 	id, socketPath, err := s.services.Recognition().Start(r.Context(), request.Device, request.Language)
 	if err != nil {
 		if errors.Is(err, recognition.DeviceIsBusyError) {
-			encode(errorResponse{err.Error()}, w, http.StatusBadRequest)
+			json.Encode(errorResponse{err.Error()}, w, http.StatusBadRequest)
 			return
 		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	encode(&startResponse{id, socketPath}, w, http.StatusOK)
+	json.Encode(startResponse{id, socketPath}, w, http.StatusOK)
 }

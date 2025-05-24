@@ -1,6 +1,7 @@
-package api
+package core
 
 import (
+	"live2text/internal/api/json"
 	"net/http"
 )
 
@@ -20,5 +21,5 @@ func (s *Server) Devices(w http.ResponseWriter, _ *http.Request) {
 		deviceNames = append(deviceNames, device.Name)
 	}
 
-	encode(&devicesResponse{deviceNames}, w, http.StatusOK)
+	json.Encode(&devicesResponse{deviceNames}, w, http.StatusOK)
 }

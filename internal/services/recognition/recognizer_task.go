@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"io"
 	"live2text/internal/background"
 	"live2text/internal/services/audio"
@@ -15,7 +17,6 @@ import (
 	"live2text/internal/services/recognition/subs"
 	"live2text/internal/services/speech_wrapper"
 	"live2text/internal/utils"
-	"log"
 	"log/slog"
 	"math"
 	"math/rand"
@@ -75,7 +76,7 @@ func (rt *RecognizeTask) Run(ctx context.Context) error {
 		return fmt.Errorf("cannot listen device: %w", err)
 	}
 
-	audioBroadcaster := utils.Broadcaster(ctx, rt.logger, deviceListener.Ch, 2)
+	audioBroadcaster := utils.Broadcaster(ctx, rt.logger.With("name", "audio"), deviceListener.Ch, 2)
 
 	g, ctx := errgroup.WithContext(ctx)
 	var wg sync.WaitGroup
@@ -107,7 +108,7 @@ func (rt *RecognizeTask) Run(ctx context.Context) error {
 		}
 	})
 
-	subsBroadcaster := utils.Broadcaster(ctx, rt.logger, recognizedCh, 2)
+	subsBroadcaster := utils.Broadcaster(ctx, rt.logger.With("name", "subs"), recognizedCh, 2)
 
 	// Store recognized part in internal memory
 	wg.Add(1)
@@ -249,7 +250,7 @@ func (rt *RecognizeTask) readRecognized(ctx context.Context, stream speechpb.Spe
 	for {
 		select {
 		case <-ctx.Done():
-			slog.InfoContext(ctx, "[Read recognized] Shutting down...")
+			slog.InfoContext(ctx, "Read recognized shutting down...")
 			return ctx.Err()
 		default:
 		}
@@ -261,10 +262,11 @@ func (rt *RecognizeTask) readRecognized(ctx context.Context, stream speechpb.Spe
 		if err != nil {
 			return fmt.Errorf("cannot stream results: %w", err)
 		}
-		if err := resp.Error; err != nil {
+		if grpcErr := resp.Error; err != nil {
+			st := status.FromProto(grpcErr)
 			// Workaround while the API doesn't give a more informative error.
-			if err.Code == 3 || err.Code == 11 {
-				log.Print("WARNING: Speech recognition request exceeded limit of 60 seconds.")
+			if st.Code() == codes.InvalidArgument || st.Code() == codes.OutOfRange {
+				rt.logger.Warn("Speech recognition request exceeded limit of 300 seconds.")
 			}
 			return fmt.Errorf("cannot recognize: %v", err)
 		}

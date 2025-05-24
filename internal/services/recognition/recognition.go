@@ -20,5 +20,5 @@ type recognition struct {
 }
 
 func NewRecognition(logger *slog.Logger, metrics metrics.Metrics, audio audio.Audio, burner burner.Burner, speechClient speech_wrapper.Client, taskManager *background.TaskManager, socketManager *background.SocketManager) Recognition {
-	return &recognition{logger, metrics, audio, burner, speechClient, taskManager, socketManager}
+	return &recognition{logger.With("service", "Recognition"), metrics, audio, burner, speechClient, taskManager, socketManager}
 }

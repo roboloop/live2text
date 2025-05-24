@@ -22,7 +22,7 @@ func main() {
 func run(ctx context.Context, args []string) error {
 	cfg, err := config.Initialize(args)
 	if err != nil {
-		return fmt.Errorf("could not initialize config: %w", err)
+		return fmt.Errorf("cannot initialize config: %w", err)
 	}
 
 	handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
@@ -31,18 +31,20 @@ func run(ctx context.Context, args []string) error {
 	logger := slog.New(handler)
 	bttClient := newBtt(logger, cfg)
 	if err = bttClient.Clear(ctx); err != nil {
-		return fmt.Errorf("could not clear: %w", err)
+		return fmt.Errorf("cannot clear: %w", err)
 	}
 	if err = bttClient.Initialize(ctx); err != nil {
-		return fmt.Errorf("could not initialize: %w", err)
+		return fmt.Errorf("cannot initialize: %w", err)
 	}
 
 	return nil
 }
 
 func newBtt(logger *slog.Logger, cfg *config.Config) btt.Btt {
-	const bttName = "BetterTouchTool"
-	const appName = "live2text"
+	const (
+		appName = "live2text"
+		bttName = "BetterTouchTool"
+	)
 
 	httpClient := http.NewClient(logger, cfg.BttAddress)
 	execClient := exec.NewClient(logger, appName, bttName)

@@ -1,11 +1,11 @@
-package api
+package btt
 
 import "net/http"
 
-func (s *Server) SelectedLanguage(w http.ResponseWriter, r *http.Request) {
+func (s *Server) SelectedDevice(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	language, err := s.services.Btt().SelectedLanguage(r.Context())
+	device, err := s.services.Btt().SelectedDevice(r.Context())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -13,5 +13,5 @@ func (s *Server) SelectedLanguage(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(language))
+	w.Write([]byte(device))
 }

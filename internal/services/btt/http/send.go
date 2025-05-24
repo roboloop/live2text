@@ -23,15 +23,18 @@ import (
 
 func (c *client) Send(ctx context.Context, method string, jsonPayload map[string]any, extraPayload map[string]string) ([]byte, error) {
 	var buf bytes.Buffer
-	var query url.Values
+	//var query url.Values
+	query := url.Values{}
 	if jsonPayload != nil {
 		if err := json.NewEncoder(&buf).Encode(jsonPayload); err != nil {
 			return nil, fmt.Errorf("cannot encode payload: %s", err)
 		}
 		query.Set("json", buf.String())
 	}
-	for key, val := range extraPayload {
-		query.Set(key, val)
+	if extraPayload != nil {
+		for key, val := range extraPayload {
+			query.Set(key, val)
+		}
 	}
 
 	return c.send(ctx, method, query)

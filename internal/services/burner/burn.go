@@ -15,18 +15,18 @@ func (b *burner) Burn(ctx context.Context, w io.Writer, input <-chan []int16, ch
 	for {
 		select {
 		case <-ctx.Done():
-			b.logger.InfoContext(ctx, "[Burner] Writing samples...", "total", len(samples))
+			b.logger.InfoContext(ctx, "Writing samples...", "total", len(samples))
 
 			writer := wav.NewWriter(w, uint32(len(samples)), uint16(channels), uint32(sampleRate), bitsPerSample)
 			if err := writer.WriteSamples(samples); err != nil {
 				return fmt.Errorf("cannot write samples: %w", err)
 			}
 
-			b.logger.InfoContext(ctx, "[Burner] Writing samples is done!")
+			b.logger.InfoContext(ctx, "Writing samples is done!")
 			b.metrics.AddBytesWrittenOnDisk(len(samples) * int(bitsPerSample/bitsPerByte))
 			return nil
 		case value := <-input:
-			b.logger.DebugContext(ctx, "[Burner] Getting samples", "len", len(value))
+			b.logger.DebugContext(ctx, "Getting samples", "len", len(value))
 			if channels == 1 {
 				samples = append(samples, int16ToSample(value)...)
 			} else {
@@ -41,10 +41,6 @@ func int16ToSample(buffer []int16) []wav.Sample {
 	for i, v := range buffer {
 		samples[i] = wav.Sample{Values: [2]int{int(v), 0}}
 	}
-	//if len(buffer) > 0 {
-	//	maxi := slices.Max(buffer)
-	//	fmt.Printf("MAX: %v\n", maxi)
-	//}
 	return samples
 }
 
@@ -58,7 +54,6 @@ func int16ToSampleInStereo(buffer []int16) []wav.Sample {
 
 func int16ToSampleInStereo2(b1, b2 []int16) []wav.Sample {
 	if len(b1) != len(b2) {
-		//log.Fatalf("len no the same: %v, %v", len(b1), len(b2))
 		return []wav.Sample{}
 	}
 	samples := make([]wav.Sample, len(b1))

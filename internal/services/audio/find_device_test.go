@@ -2,24 +2,26 @@ package audio_test
 
 import (
 	"errors"
+	"reflect"
+	"testing"
+
 	"github.com/gordonklaus/portaudio"
+
 	"live2text/internal/services/audio"
 	"live2text/internal/services/audio_wrapper"
 	"live2text/internal/utils"
-	"reflect"
-	"testing"
 )
 
+// TestFindInputDevice tests the FindInputDevice function with various scenarios
+// to ensure it correctly identifies audio input devices and handles error cases.
 func TestFindInputDevice(t *testing.T) {
+	// Define test cases
 	tests := []struct {
-		name string
-
-		mockAudioWrapper *audio_wrapper.MockAudio
-
-		deviceName string
-
-		expected    *portaudio.DeviceInfo
-		expectedErr string
+		name             string        // Test case name
+		mockAudioWrapper *audio_wrapper.MockAudio // Mock audio wrapper configuration
+		deviceName       string        // Device name to search for
+		expected         *portaudio.DeviceInfo // Expected device info result
+		expectedErr      string        // Expected error message (if any)
 	}{
 		{
 			name:             "DefaultHostApi fails",
@@ -28,38 +30,64 @@ func TestFindInputDevice(t *testing.T) {
 			expectedErr:      "cannot list host apis: host api failed",
 		},
 		{
-			name:             "Device not found",
-			mockAudioWrapper: &audio_wrapper.MockAudio{DefaultHostApiHostApiInfo: &portaudio.HostApiInfo{Devices: []*portaudio.DeviceInfo{{Name: "bar"}}}},
-			deviceName:       "foo",
-			expectedErr:      "device was not found",
+			name: "Device not found",
+			mockAudioWrapper: &audio_wrapper.MockAudio{
+				DefaultHostApiHostApiInfo: &portaudio.HostApiInfo{
+					Devices: []*portaudio.DeviceInfo{{Name: "bar"}},
+				},
+			},
+			deviceName:  "foo",
+			expectedErr: "device not found", // Match the actual error message in implementation
 		},
 		{
-			name:             "No input channel",
-			mockAudioWrapper: &audio_wrapper.MockAudio{DefaultHostApiHostApiInfo: &portaudio.HostApiInfo{Devices: []*portaudio.DeviceInfo{{Name: "foo"}}}},
-			deviceName:       "foo",
-			expectedErr:      "device hasn't input channels",
+			name: "No input channels",
+			mockAudioWrapper: &audio_wrapper.MockAudio{
+				DefaultHostApiHostApiInfo: &portaudio.HostApiInfo{
+					Devices: []*portaudio.DeviceInfo{{Name: "foo"}},
+				},
+			},
+			deviceName:  "foo",
+			expectedErr: "device hasn't input channels",
 		},
 		{
-			name:             "Device found",
-			mockAudioWrapper: &audio_wrapper.MockAudio{DefaultHostApiHostApiInfo: &portaudio.HostApiInfo{Devices: []*portaudio.DeviceInfo{{Name: "foo", MaxInputChannels: 1}}}},
-			deviceName:       "foo",
-			expected:         &portaudio.DeviceInfo{Name: "foo", MaxInputChannels: 1},
+			name: "Device found successfully",
+			mockAudioWrapper: &audio_wrapper.MockAudio{
+				DefaultHostApiHostApiInfo: &portaudio.HostApiInfo{
+					Devices: []*portaudio.DeviceInfo{{Name: "foo", MaxInputChannels: 1}},
+				},
+			},
+			deviceName: "foo",
+			expected:   &portaudio.DeviceInfo{Name: "foo", MaxInputChannels: 1},
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			a := audio.NewAudio(utils.NilLogger, nil, tt.mockAudioWrapper)
-			device, err := a.FindInputDevice(tt.deviceName)
-			if tt.expectedErr != "" {
-				if tt.expectedErr != err.Error() {
-					t.Errorf("FindInputDevice() got %v, expected %v", err, tt.expectedErr)
+	// Run test cases
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			// Initialize audio service with mock
+			audioService := audio.NewAudio(utils.NilLogger, nil, tc.mockAudioWrapper)
+
+			// Call the function under test
+			device, err := audioService.FindInputDevice(tc.deviceName)
+
+			// Check error cases
+			if tc.expectedErr != "" {
+				if err == nil {
+					t.Fatalf("FindInputDevice() expected error %q, got nil", tc.expectedErr)
 				}
-				return
-			}
-			if !reflect.DeepEqual(device, tt.expected) {
-				t.Errorf("FindInputDevice() got %#v, expected %#v", device, tt.expected)
-				return
+
+				if err.Error() != tc.expectedErr {
+					t.Errorf("FindInputDevice() error = %q, want %q", err.Error(), tc.expectedErr)
+				}
+			} else {
+				// Check success case
+				if err != nil {
+					t.Fatalf("FindInputDevice() unexpected error: %v", err)
+				}
+
+				if !reflect.DeepEqual(device, tc.expected) {
+					t.Errorf("FindInputDevice() device = %#v, want %#v", device, tc.expected)
+				}
 			}
 		})
 	}

@@ -6,6 +6,7 @@ import (
 )
 
 func Broadcaster[T any](ctx context.Context, logger *slog.Logger, input <-chan T, total int) []<-chan T {
+	logger = logger.With("service", "Broadcaster")
 	var (
 		outputs []chan T
 		results []<-chan T
@@ -18,7 +19,7 @@ func Broadcaster[T any](ctx context.Context, logger *slog.Logger, input <-chan T
 
 	go func() {
 		defer func() {
-			logger.ErrorContext(ctx, "[Broadcaster] Shutting down...")
+			logger.ErrorContext(ctx, "Shutting down...")
 			for _, output := range outputs {
 				close(output)
 			}
@@ -34,7 +35,7 @@ func Broadcaster[T any](ctx context.Context, logger *slog.Logger, input <-chan T
 					case output <- msg:
 						continue
 					default:
-						logger.ErrorContext(ctx, "[Broadcaster] Message dropped", "output", i)
+						logger.ErrorContext(ctx, "Message dropped", "output", i)
 					}
 				}
 			}
