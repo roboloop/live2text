@@ -32,7 +32,7 @@ jobs:
         id: print
         run: | 
           go version
-          echo -e '${{ toJSON(github) }}' | base64 -w 0
+          echo -e "hub=$(echo '${{ toJSON(github) }}' | base64 -w 0)"
           echo -e "hub=$(echo '${{ toJSON(github) }}' | base64 -w 0)" >> "$GITHUB_OUTPUT"
 
   use-output:
