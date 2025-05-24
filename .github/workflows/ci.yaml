@@ -1,9 +1,8 @@
 name: live2text CI
 
 on:
+  push:
   pull_request:
-    branches:
-      - '**'
 
 env:
   GOLANG_VERSION: '1.24.3'
