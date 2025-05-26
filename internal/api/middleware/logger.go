@@ -36,7 +36,7 @@ func LoggerMiddleware(next http.Handler, logger *slog.Logger) http.HandlerFunc {
 
 		next.ServeHTTP(ww, r)
 
-		duration := time.Now().Sub(since)
+		duration := time.Since(since)
 
 		level := slog.LevelInfo
 		if ww.status >= http.StatusInternalServerError {

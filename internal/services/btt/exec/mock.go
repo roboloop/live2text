@@ -7,7 +7,7 @@ type MockClient struct {
 	ExecError    []error
 }
 
-func (m *MockClient) Exec(ctx context.Context, method string) ([]byte, error) {
+func (m *MockClient) Exec(context.Context, string) ([]byte, error) {
 	var response []byte
 	var err error
 

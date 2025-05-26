@@ -11,7 +11,8 @@ import (
 func (c *client) Exec(ctx context.Context, method string) ([]byte, error) {
 	var out bytes.Buffer
 	var err error
-	cmd := exec.CommandContext(ctx, "osascript", "-e", fmt.Sprintf("tell application \"%s\" to %s", c.bttName, method))
+	script := fmt.Sprintf("tell application \"%s\" to %s", c.bttName, method)
+	cmd := exec.CommandContext(ctx, "osascript", "-e", script)
 	cmd.Stdout = &out
 	defer func() {
 		if err != nil {

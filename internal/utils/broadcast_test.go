@@ -8,15 +8,8 @@ import (
 )
 
 func TestBroadcaster(t *testing.T) {
-	var (
-		ctx    context.Context
-		cancel context.CancelFunc
-	)
-
-	ctx = context.Background()
-
 	t.Run("Happy path", func(t *testing.T) {
-		ctx, cancel = context.WithCancel(ctx)
+		ctx, cancel := context.WithCancel(t.Context())
 		defer cancel()
 
 		value := 42
@@ -37,7 +30,7 @@ func TestBroadcaster(t *testing.T) {
 
 	t.Run("Discard from channel", func(t *testing.T) {
 		t.Skip("broken test")
-		ctx, cancel = context.WithCancel(ctx)
+		ctx, cancel := context.WithCancel(t.Context())
 		defer cancel()
 
 		inputCh := make(chan int, 1)

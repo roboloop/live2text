@@ -7,7 +7,7 @@ import (
 )
 
 func (b *btt) ToggleListening(ctx context.Context) error {
-	id, err := b.getStringVariable(ctx, taskIdVariable)
+	id, err := b.getStringVariable(ctx, taskIDVariable)
 	if err != nil {
 		return fmt.Errorf("cannot get listeting socket variable: %w", err)
 	}
@@ -16,7 +16,7 @@ func (b *btt) ToggleListening(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("cannot get app trigger: %w", err)
 	}
-	uuid := appTrigger[bttUuid].(string)
+	uuid := appTrigger[bttUUID].(string)
 
 	if id != "" {
 		return b.stop(ctx, uuid, id)
@@ -27,8 +27,8 @@ func (b *btt) ToggleListening(ctx context.Context) error {
 
 func (b *btt) stop(ctx context.Context, uuid, id string) error {
 	var err error
-	if err = b.setPersistentStringVariable(ctx, taskIdVariable, ""); err != nil {
-		return fmt.Errorf("cannot remove task id")
+	if err = b.setPersistentStringVariable(ctx, taskIDVariable, ""); err != nil {
+		return fmt.Errorf("cannot remove task id: %w", err)
 	}
 
 	if err = b.recognition.Stop(ctx, id); err != nil {
@@ -44,7 +44,7 @@ func (b *btt) stop(ctx context.Context, uuid, id string) error {
 		AddShell(rendered, 0.0, payload.ShellTypeNone).
 		AddMap(map[string]any{
 			"BTTTriggerConfig": map[string]any{
-				//"BTTTouchBarAppleScriptStringRunOnInit": 0,
+				// "BTTTouchBarAppleScriptStringRunOnInit": 0,
 				"BTTTouchBarScriptUpdateInterval": 0.0,
 			},
 		})
@@ -74,7 +74,7 @@ func (b *btt) start(ctx context.Context, uuid string) error {
 	if id, socketPath, err = b.recognition.Start(ctx, device, language); err != nil {
 		return fmt.Errorf("cannot start recognition: %w", err)
 	}
-	if err = b.setPersistentStringVariable(ctx, taskIdVariable, id); err != nil {
+	if err = b.setPersistentStringVariable(ctx, taskIDVariable, id); err != nil {
 		return fmt.Errorf("cannot set task id variable: %w", err)
 	}
 
@@ -87,7 +87,7 @@ func (b *btt) start(ctx context.Context, uuid string) error {
 		AddShell(rendered, b.interval, payload.ShellTypeNone).
 		AddMap(map[string]any{
 			"BTTTriggerConfig": map[string]any{
-				//"BTTTouchBarAppleScriptStringRunOnInit": 1,
+				// "BTTTouchBarAppleScriptStringRunOnInit": 1,
 				"BTTTouchBarScriptUpdateInterval": defaultInterval,
 			},
 		})

@@ -9,8 +9,7 @@ import (
 	"log/slog"
 )
 
-func newMocks() (*audio.MockAudio, *recognition.MockRecognition, *btthttp.MockClient, *bttexec.MockClient, *config.Config) {
-	//logger := utils.NilLogger
+func newMocks() (*audio.MockAudio, *recognition.MockRecognition, *btthttp.MockClient, *bttexec.MockClient, *config.Config) { //nolint:unparam
 	cfg := &config.Config{
 		AppAddress: "127.0.0.1:1234",
 		BttAddress: "127.0.0.1:5678",
@@ -29,7 +28,7 @@ func newMocks() (*audio.MockAudio, *recognition.MockRecognition, *btthttp.MockCl
 	}
 
 	mockRecognition := &recognition.MockRecognition{
-		StartId:         "",
+		StartID:         "",
 		StartSocketPath: "",
 		StartError:      nil,
 		StopError:       nil,
@@ -37,7 +36,7 @@ func newMocks() (*audio.MockAudio, *recognition.MockRecognition, *btthttp.MockCl
 		SubsError:       nil,
 	}
 
-	mockHttpClient := &btthttp.MockClient{
+	mockHTTPClient := &btthttp.MockClient{
 		SendResponse: nil,
 		SendError:    nil,
 	}
@@ -47,7 +46,5 @@ func newMocks() (*audio.MockAudio, *recognition.MockRecognition, *btthttp.MockCl
 		ExecError:    nil,
 	}
 
-	//b := btt.NewBtt(logger, mockAudio, mockRecognition, mockHttpClient, mockExecClient, cfg)
-
-	return mockAudio, mockRecognition, mockHttpClient, mockExecClient, cfg
+	return mockAudio, mockRecognition, mockHTTPClient, mockExecClient, cfg
 }

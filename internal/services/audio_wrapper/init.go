@@ -1,17 +1,18 @@
-package audio_wrapper
+package audiowrapper
 
 import (
-	"github.com/gordonklaus/portaudio"
 	"sync"
+
+	"github.com/gordonklaus/portaudio"
 )
 
 var initOnce sync.Once
-var initError error
+var errInit error
 
 func (a *audio) Init() error {
 	initOnce.Do(func() {
-		initError = portaudio.Initialize()
+		errInit = portaudio.Initialize()
 	})
 
-	return initError
+	return errInit
 }

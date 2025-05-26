@@ -26,7 +26,7 @@ func Validate(v Validator, s services.Services, w http.ResponseWriter, r *http.R
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		w.Write(buf.Bytes())
+		_, _ = w.Write(buf.Bytes())
 		return true
 	}
 

@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-var TaskIsRunning = errors.New("task is already running")
+var ErrTaskIsRunning = errors.New("task is already running")
 
 type Status int
 
@@ -33,9 +33,7 @@ type TaskManager struct {
 	mu  sync.Mutex
 	wg  sync.WaitGroup
 
-	//tasks map[string]context.CancelFunc
 	tasks map[string]*task
-	//cancels map[string]context.CancelFunc
 }
 
 type TaskManagerStatus struct {
@@ -44,7 +42,6 @@ type TaskManagerStatus struct {
 }
 
 func NewTaskManager(ctx context.Context) *TaskManager {
-	//return &TaskManager{ctx: ctx, tasks: map[string]context.CancelFunc{}}
 	return &TaskManager{ctx: ctx, tasks: map[string]*task{}}
 }
 
@@ -57,7 +54,7 @@ func (tm *TaskManager) Go(name string, runnableTask RunnableTask) error {
 	defer tm.mu.Unlock()
 
 	if _, ok := tm.tasks[name]; ok {
-		return TaskIsRunning
+		return ErrTaskIsRunning
 	}
 
 	taskCtx, cancel := context.WithCancel(tm.ctx)
@@ -77,7 +74,6 @@ func (tm *TaskManager) Go(name string, runnableTask RunnableTask) error {
 		t.err = runnableTask.Run(taskCtx)
 
 		t.status = statusFinished
-		//tm.Cancel(name)
 	}()
 
 	return nil

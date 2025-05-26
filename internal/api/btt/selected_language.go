@@ -13,5 +13,7 @@ func (s *Server) SelectedLanguage(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(language))
+	if _, err = w.Write([]byte(language)); err != nil {
+		s.logger.ErrorContext(r.Context(), "Failed to write response", "error", err)
+	}
 }

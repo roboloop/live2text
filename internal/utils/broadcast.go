@@ -11,7 +11,7 @@ func Broadcaster[T any](ctx context.Context, logger *slog.Logger, input <-chan T
 		outputs []chan T
 		results []<-chan T
 	)
-	for i := 0; i < total; i++ {
+	for range total {
 		ch := make(chan T, cap(input))
 		outputs = append(outputs, ch)
 		results = append(results, ch)

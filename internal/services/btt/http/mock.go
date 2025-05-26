@@ -7,7 +7,7 @@ type MockClient struct {
 	SendError    []error
 }
 
-func (m *MockClient) Send(ctx context.Context, method string, jsonPayload map[string]any, extraPayload map[string]string) ([]byte, error) {
+func (m *MockClient) Send(context.Context, string, map[string]any, map[string]string) ([]byte, error) {
 	var response []byte
 	var err error
 

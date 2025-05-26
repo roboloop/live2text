@@ -1,10 +1,10 @@
-package audio_wrapper
+package audiowrapper
 
 import "github.com/gordonklaus/portaudio"
 
 type Audio interface {
 	OpenStream(portaudio.StreamParameters, ...any) (Stream, error)
-	DefaultHostApi() (*portaudio.HostApiInfo, error)
+	DefaultHostAPI() (*portaudio.HostApiInfo, error)
 	Close() error
 }
 

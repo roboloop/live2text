@@ -10,12 +10,12 @@ func (b *btt) SelectDevice(ctx context.Context, device string) error {
 		return fmt.Errorf("cannot set selected device: %w", err)
 	}
 
-	selectedDeviceUuid, err := b.getTriggerUuid(ctx, selectedDeviceTitle)
+	selectedDeviceUUID, err := b.getTriggerUUID(ctx, selectedDeviceTitle)
 	if err != nil {
 		return fmt.Errorf("cannot get selected device trigger: %w", err)
 	}
 
-	if err = b.RefreshWidget(ctx, selectedDeviceUuid); err != nil {
+	if err = b.RefreshWidget(ctx, selectedDeviceUUID); err != nil {
 		return fmt.Errorf("cannot refresh selected device widget: %w", err)
 	}
 

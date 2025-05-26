@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"golang.org/x/sync/errgroup"
 	"log/slog"
 	"net"
 	"sync"
+
+	"golang.org/x/sync/errgroup"
 )
 
-var NoSocketFound = errors.New("no socket found")
+var ErrNoSocketFound = errors.New("no socket found")
 
 type SocketManager struct {
 	ctx       context.Context
@@ -29,10 +30,9 @@ func NewSocketManager(ctx context.Context, logger *slog.Logger) *SocketManager {
 }
 
 func (sm *SocketManager) Listen(socketPath string, fn func(net.Conn)) error {
-	//socketPath := filepath.Join(os.TempDir(), fmt.Sprintf("%s-%d.sock", sm.prefix, rand.Uint64()))
-	listener, err := (&net.ListenConfig{}).Listen(sm.ctx, "unix", socketPath)
-	if err != nil {
-		return fmt.Errorf("cannot dial a unix socket: %w", err)
+	listener, errListen := (&net.ListenConfig{}).Listen(sm.ctx, "unix", socketPath)
+	if errListen != nil {
+		return fmt.Errorf("cannot dial a unix socket: %w", errListen)
 	}
 	sm.mu.Lock()
 	sm.listeners[socketPath] = listener
@@ -63,7 +63,7 @@ func (sm *SocketManager) Listen(socketPath string, fn func(net.Conn)) error {
 func (sm *SocketManager) CloseByPath(socketPath string) error {
 	listener, ok := sm.listeners[socketPath]
 	if !ok {
-		return NoSocketFound
+		return ErrNoSocketFound
 	}
 
 	if err := listener.Close(); err != nil {
@@ -75,14 +75,11 @@ func (sm *SocketManager) CloseByPath(socketPath string) error {
 func (sm *SocketManager) Close() error {
 	g, _ := errgroup.WithContext(context.Background())
 	for _, listener := range sm.listeners {
-		g.Go(func() error {
-			return listener.Close()
-		})
+		g.Go(listener.Close)
 	}
 	if err := g.Wait(); err != nil {
 		return err
 	}
-	//sm.wg.Wait()
 	return nil
 }
 

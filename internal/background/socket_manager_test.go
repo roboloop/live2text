@@ -1,9 +1,9 @@
 package background_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
-	"golang.org/x/net/context"
 	"io"
 	"live2text/internal/background"
 	"live2text/internal/utils"
@@ -15,27 +15,28 @@ import (
 )
 
 func TestSocketManager(t *testing.T) {
+	ctx := t.Context()
 	defaultFn := func(conn net.Conn) {
 		conn.Close()
 	}
 
 	t.Run("Socket communication between client and server", func(t *testing.T) {
 		var (
-			ping      string = "ping"
-			pong      string = "pong"
+			ping      = "ping"
+			pong      = "pong"
 			incoming  string
 			outcoming string
 			err       error
 		)
 
-		sm, socketPath := newSocketManager()
+		sm, socketPath := newSocketManager(ctx)
 		defer sm.Close()
 
 		err = sm.Listen(socketPath, func(conn net.Conn) {
 			defer conn.Close()
 			incoming = read(conn)
 
-			fmt.Fprintf(conn, pong)
+			fmt.Fprintf(conn, "%s", pong)
 		})
 		assertNoError(t, err)
 
@@ -43,7 +44,7 @@ func TestSocketManager(t *testing.T) {
 		assertNoError(t, err)
 		defer conn.Close()
 
-		_, err = fmt.Fprintf(conn, ping)
+		_, err = fmt.Fprintf(conn, "%s", ping)
 		assertNoError(t, err)
 
 		outcoming = read(conn)
@@ -58,7 +59,7 @@ func TestSocketManager(t *testing.T) {
 	})
 
 	t.Run("Listener was closed by socket path", func(t *testing.T) {
-		sm, socketPath := newSocketManager()
+		sm, socketPath := newSocketManager(ctx)
 		err := sm.Listen(socketPath, defaultFn)
 		assertNoError(t, err)
 
@@ -67,23 +68,23 @@ func TestSocketManager(t *testing.T) {
 	})
 
 	t.Run("No listener found to close by socket path", func(t *testing.T) {
-		sm, _ := newSocketManager()
+		sm, _ := newSocketManager(ctx)
 
 		err := sm.CloseByPath("foo")
-		if err != nil && !errors.Is(err, background.NoSocketFound) {
-			t.Errorf("ClosedByPath() expected error: got %v, expected %v", err, background.NoSocketFound)
+		if err != nil && !errors.Is(err, background.ErrNoSocketFound) {
+			t.Errorf("ClosedByPath() expected error: got %v, expected %v", err, background.ErrNoSocketFound)
 		}
 	})
 
 	t.Run("Wait until listener is closed", func(t *testing.T) {
-		sm, socketPath := newSocketManager()
+		sm, socketPath := newSocketManager(ctx)
 		err := sm.Listen(socketPath, defaultFn)
 		assertNoError(t, err)
 		sm.Close()
 	})
 
 	t.Run("Socket manager status", func(t *testing.T) {
-		sm, _ := newSocketManager()
+		sm, _ := newSocketManager(ctx)
 		sm.Listen("foo", defaultFn)
 		sm.Listen("bar", defaultFn)
 		totalListeners := sm.Status().TotalListeners
@@ -95,8 +96,7 @@ func TestSocketManager(t *testing.T) {
 	})
 }
 
-func newSocketManager() (*background.SocketManager, string) {
-	ctx := context.Background()
+func newSocketManager(ctx context.Context) (*background.SocketManager, string) {
 	path := filepath.Join(os.TempDir(), fmt.Sprintf("%s-%d.sock", "live2text", rand.Uint64()))
 
 	return background.NewSocketManager(ctx, utils.NilLogger), path

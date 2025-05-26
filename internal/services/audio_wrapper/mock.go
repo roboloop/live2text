@@ -1,4 +1,4 @@
-package audio_wrapper
+package audiowrapper
 
 import (
 	"github.com/gordonklaus/portaudio"
@@ -8,8 +8,8 @@ type MockAudio struct {
 	OpenStreamStream *MockStream
 	OpenStreamError  error
 
-	DefaultHostApiHostApiInfo *portaudio.HostApiInfo
-	DefaultHostApiError       error
+	DefaultHostAPIHostAPIInfo *portaudio.HostApiInfo
+	DefaultHostAPIError       error
 
 	CloseError error
 }
@@ -25,8 +25,8 @@ func (m *MockAudio) OpenStream(portaudio.StreamParameters, ...any) (Stream, erro
 	return m.OpenStreamStream, m.OpenStreamError
 }
 
-func (m *MockAudio) DefaultHostApi() (*portaudio.HostApiInfo, error) {
-	return m.DefaultHostApiHostApiInfo, m.DefaultHostApiError
+func (m *MockAudio) DefaultHostAPI() (*portaudio.HostApiInfo, error) {
+	return m.DefaultHostAPIHostAPIInfo, m.DefaultHostAPIError
 }
 
 func (m *MockAudio) Close() error {

@@ -8,7 +8,7 @@ import (
 	"github.com/gordonklaus/portaudio"
 
 	"live2text/internal/services/audio"
-	"live2text/internal/services/audio_wrapper"
+	audiowrapper "live2text/internal/services/audio_wrapper"
 	"live2text/internal/utils"
 )
 
@@ -17,22 +17,22 @@ import (
 func TestFindInputDevice(t *testing.T) {
 	// Define test cases
 	tests := []struct {
-		name             string        // Test case name
-		mockAudioWrapper *audio_wrapper.MockAudio // Mock audio wrapper configuration
-		deviceName       string        // Device name to search for
-		expected         *portaudio.DeviceInfo // Expected device info result
-		expectedErr      string        // Expected error message (if any)
+		name             string                  // Test case name
+		mockAudioWrapper *audiowrapper.MockAudio // Mock audio wrapper configuration
+		deviceName       string                  // Device name to search for
+		expected         *portaudio.DeviceInfo   // Expected device info result
+		expectedErr      string                  // Expected error message (if any)
 	}{
 		{
-			name:             "DefaultHostApi fails",
-			mockAudioWrapper: &audio_wrapper.MockAudio{DefaultHostApiError: errors.New("host api failed")},
+			name:             "DefaultHostAPI fails",
+			mockAudioWrapper: &audiowrapper.MockAudio{DefaultHostAPIError: errors.New("host api failed")},
 			deviceName:       "mic1",
 			expectedErr:      "cannot list host apis: host api failed",
 		},
 		{
 			name: "Device not found",
-			mockAudioWrapper: &audio_wrapper.MockAudio{
-				DefaultHostApiHostApiInfo: &portaudio.HostApiInfo{
+			mockAudioWrapper: &audiowrapper.MockAudio{
+				DefaultHostAPIHostAPIInfo: &portaudio.HostApiInfo{
 					Devices: []*portaudio.DeviceInfo{{Name: "bar"}},
 				},
 			},
@@ -41,8 +41,8 @@ func TestFindInputDevice(t *testing.T) {
 		},
 		{
 			name: "No input channels",
-			mockAudioWrapper: &audio_wrapper.MockAudio{
-				DefaultHostApiHostApiInfo: &portaudio.HostApiInfo{
+			mockAudioWrapper: &audiowrapper.MockAudio{
+				DefaultHostAPIHostAPIInfo: &portaudio.HostApiInfo{
 					Devices: []*portaudio.DeviceInfo{{Name: "foo"}},
 				},
 			},
@@ -51,8 +51,8 @@ func TestFindInputDevice(t *testing.T) {
 		},
 		{
 			name: "Device found successfully",
-			mockAudioWrapper: &audio_wrapper.MockAudio{
-				DefaultHostApiHostApiInfo: &portaudio.HostApiInfo{
+			mockAudioWrapper: &audiowrapper.MockAudio{
+				DefaultHostAPIHostAPIInfo: &portaudio.HostApiInfo{
 					Devices: []*portaudio.DeviceInfo{{Name: "foo", MaxInputChannels: 1}},
 				},
 			},
@@ -79,15 +79,10 @@ func TestFindInputDevice(t *testing.T) {
 				if err.Error() != tc.expectedErr {
 					t.Errorf("FindInputDevice() error = %q, want %q", err.Error(), tc.expectedErr)
 				}
-			} else {
-				// Check success case
-				if err != nil {
-					t.Fatalf("FindInputDevice() unexpected error: %v", err)
-				}
-
-				if !reflect.DeepEqual(device, tc.expected) {
-					t.Errorf("FindInputDevice() device = %#v, want %#v", device, tc.expected)
-				}
+				return
+			}
+			if !reflect.DeepEqual(device, tc.expected) {
+				t.Errorf("FindInputDevice() device = %#v, want %#v", device, tc.expected)
 			}
 		})
 	}

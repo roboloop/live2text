@@ -10,9 +10,4 @@ type ListenerInfo struct {
 
 	Ch    <-chan []int16
 	ErrCh <-chan error
-
-	notImplemented
-}
-
-type notImplemented interface {
 }

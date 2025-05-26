@@ -19,7 +19,7 @@ const (
 	selectedLanguageUUIDVariable = "LIVE2TEXT_SELECTED_LANGUAGE_UUID"
 
 	listeningSocketVariable = "LIVE2TEXT_LISTENING_SOCKET"
-	taskIdVariable          = "LIVE2TEXT_TASK_ID"
+	taskIDVariable          = "LIVE2TEXT_TASK_ID"
 )
 
 func (b *btt) getStringVariable(ctx context.Context, variable string) (string, error) {

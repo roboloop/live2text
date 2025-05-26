@@ -2,12 +2,13 @@ package audio_test
 
 import (
 	"errors"
-	"github.com/gordonklaus/portaudio"
 	"live2text/internal/services/audio"
-	"live2text/internal/services/audio_wrapper"
+	audiowrapper "live2text/internal/services/audio_wrapper"
 	"live2text/internal/utils"
 	"reflect"
 	"testing"
+
+	"github.com/gordonklaus/portaudio"
 )
 
 func TestList(t *testing.T) {
@@ -17,20 +18,24 @@ func TestList(t *testing.T) {
 	tests := []struct {
 		name string
 
-		mockAudioWrapper *audio_wrapper.MockAudio
+		mockAudioWrapper *audiowrapper.MockAudio
 
 		expected    []*portaudio.DeviceInfo
 		expectedErr string
 	}{
 		{
-			name:             "DefaultHostApi fails",
-			mockAudioWrapper: &audio_wrapper.MockAudio{DefaultHostApiError: errors.New("host api failed")},
+			name:             "DefaultHostAPI fails",
+			mockAudioWrapper: &audiowrapper.MockAudio{DefaultHostAPIError: errors.New("host api failed")},
 			expectedErr:      "cannot list host apis: host api failed",
 		},
 		{
-			name:             "List of devices",
-			mockAudioWrapper: &audio_wrapper.MockAudio{DefaultHostApiHostApiInfo: &portaudio.HostApiInfo{Devices: []*portaudio.DeviceInfo{validDevice, invalidDevice}}},
-			expected:         []*portaudio.DeviceInfo{validDevice},
+			name: "List of devices",
+			mockAudioWrapper: &audiowrapper.MockAudio{
+				DefaultHostAPIHostAPIInfo: &portaudio.HostApiInfo{
+					Devices: []*portaudio.DeviceInfo{validDevice, invalidDevice},
+				},
+			},
+			expected: []*portaudio.DeviceInfo{validDevice},
 		},
 	}
 	for _, tt := range tests {

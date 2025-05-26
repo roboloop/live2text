@@ -3,13 +3,14 @@ package btt
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 )
 
 const (
 	bttWidgetName  = "BTTWidgetName"
 	bttDescription = "BTTTriggerTypeDescription"
-	bttUuid        = "BTTUUID"
+	bttUUID        = "BTTUUID"
 )
 
 func (b *btt) getTrigger(ctx context.Context, name string) (map[string]any, error) {
@@ -29,14 +30,14 @@ func (b *btt) getTrigger(ctx context.Context, name string) (map[string]any, erro
 		}
 	}
 
-	return nil, fmt.Errorf("cannot find trigger")
+	return nil, errors.New("cannot find trigger")
 }
 
-func (b *btt) getTriggerUuid(ctx context.Context, name string) (string, error) {
+func (b *btt) getTriggerUUID(ctx context.Context, name string) (string, error) {
 	trigger, err := b.getTrigger(ctx, name)
 	if err != nil {
 		return "", err
 	}
 
-	return trigger[bttUuid].(string), nil
+	return trigger[bttUUID].(string), nil
 }

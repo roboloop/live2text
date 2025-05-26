@@ -1,10 +1,11 @@
-package speech_wrapper
+package speechwrapper
 
 import (
-	speech "cloud.google.com/go/speech/apiv1"
-	"cloud.google.com/go/speech/apiv1/speechpb"
 	"context"
 	"fmt"
+
+	speech "cloud.google.com/go/speech/apiv1"
+	"cloud.google.com/go/speech/apiv1/speechpb"
 )
 
 type speechClient struct {

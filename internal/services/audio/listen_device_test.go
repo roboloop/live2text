@@ -1,29 +1,29 @@
 package audio_test
 
 import (
-	"context"
 	"errors"
-	"github.com/gordonklaus/portaudio"
 	"live2text/internal/services/audio"
-	"live2text/internal/services/audio_wrapper"
+	audiowrapper "live2text/internal/services/audio_wrapper"
 	"live2text/internal/utils"
 	"testing"
+
+	"github.com/gordonklaus/portaudio"
 )
 
 func TestListenDevice(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	var (
 		deviceName   = "foo"
 		device       = &portaudio.DeviceInfo{Name: deviceName, MaxInputChannels: 1}
-		hostApiInfo  = &portaudio.HostApiInfo{Devices: []*portaudio.DeviceInfo{device}}
+		hostAPIInfo  = &portaudio.HostApiInfo{Devices: []*portaudio.DeviceInfo{device}}
 		listenerInfo = &audio.ListenerInfo{Device: device, Channels: 1, ChunkSizeMs: 100}
 	)
 
 	for _, tt := range []struct {
 		name string
 
-		mockAudioWrapper *audio_wrapper.MockAudio
+		mockAudioWrapper *audiowrapper.MockAudio
 
 		deviceName string
 
@@ -31,29 +31,15 @@ func TestListenDevice(t *testing.T) {
 		expectedErr string
 	}{
 		{
-			name:             "No stream",
-			mockAudioWrapper: &audio_wrapper.MockAudio{DefaultHostApiHostApiInfo: hostApiInfo, OpenStreamError: errors.New("internal")},
+			name:             "No device",
+			mockAudioWrapper: &audiowrapper.MockAudio{DefaultHostAPIError: errors.New("internal")},
 			deviceName:       deviceName,
 			expected:         listenerInfo,
-			expectedErr:      "could not open the stream: internal",
-		},
-		{
-			name:             "Stream not started",
-			mockAudioWrapper: &audio_wrapper.MockAudio{DefaultHostApiHostApiInfo: hostApiInfo, OpenStreamStream: &audio_wrapper.MockStream{StartError: errors.New("internal")}},
-			deviceName:       deviceName,
-			expected:         listenerInfo,
-			expectedErr:      "could not start the stream: internal",
-		},
-		{
-			name:             "Read failed",
-			mockAudioWrapper: &audio_wrapper.MockAudio{DefaultHostApiHostApiInfo: hostApiInfo, OpenStreamStream: &audio_wrapper.MockStream{ReadError: errors.New("internal")}},
-			deviceName:       deviceName,
-			expected:         listenerInfo,
-			expectedErr:      "could not read stream: internal",
+			expectedErr:      "cannot find input device: cannot list host apis: internal",
 		},
 		{
 			name:             "Happy path",
-			mockAudioWrapper: &audio_wrapper.MockAudio{DefaultHostApiHostApiInfo: hostApiInfo, OpenStreamStream: &audio_wrapper.MockStream{}},
+			mockAudioWrapper: &audiowrapper.MockAudio{DefaultHostAPIHostAPIInfo: hostAPIInfo, OpenStreamStream: &audiowrapper.MockStream{}},
 			deviceName:       deviceName,
 			expected:         listenerInfo,
 		},
@@ -63,6 +49,10 @@ func TestListenDevice(t *testing.T) {
 			listener, err := a.ListenDevice(ctx, tt.deviceName)
 
 			if tt.expectedErr != "" {
+				if err == nil {
+					t.Fatalf("ListenDevice() expected error %v, got nil", tt.expectedErr)
+				}
+
 				if tt.expectedErr != err.Error() {
 					t.Errorf("Expected error: %v, got %v", tt.expectedErr, err.Error())
 				}
@@ -77,8 +67,4 @@ func TestListenDevice(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestListening(t *testing.T) {
-
 }

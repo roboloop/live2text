@@ -35,6 +35,7 @@ func NewWriter(totalLines, perLine int) *Writer {
 	}
 }
 
+//nolint:gocognit // TODO: simplify
 func (w *Writer) AddSection(text string, isFinal bool) {
 	if isFinal {
 		text += "."
@@ -140,7 +141,7 @@ func (w *Writer) Format() string {
 			offsets = append([]int{0}, offsets...)
 		}
 
-		for j := 0; j < len(offsets)-1; j++ {
+		for j := range len(offsets) - 1 {
 			segment := strings.TrimLeft(string(runes[offsets[j]:offsets[j+1]]), " ")
 			lines[lineIndex] = append(lines[lineIndex], segment)
 			lineIndex++

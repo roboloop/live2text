@@ -11,12 +11,10 @@ import (
 	"log/slog"
 )
 
-const bttName = "BetterTouchTool"
-const appName = "live2text"
-
 const (
-	settingsTitle         = appName + " Settings"
-	appTitle              = appName + " App"
+	appName               = "Live2Text"
+	settingsTitle         = appName + "Settings"
+	appTitle              = appName + "App"
 	deviceGroupTitle      = "Device"
 	languageGroupTitle    = "Language"
 	selectedLanguageTitle = "Selected Language"
@@ -40,7 +38,14 @@ type btt struct {
 	interval float64
 }
 
-func NewBtt(logger *slog.Logger, audio audio.Audio, recognition recognition.Recognition, httpClient http.Client, execClient exec.Client, cfg *config.Config) Btt {
+func NewBtt(
+	logger *slog.Logger,
+	audio audio.Audio,
+	recognition recognition.Recognition,
+	httpClient http.Client,
+	execClient exec.Client,
+	cfg *config.Config,
+) Btt {
 	debug := logger.Handler().Enabled(context.Background(), slog.LevelDebug)
 
 	return &btt{

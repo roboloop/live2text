@@ -18,12 +18,10 @@ go build -o ~/go/bin/live2text cmd/live2text/main.go
 
 ## TODO
 
-- Refactor code (ensure consistent message formats in tests, errors, logs, and use tags instead of \[prefix\] in logs)
+- Refactor code (ensure consistent message formats in tests, errors, logs)
 - Fully implement graceful shutdown
 - Handle port occupation cases
-- Properly manage context cancellation
-- Integrate HTTP calls in btt.sh
 - Fix goroutine leaks
-- Update Go version
 - Improve README with explanations and demonstrations
-- Add tests, set up linter, and configure CI/CD
+- More tests
+- Improve CI (remove duplicates, check the cache)

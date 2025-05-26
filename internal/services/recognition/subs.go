@@ -5,12 +5,12 @@ import (
 	"errors"
 )
 
-var NoTaskError = errors.New("no task found")
+var ErrNoTask = errors.New("no task found")
 
 func (r *recognition) Subs(_ context.Context, device string) (string, error) {
 	task := r.taskManager.Get(device)
 	if task == nil {
-		return "", NoTaskError
+		return "", ErrNoTask
 	}
 
 	recognizeTask, ok := task.(*RecognizeTask)

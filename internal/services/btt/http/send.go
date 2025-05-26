@@ -6,35 +6,27 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
 )
 
-//func (c *client) Send(ctx context.Context, method string, jsonPayload map[string]string, payload map[string]string) ([]byte, error) {
-//	query := url.Values{}
-//	for key, value := range payload {
-//		query.Set(key, value)
-//	}
-//
-//	return c.send(ctx, method, query)
-//}
-
-func (c *client) Send(ctx context.Context, method string, jsonPayload map[string]any, extraPayload map[string]string) ([]byte, error) {
+func (c *client) Send(
+	ctx context.Context,
+	method string,
+	jsonPayload map[string]any,
+	extraPayload map[string]string,
+) ([]byte, error) {
 	var buf bytes.Buffer
-	//var query url.Values
 	query := url.Values{}
 	if jsonPayload != nil {
 		if err := json.NewEncoder(&buf).Encode(jsonPayload); err != nil {
-			return nil, fmt.Errorf("cannot encode payload: %s", err)
+			return nil, fmt.Errorf("cannot encode payload: %w", err)
 		}
 		query.Set("json", buf.String())
 	}
-	if extraPayload != nil {
-		for key, val := range extraPayload {
-			query.Set(key, val)
-		}
+	for key, val := range extraPayload {
+		query.Set(key, val)
 	}
 
 	return c.send(ctx, method, query)
@@ -52,7 +44,7 @@ func (c *client) send(ctx context.Context, method string, query url.Values) ([]b
 
 	defer func() {
 		if err != nil {
-			slog.ErrorContext(ctx, "cannot send request", "error", err, "method", method)
+			c.logger.ErrorContext(ctx, "cannot send request", "error", err, "method", method)
 		}
 	}()
 
@@ -71,7 +63,7 @@ func (c *client) send(ctx context.Context, method string, query url.Values) ([]b
 		return nil, fmt.Errorf("cannot read body: %w", err)
 	}
 
-	slog.InfoContext(ctx, "sent request", "method", method)
+	c.logger.InfoContext(ctx, "sent request", "method", method)
 
 	return body, nil
 }

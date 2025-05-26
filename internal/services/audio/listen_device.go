@@ -3,13 +3,12 @@ package audio
 import (
 	"context"
 	"fmt"
+
 	"github.com/gordonklaus/portaudio"
-	"time"
 )
 
-// ListenDevice listens the input device
-// To stop listening cancel the context
-func (a *audio) ListenDevice(ctx context.Context, deviceName string) (*DeviceListener, error) {
+// ListenDevice returns device listener.
+func (a *audio) ListenDevice(_ context.Context, deviceName string) (*DeviceListener, error) {
 	var (
 		device *portaudio.DeviceInfo
 		err    error
@@ -19,45 +18,4 @@ func (a *audio) ListenDevice(ctx context.Context, deviceName string) (*DeviceLis
 	}
 
 	return NewDeviceListener(a.logger, a.metrics, a.externalAudio, device), nil
-}
-
-func (a *audio) listenDevice(ctx context.Context, info *ListenerInfo, ch chan []int16) error {
-	bufferSize := int(info.Device.DefaultSampleRate) * info.ChunkSizeMs / int(time.Second.Milliseconds())
-	buffer := make([]int16, bufferSize*info.Channels)
-
-	stream, err := a.externalAudio.OpenStream(portaudio.StreamParameters{
-		Input: portaudio.StreamDeviceParameters{
-			Device:   info.Device,
-			Channels: info.Channels,
-			Latency:  info.Device.DefaultLowInputLatency,
-		},
-		SampleRate:      float64(info.SampleRate),
-		FramesPerBuffer: bufferSize,
-	}, buffer)
-	if err != nil {
-		return fmt.Errorf("cannot open the stream: %w", err)
-	}
-	defer stream.Close()
-
-	if err = stream.Start(); err != nil {
-		return fmt.Errorf("cannot start the stream: %w", err)
-	}
-	defer stream.Stop()
-
-	for {
-		if err = stream.Read(); err != nil {
-			return fmt.Errorf("cannot read stream: %w", err)
-		}
-		clone := make([]int16, len(buffer))
-		copy(clone, buffer)
-
-		select {
-		case <-ctx.Done():
-			a.logger.InfoContext(ctx, "shutdown of audio reader")
-			return nil
-		case ch <- clone:
-		default:
-			a.logger.ErrorContext(ctx, "The channel is full, segment was dropped")
-		}
-	}
 }

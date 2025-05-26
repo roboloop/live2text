@@ -112,7 +112,7 @@ func TestAddMixText(t *testing.T) {
 	assertEqual(t, "countdown.\nNo more.", writer.Format())
 }
 
-// Helper function for assertion
+// Helper function for assertion.
 func assertEqual(t *testing.T, expected, actual string) {
 	t.Helper()
 	if strings.TrimSpace(expected) != strings.TrimSpace(actual) {

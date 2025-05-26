@@ -13,6 +13,7 @@ type testStruct struct {
 	Value int    `json:"value"`
 }
 
+//nolint:gocognit // TODO: simplify?
 func TestDecode(t *testing.T) {
 	tests := []struct {
 		name string
@@ -55,12 +56,11 @@ func TestDecode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req, err := http.NewRequest("POST", "/test", strings.NewReader(tt.body))
+			req, err := http.NewRequest(http.MethodPost, "/test", strings.NewReader(tt.body))
 			if err != nil {
 				t.Fatalf("Failed to create request: %v", err)
 			}
 			req.Header.Set("Content-Type", tt.contentType)
-
 			w := httptest.NewRecorder()
 			result, hasError := json.Decode[testStruct](w, req)
 

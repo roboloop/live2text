@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/gordonklaus/portaudio"
 	"live2text/internal/api/json"
 	"live2text/internal/api/validation"
 	"live2text/internal/services"
 	"live2text/internal/services/recognition"
 	"net/http"
 	"slices"
+
+	"github.com/gordonklaus/portaudio"
 )
 
 type startRequest struct {
@@ -19,7 +20,7 @@ type startRequest struct {
 }
 
 type startResponse struct {
-	Id         string `json:"id"`
+	ID         string `json:"id"`
 	SocketPath string `json:"socketPath"`
 }
 
@@ -56,7 +57,7 @@ func (s *Server) Start(w http.ResponseWriter, r *http.Request) {
 
 	id, socketPath, err := s.services.Recognition().Start(r.Context(), request.Device, request.Language)
 	if err != nil {
-		if errors.Is(err, recognition.DeviceIsBusyError) {
+		if errors.Is(err, recognition.ErrDeviceIsBusy) {
 			json.Encode(errorResponse{err.Error()}, w, http.StatusBadRequest)
 			return
 		}

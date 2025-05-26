@@ -1,1 +1,1 @@
-package speech_wrapper
+package speechwrapper

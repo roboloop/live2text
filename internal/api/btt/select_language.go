@@ -11,7 +11,7 @@ type selectLanguageRequest struct {
 	Language string `json:"language"`
 }
 
-func (r selectLanguageRequest) Valid(_ context.Context, api *Server) (map[string]string, error) {
+func (r selectLanguageRequest) Valid(context.Context, *Server) (map[string]string, error) {
 	problems := make(map[string]string)
 
 	if !validation.IsValidLanguageCode(r.Language) {

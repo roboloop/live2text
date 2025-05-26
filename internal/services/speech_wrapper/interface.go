@@ -1,17 +1,12 @@
-package speech_wrapper
+package speechwrapper
 
 import (
-	"cloud.google.com/go/speech/apiv1/speechpb"
 	"context"
+
+	"cloud.google.com/go/speech/apiv1/speechpb"
 )
 
 type Client interface {
 	StreamingRecognize(ctx context.Context) (speechpb.Speech_StreamingRecognizeClient, error)
 	Close() error
 }
-
-//type StreamingClient interface {
-//	Exec() (*speechpb.StreamingRecognizeRequest, error)
-//	Recv() (*speechpb.StreamingRecognizeResponse, error)
-//	CloseSend() error
-//}

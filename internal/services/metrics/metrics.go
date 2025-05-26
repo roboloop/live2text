@@ -1,8 +1,9 @@
 package metrics
 
 import (
-	externalmetrics "github.com/VictoriaMetrics/metrics"
 	"io"
+
+	externalmetrics "github.com/VictoriaMetrics/metrics"
 )
 
 var metricBytesSentToGoogleSpeech = "recognizer_bytes_sent_to_google_speech"

@@ -3,7 +3,7 @@ package recognition
 import "context"
 
 type MockRecognition struct {
-	StartId         string
+	StartID         string
 	StartSocketPath string
 	StartError      error
 
@@ -13,14 +13,14 @@ type MockRecognition struct {
 	SubsError error
 }
 
-func (m *MockRecognition) Start(ctx context.Context, device string, language string) (id string, socketPath string, err error) {
-	return m.StartId, m.StartSocketPath, m.StartError
+func (m *MockRecognition) Start(context.Context, string, string) (string, string, error) {
+	return m.StartID, m.StartSocketPath, m.StartError
 }
 
-func (m *MockRecognition) Stop(ctx context.Context, id string) error {
+func (m *MockRecognition) Stop(context.Context, string) error {
 	return m.StopError
 }
 
-func (m *MockRecognition) Subs(ctx context.Context, id string) (string, error) {
+func (m *MockRecognition) Subs(context.Context, string) (string, error) {
 	return m.SubsText, m.SubsError
 }

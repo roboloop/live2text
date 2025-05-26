@@ -11,14 +11,14 @@ import (
 	"live2text/internal/config"
 	"live2text/internal/services"
 	"live2text/internal/services/audio"
-	"live2text/internal/services/audio_wrapper"
+	audiowrapper "live2text/internal/services/audio_wrapper"
 	"live2text/internal/services/btt"
 	bttexec "live2text/internal/services/btt/exec"
 	btthttp "live2text/internal/services/btt/http"
 	"live2text/internal/services/burner"
 	"live2text/internal/services/metrics"
 	"live2text/internal/services/recognition"
-	"live2text/internal/services/speech_wrapper"
+	speechwrapper "live2text/internal/services/speech_wrapper"
 	"log"
 	"log/slog"
 	"net"
@@ -33,7 +33,7 @@ import (
 func main() {
 	ctx := context.Background()
 	if err := run(ctx, os.Args[1:]); err != nil {
-		slog.Error("Application error", "error", err)
+		slog.Error("Application error", "error", err) //nolint:sloglint
 		os.Exit(1)
 	}
 }
@@ -47,17 +47,17 @@ func run(ctx context.Context, args []string) error {
 		return fmt.Errorf("cannot initialize config: %w", err)
 	}
 
-	sc, err := speech_wrapper.NewClient(ctx)
+	sc, err := speechwrapper.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("cannot create speech client: %w", err)
 	}
 	defer sc.Close()
 
-	aw, awClose, err := audio_wrapper.NewAudio()
+	aw, err := audiowrapper.NewAudio()
 	if err != nil {
 		return fmt.Errorf("cannot create new audio wrapper: %w", err)
 	}
-	defer awClose()
+	defer aw.Close()
 
 	sl, l := newLoggers(cfg.LogLevel)
 
@@ -75,47 +75,50 @@ func run(ctx context.Context, args []string) error {
 	server := newServer(ctx, cfg.AppAddress, api.NewHandler(sl, s), l)
 	defer server.Close()
 	go func() {
-		slog.InfoContext(ctx, "Starting the API server", "address", cfg.AppAddress)
+		sl.InfoContext(ctx, "Starting the API server", "address", cfg.AppAddress)
 		if serverErr := server.ListenAndServe(); serverErr != nil && !errors.Is(serverErr, http.ErrServerClosed) {
-			slog.ErrorContext(ctx, "Failed to listen and serve", "error", serverErr)
+			sl.ErrorContext(ctx, "Failed to listen and serve", "error", serverErr)
 		}
 	}()
 
 	debugServer := newServer(ctx, "127.0.0.1:6060", newDebugHandler(), l)
 	go func() {
-		slog.InfoContext(ctx, "Starting debug server", "address", debugServer.Addr)
-		if debugServerErr := debugServer.ListenAndServe(); debugServerErr != nil && !errors.Is(debugServerErr, http.ErrServerClosed) {
-			slog.ErrorContext(ctx, "Debug server error", "error", err)
+		sl.InfoContext(ctx, "Starting debug server", "address", debugServer.Addr)
+		if debugServerErr := debugServer.ListenAndServe(); debugServerErr != nil &&
+			!errors.Is(debugServerErr, http.ErrServerClosed) {
+			sl.ErrorContext(ctx, "Debug server error", "error", err)
 		}
 	}()
 
 	// Wait for interrupt signal
 	<-ctx.Done()
-	slog.InfoContext(ctx, "Received shutdown signal", "signal", ctx.Err())
+	sl.InfoContext(ctx, "Received shutdown signal", "signal", ctx.Err())
 
 	// Shutdown servers and clean up resource
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer shutdownCancel()
 
 	if err = server.Shutdown(shutdownCtx); err != nil {
-		slog.ErrorContext(ctx, "Failed to shutdown server gracefully", "error", err)
+		sl.ErrorContext(ctx, "Failed to shutdown server gracefully", "error", err)
 	} else {
-		slog.InfoContext(ctx, "Server shutdown completed successfully")
+		sl.InfoContext(ctx, "Server shutdown completed successfully")
 	}
 
 	if err = debugServer.Shutdown(shutdownCtx); err != nil {
-		slog.ErrorContext(ctx, "Failed to shutdown debug server gracefully", "error", err)
+		sl.ErrorContext(ctx, "Failed to shutdown debug server gracefully", "error", err)
 	} else {
-		slog.InfoContext(ctx, "Debug server shutdown completed successfully")
+		sl.InfoContext(ctx, "Debug server shutdown completed successfully")
 	}
 
-	slog.InfoContext(ctx, "Closing socket manager")
-	sm.Close()
+	sl.InfoContext(ctx, "Closing socket manager")
+	if err = sm.Close(); err != nil {
+		sl.ErrorContext(ctx, "Failed to close socket manager")
+	}
 
-	slog.InfoContext(ctx, "Waiting for background tasks to complete")
+	sl.InfoContext(ctx, "Waiting for background tasks to complete")
 	tm.Wait()
 
-	slog.InfoContext(ctx, "Application shutdown complete")
+	sl.InfoContext(ctx, "Application shutdown complete")
 
 	return nil
 }

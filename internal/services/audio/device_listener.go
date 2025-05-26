@@ -3,17 +3,18 @@ package audio
 import (
 	"context"
 	"fmt"
-	"github.com/gordonklaus/portaudio"
-	"live2text/internal/services/audio_wrapper"
+	audiowrapper "live2text/internal/services/audio_wrapper"
 	"live2text/internal/services/metrics"
 	"log/slog"
 	"time"
+
+	"github.com/gordonklaus/portaudio"
 )
 
 type DeviceListener struct {
 	logger        *slog.Logger
 	metrics       metrics.Metrics
-	externalAudio audio_wrapper.Audio
+	externalAudio audiowrapper.Audio
 
 	deviceInfo *portaudio.DeviceInfo
 
@@ -24,7 +25,12 @@ type DeviceListener struct {
 	ch          chan []int16
 }
 
-func NewDeviceListener(logger *slog.Logger, metrics metrics.Metrics, externalAudio audio_wrapper.Audio, deviceInfo *portaudio.DeviceInfo) *DeviceListener {
+func NewDeviceListener(
+	logger *slog.Logger,
+	metrics metrics.Metrics,
+	externalAudio audiowrapper.Audio,
+	deviceInfo *portaudio.DeviceInfo,
+) *DeviceListener {
 	const defaultChunkSizeMs = 100
 	ch := make(chan []int16, 1024)
 	return &DeviceListener{
@@ -58,12 +64,20 @@ func (dl *DeviceListener) Listen(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("cannot open the stream: %w", err)
 	}
-	defer stream.Close()
+	defer func() {
+		if errStream := stream.Close(); errStream != nil {
+			dl.logger.ErrorContext(ctx, "Cannot close stream", "error", err)
+		}
+	}()
 
 	if err = stream.Start(); err != nil {
 		return fmt.Errorf("cannot start the stream: %w", err)
 	}
-	defer stream.Stop()
+	defer func() {
+		if errStream := stream.Stop(); errStream != nil {
+			dl.logger.ErrorContext(ctx, "Cannot stop stream", "error", err)
+		}
+	}()
 
 	for {
 		if err = stream.Read(); err != nil {

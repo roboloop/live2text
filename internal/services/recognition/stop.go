@@ -5,11 +5,11 @@ import (
 	"errors"
 )
 
-var NoDeviceBusyError = errors.New("no device busy")
+var ErrNoDeviceBusy = errors.New("no device busy")
 
-func (r *recognition) Stop(ctx context.Context, device string) error {
+func (r *recognition) Stop(_ context.Context, device string) error {
 	if !r.taskManager.Has(device) {
-		return NoDeviceBusyError
+		return ErrNoDeviceBusy
 	}
 
 	r.taskManager.Cancel(device)

@@ -1,9 +1,7 @@
 package btt_test
 
 import (
-	"context"
 	"errors"
-	"github.com/gordonklaus/portaudio"
 	"live2text/internal/services/audio"
 	"live2text/internal/services/btt"
 	bttexec "live2text/internal/services/btt/exec"
@@ -11,16 +9,18 @@ import (
 	"live2text/internal/utils"
 	"strings"
 	"testing"
+
+	"github.com/gordonklaus/portaudio"
 )
 
 func TestLoadDevices(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	tests := []struct {
 		name string
 
 		mockAudio      *audio.MockAudio
-		mockHttpClient *btthttp.MockClient
+		mockHTTPClient *btthttp.MockClient
 		mockExecClient *bttexec.MockClient
 
 		expectedErr string
@@ -60,7 +60,7 @@ func TestLoadDevices(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, mockRecognition, _, _, cfg := newMocks()
-			b := btt.NewBtt(utils.NilLogger, tt.mockAudio, mockRecognition, tt.mockHttpClient, tt.mockExecClient, cfg)
+			b := btt.NewBtt(utils.NilLogger, tt.mockAudio, mockRecognition, tt.mockHTTPClient, tt.mockExecClient, cfg)
 			err := b.LoadDevices(ctx)
 			if tt.expectedErr != "" && err != nil {
 				if !strings.Contains(err.Error(), tt.expectedErr) {

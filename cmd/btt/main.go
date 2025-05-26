@@ -14,7 +14,7 @@ import (
 func main() {
 	ctx := context.Background()
 	if err := run(ctx, os.Args[1:]); err != nil {
-		slog.Error(err.Error())
+		slog.Error("Application error", "error", err) //nolint:sloglint
 		os.Exit(1)
 	}
 }

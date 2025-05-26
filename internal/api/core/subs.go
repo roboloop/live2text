@@ -8,7 +8,7 @@ import (
 )
 
 type subsRequest struct {
-	Id string `json:"id"`
+	ID string `json:"id"`
 }
 
 func (s *Server) Subs(w http.ResponseWriter, r *http.Request) {
@@ -19,9 +19,9 @@ func (s *Server) Subs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	text, err := s.services.Recognition().Subs(r.Context(), request.Id)
+	text, err := s.services.Recognition().Subs(r.Context(), request.ID)
 	if err != nil {
-		if errors.Is(err, recognition.NoTaskError) {
+		if errors.Is(err, recognition.ErrNoTask) {
 			json.Encode(errorResponse{err.Error()}, w, http.StatusBadRequest)
 			return
 		}
@@ -32,5 +32,7 @@ func (s *Server) Subs(w http.ResponseWriter, r *http.Request) {
 	// Avoid a json response, write just a simple text
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(text))
+	if _, err = w.Write([]byte(text)); err != nil {
+		s.logger.ErrorContext(r.Context(), "Failed to write response", "error", err)
+	}
 }

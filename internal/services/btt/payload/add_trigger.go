@@ -1,12 +1,12 @@
 package payload
 
-type TriggerId int
+type TriggerID int
 
 const (
-	TriggerDirectory      TriggerId = 630
-	TriggerTouchBarButton TriggerId = 629
-	TriggerNamed          TriggerId = 643
-	TriggerShellScript    TriggerId = 642
+	TriggerDirectory      TriggerID = 630
+	TriggerTouchBarButton TriggerID = 629
+	TriggerNamed          TriggerID = 643
+	TriggerShellScript    TriggerID = 642
 )
 
 type TriggerType string
@@ -25,7 +25,13 @@ const (
 	ActionTypeOpenGroup        ActionType = 205
 )
 
-func (p Payload) AddTrigger(name string, triggerID TriggerId, triggerType TriggerType, actionType ActionType, hidden bool) Payload {
+func (p Payload) AddTrigger(
+	name string,
+	triggerID TriggerID,
+	triggerType TriggerType,
+	actionType ActionType,
+	hidden bool,
+) Payload {
 	p.AddMap(map[string]any{
 		"BTTTouchBarButtonName":   name,
 		"BTTWidgetName":           name,

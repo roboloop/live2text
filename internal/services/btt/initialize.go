@@ -27,9 +27,11 @@ func (b *btt) Initialize(ctx context.Context) error {
 }
 
 func (b *btt) addSettingsMenu(ctx context.Context) error {
-	settingsPayload := make(payload.Payload).AddTrigger(settingsTitle, payload.TriggerDirectory, payload.TouchBar, payload.ActionTypeExecuteScript, true)
+	settingsPayload := make(
+		payload.Payload,
+	).AddTrigger(settingsTitle, payload.TriggerDirectory, payload.TouchBar, payload.ActionTypeExecuteScript, true)
 
-	settingsUuid, err := b.addTrigger(ctx, settingsPayload, payload.MainOrderSettings, "")
+	settingsUUID, err := b.addTrigger(ctx, settingsPayload, payload.MainOrderSettings, "")
 	if err != nil {
 		return fmt.Errorf("cannot create settings group: %w", err)
 	}
@@ -37,7 +39,7 @@ func (b *btt) addSettingsMenu(ctx context.Context) error {
 	closePayload := make(payload.Payload).
 		AddTrigger("Close Group", payload.TriggerTouchBarButton, payload.TouchBar, payload.ActionTypeCloseGroup, false).
 		AddIcon("xmark.circle.fill", 25, true)
-	if _, err = b.addTrigger(ctx, closePayload, payload.SettingsOrderCloseGroup, settingsUuid); err != nil {
+	if _, err = b.addTrigger(ctx, closePayload, payload.SettingsOrderCloseGroup, settingsUUID); err != nil {
 		return fmt.Errorf("cannot create close trigger: %w", err)
 	}
 
@@ -48,31 +50,34 @@ func (b *btt) addSettingsMenu(ctx context.Context) error {
 	statusPayload := make(payload.Payload).
 		AddTrigger("⏳", payload.TriggerShellScript, payload.TouchBar, payload.ActionTypeEmptyPlaceholder, false).
 		AddShell(rendered, 15, payload.ShellTypeNone)
-	if _, err = b.addTrigger(ctx, statusPayload, payload.SettingsOrderStatus, settingsUuid); err != nil {
+	if _, err = b.addTrigger(ctx, statusPayload, payload.SettingsOrderStatus, settingsUUID); err != nil {
 		return fmt.Errorf("cannot create status trigger: %w", err)
 	}
 
-	if err = b.addDeviceMenu(ctx, settingsUuid); err != nil {
+	if err = b.addDeviceMenu(ctx, settingsUUID); err != nil {
 		return fmt.Errorf("cannot create device menu: %w", err)
 	}
 
-	if err = b.addLanguageMenu(ctx, settingsUuid); err != nil {
+	if err = b.addLanguageMenu(ctx, settingsUUID); err != nil {
 		return fmt.Errorf("cannot create language menu: %w", err)
 	}
 
 	return nil
 }
 
-func (b *btt) addDeviceMenu(ctx context.Context, parentUuid string) error {
+func (b *btt) addDeviceMenu(ctx context.Context, parentUUID string) error {
 	devicePayload := make(payload.Payload).
 		AddTrigger(deviceGroupTitle, payload.TriggerDirectory, payload.TouchBar, payload.ActionTypeExecuteScript, false).
 		AddIcon("microphone", 22, false)
-	deviceUuid, err := b.addTrigger(ctx, devicePayload, payload.SettingsOrderDevice, parentUuid)
+	deviceUUID, err := b.addTrigger(ctx, devicePayload, payload.SettingsOrderDevice, parentUUID)
+	if err != nil {
+		return fmt.Errorf("cannot create device group: %w", err)
+	}
 
 	closePayload := make(payload.Payload).
 		AddClose(settingsTitle).
 		AddIcon("xmark.circle.fill", 25, true)
-	if _, err = b.addTrigger(ctx, closePayload, payload.DeviceOrderCloseGroup, deviceUuid); err != nil {
+	if _, err = b.addTrigger(ctx, closePayload, payload.DeviceOrderCloseGroup, deviceUUID); err != nil {
 		return fmt.Errorf("cannot create close trigger: %w", err)
 	}
 
@@ -84,23 +89,26 @@ func (b *btt) addDeviceMenu(ctx context.Context, parentUuid string) error {
 		AddTrigger(selectedDeviceTitle, payload.TriggerShellScript, payload.TouchBar, payload.ActionTypeEmptyPlaceholder, false).
 		AddShell(rendered, 15, payload.ShellTypeNone).
 		AddMap(map[string]any{"BTTTriggerConfig": map[string]any{"BTTTouchBarFreeSpaceAfterButton": 25}})
-	if _, err = b.addTrigger(ctx, selectedDevicePayload, payload.DeviceOrderSelectedDevice, deviceUuid); err != nil {
+	if _, err = b.addTrigger(ctx, selectedDevicePayload, payload.DeviceOrderSelectedDevice, deviceUUID); err != nil {
 		return fmt.Errorf("cannot create close trigger: %w", err)
 	}
 
 	return nil
 }
 
-func (b *btt) addLanguageMenu(ctx context.Context, parentUuid string) error {
+func (b *btt) addLanguageMenu(ctx context.Context, parentUUID string) error {
 	devicePayload := make(payload.Payload).
 		AddTrigger(languageGroupTitle, payload.TriggerDirectory, payload.TouchBar, payload.ActionTypeExecuteScript, false).
 		AddIcon("character", 22, false)
-	languageUuid, err := b.addTrigger(ctx, devicePayload, payload.SettingsOrderLanguage, parentUuid)
+	languageUUID, err := b.addTrigger(ctx, devicePayload, payload.SettingsOrderLanguage, parentUUID)
+	if err != nil {
+		return fmt.Errorf("cannot create language group: %w", err)
+	}
 
 	closePayload := make(payload.Payload).
 		AddClose(settingsTitle).
 		AddIcon("xmark.circle.fill", 25, true)
-	if _, err = b.addTrigger(ctx, closePayload, payload.LanguageOrderCloseGroup, languageUuid); err != nil {
+	if _, err = b.addTrigger(ctx, closePayload, payload.LanguageOrderCloseGroup, languageUUID); err != nil {
 		return fmt.Errorf("cannot create close trigger: %w", err)
 	}
 
@@ -112,12 +120,15 @@ func (b *btt) addLanguageMenu(ctx context.Context, parentUuid string) error {
 		AddTrigger(selectedLanguageTitle, payload.TriggerShellScript, payload.TouchBar, payload.ActionTypeEmptyPlaceholder, false).
 		AddShell(rendered, 15, payload.ShellTypeNone).
 		AddMap(map[string]any{"BTTTriggerConfig": map[string]any{"BTTTouchBarFreeSpaceAfterButton": 25}})
-	if _, err = b.addTrigger(ctx, selectedDevicePayload, payload.LanguageOrderSelectedLanguage, languageUuid); err != nil {
+	if _, err = b.addTrigger(ctx, selectedDevicePayload, payload.LanguageOrderSelectedLanguage, languageUUID); err != nil {
 		return fmt.Errorf("cannot create close trigger: %w", err)
 	}
 
 	for i, language := range b.languages {
-		rendered, err = b.renderer.Render("select_language", map[string]any{"AppAddress": b.appAddress, "Language": language})
+		rendered, err = b.renderer.Render(
+			"select_language",
+			map[string]any{"AppAddress": b.appAddress, "Language": language},
+		)
 		if err != nil {
 			return fmt.Errorf("cannot render print_selected_language script: %w", err)
 		}
@@ -125,7 +136,7 @@ func (b *btt) addLanguageMenu(ctx context.Context, parentUuid string) error {
 		languagePayload := make(payload.Payload).
 			AddTrigger(language, payload.TriggerTouchBarButton, payload.TouchBar, payload.ActionTypeEmptyPlaceholder, false).
 			AddShell(rendered, 0, payload.ShellTypeAdditional)
-		if _, err = b.addTrigger(ctx, languagePayload, payload.LanguageOrderSelectedLanguage+payload.Order(1+i), languageUuid); err != nil {
+		if _, err = b.addTrigger(ctx, languagePayload, payload.LanguageOrderSelectedLanguage+payload.Order(1+i), languageUUID); err != nil {
 			return fmt.Errorf("cannot create close trigger: %w", err)
 		}
 	}
@@ -141,13 +152,16 @@ func (b *btt) addMainMenu(ctx context.Context) error {
 	}
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(jsonPayload); err != nil {
-		return fmt.Errorf("cannot ecnode json payload: %s", err)
+		return fmt.Errorf("cannot ecnode json payload: %w", err)
 	}
 	query := url.Values{}
 	query.Set("json", buf.String())
 	encoded := strings.ReplaceAll(query.Encode(), "+", "%20")
 
-	rendered, err := b.renderer.Render("open_settings", map[string]any{"AppAddress": b.appAddress, "BttAddress": b.bttAddress, "Query": encoded})
+	rendered, err := b.renderer.Render(
+		"open_settings",
+		map[string]any{"AppAddress": b.appAddress, "BttAddress": b.bttAddress, "Query": encoded},
+	)
 	if err != nil {
 		return fmt.Errorf("cannot render print_selected_language script: %w", err)
 	}
@@ -179,7 +193,6 @@ func (b *btt) addMainMenu(ctx context.Context) error {
 				"BTTTouchBarButtonColor":         "0.0, 0.0, 0.0, 255.0",
 				"BTTTouchBarButtonTextAlignment": 0,
 			},
-			//"BTTUUID":
 		})
 	if _, err = b.addTrigger(ctx, mainPayload, payload.MainOrderSubs, ""); err != nil {
 		return fmt.Errorf("cannot create main trigger: %w", err)

@@ -1,13 +1,9 @@
 package recognition
 
 import (
-	"cloud.google.com/go/speech/apiv1/speechpb"
 	"context"
 	"errors"
 	"fmt"
-	"golang.org/x/sync/errgroup"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"io"
 	"live2text/internal/background"
 	"live2text/internal/services/audio"
@@ -15,17 +11,23 @@ import (
 	"live2text/internal/services/metrics"
 	"live2text/internal/services/recognition/console"
 	"live2text/internal/services/recognition/subs"
-	"live2text/internal/services/speech_wrapper"
+	speechwrapper "live2text/internal/services/speech_wrapper"
 	"live2text/internal/utils"
 	"log/slog"
 	"math"
-	"math/rand"
+	"math/rand/v2"
 	"net"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"cloud.google.com/go/speech/apiv1/speechpb"
+	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type recognized struct {
@@ -40,7 +42,7 @@ type RecognizeTask struct {
 	audio         audio.Audio
 	burner        burner.Burner
 	socketManager *background.SocketManager
-	speechClient  speech_wrapper.Client
+	speechClient  speechwrapper.Client
 
 	id         string
 	device     string
@@ -51,7 +53,15 @@ type RecognizeTask struct {
 	subs           *subs.Writer
 }
 
-func NewRecognizeTask(logger *slog.Logger, metrics metrics.Metrics, audio audio.Audio, burner burner.Burner, socketManager *background.SocketManager, speechClient speech_wrapper.Client, device, language, socketPath string) *RecognizeTask {
+func NewRecognizeTask(
+	logger *slog.Logger,
+	metrics metrics.Metrics,
+	audio audio.Audio,
+	burner burner.Burner,
+	socketManager *background.SocketManager,
+	speechClient speechwrapper.Client,
+	device, language, socketPath string,
+) *RecognizeTask {
 	return &RecognizeTask{
 		logger:        logger,
 		metrics:       metrics,
@@ -60,7 +70,7 @@ func NewRecognizeTask(logger *slog.Logger, metrics metrics.Metrics, audio audio.
 		socketManager: socketManager,
 		speechClient:  speechClient,
 
-		id:         fmt.Sprintf("%d", rand.Int()%100000),
+		id:         strconv.Itoa(rand.Int() % 100000), //nolint:gosec
 		device:     device,
 		language:   language,
 		socketPath: socketPath,
@@ -133,12 +143,12 @@ func (rt *RecognizeTask) Run(ctx context.Context) error {
 
 		return rt.socketManager.Listen(rt.socketPath, func(conn net.Conn) {
 			defer conn.Close()
-			conn.Write([]byte(rt.subs.Format()))
+			_, _ = conn.Write([]byte(rt.subs.Format()))
 		})
 	})
 
 	if err = g.Wait(); err != nil {
-		slog.ErrorContext(ctx, "Recognition failed", "error", err)
+		rt.logger.ErrorContext(ctx, "Recognition failed", "error", err)
 	}
 
 	wg.Wait()
@@ -161,7 +171,12 @@ func (rt *RecognizeTask) burnContent(ctx context.Context, ch <-chan []int16, cha
 	return err
 }
 
-func (rt *RecognizeTask) stream(ctx context.Context, ch <-chan []int16, sampleRate int, recognizedCh chan<- recognized) error {
+func (rt *RecognizeTask) stream(
+	ctx context.Context,
+	ch <-chan []int16,
+	sampleRate int,
+	recognizedCh chan<- recognized,
+) error {
 	rt.logger.InfoContext(ctx, "New streaming recognize request")
 
 	streamCtx, cancel := context.WithCancel(ctx)
@@ -171,13 +186,18 @@ func (rt *RecognizeTask) stream(ctx context.Context, ch <-chan []int16, sampleRa
 	if err != nil {
 		return fmt.Errorf("cannot streaming recognize: %w", err)
 	}
-	defer stream.CloseSend()
+	defer func() {
+		if errClose := stream.CloseSend(); errClose != nil {
+			rt.logger.ErrorContext(ctx, "Cannot close stream", "error", err)
+		}
+	}()
+
 	if err = stream.Send(&speechpb.StreamingRecognizeRequest{
 		StreamingRequest: &speechpb.StreamingRecognizeRequest_StreamingConfig{
 			StreamingConfig: &speechpb.StreamingRecognitionConfig{
 				Config: &speechpb.RecognitionConfig{
 					Encoding:        speechpb.RecognitionConfig_LINEAR16,
-					SampleRateHertz: int32(sampleRate),
+					SampleRateHertz: int32(sampleRate), //nolint:gosec // the value always small enough
 					LanguageCode:    rt.language,
 					MaxAlternatives: 1,
 				},
@@ -217,7 +237,11 @@ func (rt *RecognizeTask) stream(ctx context.Context, ch <-chan []int16, sampleRa
 	}
 }
 
-func (rt *RecognizeTask) streamContent(ctx context.Context, stream speechpb.Speech_StreamingRecognizeClient, ch <-chan []int16) error {
+func (rt *RecognizeTask) streamContent(
+	ctx context.Context,
+	stream speechpb.Speech_StreamingRecognizeClient,
+	ch <-chan []int16,
+) error {
 	var err error
 	for {
 		select {
@@ -225,7 +249,6 @@ func (rt *RecognizeTask) streamContent(ctx context.Context, stream speechpb.Spee
 			rt.logger.InfoContext(ctx, "[Stream Content] Shutting down...")
 			return ctx.Err()
 		case buffer := <-ch:
-			//rt.logger.InfoContext(ctx, "Receiving the buf", "size", len(buffer))
 			content := make([]byte, 0, len(buffer)*2)
 			for _, value := range buffer {
 				lowByte := byte(value & math.MaxUint8)
@@ -246,29 +269,33 @@ func (rt *RecognizeTask) streamContent(ctx context.Context, stream speechpb.Spee
 	}
 }
 
-func (rt *RecognizeTask) readRecognized(ctx context.Context, stream speechpb.Speech_StreamingRecognizeClient, recognizedCh chan<- recognized) error {
+func (rt *RecognizeTask) readRecognized(
+	ctx context.Context,
+	stream speechpb.Speech_StreamingRecognizeClient,
+	recognizedCh chan<- recognized,
+) error {
 	for {
 		select {
 		case <-ctx.Done():
-			slog.InfoContext(ctx, "Read recognized shutting down...")
+			rt.logger.InfoContext(ctx, "Read recognized shutting down...")
 			return ctx.Err()
 		default:
 		}
 
 		resp, err := stream.Recv()
-		if err == io.EOF {
-			break
-		}
 		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
 			return fmt.Errorf("cannot stream results: %w", err)
 		}
-		if grpcErr := resp.Error; err != nil {
-			st := status.FromProto(grpcErr)
+		if grpcError := resp.GetError(); grpcError != nil {
+			st := status.FromProto(grpcError)
 			// Workaround while the API doesn't give a more informative error.
 			if st.Code() == codes.InvalidArgument || st.Code() == codes.OutOfRange {
-				rt.logger.Warn("Speech recognition request exceeded limit of 300 seconds.")
+				rt.logger.WarnContext(ctx, "Speech recognition request exceeded limit of 300 seconds.")
 			}
-			return fmt.Errorf("cannot recognize: %v", err)
+			return fmt.Errorf("cannot recognize: %w", err)
 		}
 
 		if resp.GetSpeechEventType() != speechpb.StreamingRecognizeResponse_SPEECH_EVENT_UNSPECIFIED {
@@ -276,36 +303,40 @@ func (rt *RecognizeTask) readRecognized(ctx context.Context, stream speechpb.Spe
 			continue
 		}
 
-		if len(resp.Results) == 0 {
+		if len(resp.GetResults()) == 0 {
 			continue
 		}
 
-		result := resp.Results[0]
-		transcript := strings.TrimSpace(result.Alternatives[0].Transcript)
+		result := resp.GetResults()[0]
+		transcript := strings.TrimSpace(result.GetAlternatives()[0].GetTranscript())
 		recognizedCh <- recognized{
 			transcript: transcript,
-			isFinal:    result.IsFinal,
-			endTime:    result.ResultEndTime.AsDuration(),
+			isFinal:    result.GetIsFinal(),
+			endTime:    result.GetResultEndTime().AsDuration(),
 		}
 	}
 
 	return nil
 }
 
-func (rt *RecognizeTask) storeSubs(_ context.Context, sectionsCh <-chan recognized) error {
+func (rt *RecognizeTask) storeSubs(_ context.Context, sectionsCh <-chan recognized) error { //nolint:unparam
 	for s := range sectionsCh {
 		rt.subs.AddSection(s.transcript, s.isFinal)
 	}
 	return nil
 }
 
-func (rt *RecognizeTask) printSubs(_ context.Context, recognizedCh <-chan recognized) error {
+func (rt *RecognizeTask) printSubs(ctx context.Context, recognizedCh <-chan recognized) error {
 	// TODO: make clear work with file descriptors
 	fd := os.NewFile(uintptr(20), "fd20")
 	if fd == nil {
 		return errors.New("cannot open fd")
 	}
-	defer fd.Close()
+	defer func() {
+		if err := fd.Close(); err != nil {
+			rt.logger.ErrorContext(ctx, "Cannot close file descriptor", "error", err)
+		}
+	}()
 
 	var lastWasFinal bool
 	writer := console.NewWriter(fd)

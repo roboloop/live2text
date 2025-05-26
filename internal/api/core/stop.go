@@ -8,7 +8,7 @@ import (
 )
 
 type stopRequest struct {
-	Id string `json:"id"`
+	ID string `json:"id"`
 }
 
 func (s *Server) Stop(w http.ResponseWriter, r *http.Request) {
@@ -18,9 +18,9 @@ func (s *Server) Stop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := s.services.Recognition().Stop(r.Context(), request.Id)
+	err := s.services.Recognition().Stop(r.Context(), request.ID)
 	if err != nil {
-		if errors.Is(err, recognition.NoDeviceBusyError) {
+		if errors.Is(err, recognition.ErrNoDeviceBusy) {
 			json.Encode(errorResponse{err.Error()}, w, http.StatusBadRequest)
 			return
 		}
