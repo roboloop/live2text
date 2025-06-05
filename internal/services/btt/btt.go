@@ -18,6 +18,7 @@ const (
 	deviceGroupTitle           = "Device"
 	languageGroupTitle         = "Language"
 	floatingStateGroupTitle    = "Floating State"
+	metricsGroupTitle          = "Metrics"
 	streamingTextTitle         = "Streaming Text"
 	selectedLanguageTitle      = "Selected Language"
 	selectedDeviceTitle        = "Selected Device"

@@ -1,9 +1,3 @@
-{{- define "log" }}
-{{- if .Debug }}
-echo "$(date +"%Y-%m-%d %H:%M:%S.%N") Called: {{ .Name }}" >> ~/.btt/btt.log
-{{- end }}
-{{- end }}
-
 {{- define "health-check" }}
 ok=$(curl -sSLf "http://{{ .AppAddress }}/api/health" 2>/dev/null)
 [[ -z "${ok}" ]] && echo "⚠️ {{ .AppName}} is not running!" && exit 1
@@ -85,3 +79,4 @@ subs="$(nc -U "{{ . }}")"
 echo "{{ .AppName}} App"
 {{ end }}
 {{- end }}
+

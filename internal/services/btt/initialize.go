@@ -9,14 +9,10 @@ import (
 	"strings"
 
 	"live2text/internal/services/btt/payload"
+	"live2text/internal/services/metrics"
 )
 
 func (b *btt) Initialize(ctx context.Context) error {
-	// if err := b.addFloatingSection(ctx, ""); err != nil {
-	// 	return fmt.Errorf("cannot create floating section: %w", err)
-	// }
-	//
-	// return nil
 	if err := b.setPersistentStringVariable(ctx, hostVariable, b.appAddress); err != nil {
 		return fmt.Errorf("cannot set app address: %w", err)
 	}
@@ -42,9 +38,7 @@ func (b *btt) addSettingsSection(ctx context.Context) error {
 		return fmt.Errorf("cannot create settings group: %w", err)
 	}
 
-	closePayload := make(payload.Payload).
-		AddTrigger("Close Group", payload.TriggerTouchBarButton, payload.TouchBar, payload.ActionTypeCloseGroup, false).
-		AddIcon("xmark.circle.fill", 25, true)
+	closePayload := make(payload.Payload).AddClose("")
 	if _, err = b.addTrigger(ctx, closePayload, payload.SettingsOrderCloseGroup, settingsUUID); err != nil {
 		return fmt.Errorf("cannot create close trigger: %w", err)
 	}
@@ -72,6 +66,10 @@ func (b *btt) addSettingsSection(ctx context.Context) error {
 		return fmt.Errorf("cannot create floating section: %w", err)
 	}
 
+	if err = b.addMetricsSection(ctx, settingsUUID); err != nil {
+		return fmt.Errorf("cannot create metrics section: %w", err)
+	}
+
 	return nil
 }
 
@@ -84,9 +82,7 @@ func (b *btt) addDeviceSection(ctx context.Context, parentUUID string) error {
 		return fmt.Errorf("cannot create device group: %w", err)
 	}
 
-	closePayload := make(payload.Payload).
-		AddClose(settingsTitle).
-		AddIcon("xmark.circle.fill", 25, true)
+	closePayload := make(payload.Payload).AddClose(settingsTitle)
 	if _, err = b.addTrigger(ctx, closePayload, payload.DeviceOrderCloseGroup, deviceUUID); err != nil {
 		return fmt.Errorf("cannot create selected device trigger: %w", err)
 	}
@@ -115,9 +111,7 @@ func (b *btt) addLanguageSection(ctx context.Context, parentUUID string) error {
 		return fmt.Errorf("cannot create language group: %w", err)
 	}
 
-	closePayload := make(payload.Payload).
-		AddClose(settingsTitle).
-		AddIcon("xmark.circle.fill", 25, true)
+	closePayload := make(payload.Payload).AddClose(settingsTitle)
 	if _, err = b.addTrigger(ctx, closePayload, payload.LanguageOrderCloseGroup, languageUUID); err != nil {
 		return fmt.Errorf("cannot create close trigger: %w", err)
 	}
@@ -190,9 +184,7 @@ func (b *btt) addFloatingSection(ctx context.Context, parentUUID string) error {
 		return fmt.Errorf("cannot create floating group: %w", err)
 	}
 
-	closePayload := make(payload.Payload).
-		AddClose(settingsTitle).
-		AddIcon("xmark.circle.fill", 25, true)
+	closePayload := make(payload.Payload).AddClose(settingsTitle)
 	if _, err = b.addTrigger(ctx, closePayload, payload.FloatingOrderCloseGroup, floatingUUID); err != nil {
 		return fmt.Errorf("cannot create close trigger: %w", err)
 	}
@@ -223,6 +215,79 @@ func (b *btt) addFloatingSection(ctx context.Context, parentUUID string) error {
 			AddShell(rendered, 0, payload.ShellTypeAdditional)
 		if _, err = b.addTrigger(ctx, statePayload, payload.FloatingOrderSelectedState+payload.Order(1+i), floatingUUID); err != nil {
 			return fmt.Errorf("cannot create floating state trigger: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (b *btt) addMetricsSection(ctx context.Context, parentUUID string) error {
+	metricsPayload := make(payload.Payload).
+		AddTrigger(metricsGroupTitle, payload.TriggerDirectory, payload.TouchBar, payload.ActionTypeExecuteScript, false).
+		AddIcon("chart.bar", 22, false)
+	metricsUUID, err := b.addTrigger(ctx, metricsPayload, payload.SettingsOrderMetrics, parentUUID)
+	if err != nil {
+		return fmt.Errorf("cannot create metrics group: %w", err)
+	}
+
+	closePayload := make(payload.Payload).AddClose(settingsTitle)
+	if _, err = b.addTrigger(ctx, closePayload, payload.MetricsOrderCloseGroup, metricsUUID); err != nil {
+		return fmt.Errorf("cannot create close trigger: %w", err)
+	}
+
+	for _, s := range []struct {
+		template string
+		metric   string
+		title    string
+		order    payload.Order
+		icon     string
+	}{
+		{
+			"print_size_metric",
+			metrics.MetricBytesReadFromAudio,
+			"Read",
+			payload.MetricsOrderReadAudio,
+			"waveform",
+		},
+		{
+			"print_size_metric",
+			metrics.MetricBytesSentToGoogleSpeech,
+			"Sent",
+			payload.MetricsOrderSentAudio,
+			"square.and.arrow.up",
+		},
+		{
+			"print_duration_metric",
+			metrics.MetricMillisecondsSentToGoogleSpeech,
+			"Sent",
+			payload.MetricsOrderSendAudioMs,
+			"square.and.arrow.up.badge.clock",
+		},
+		{
+			"print_size_metric",
+			metrics.MetricBytesWrittenOnDisk,
+			"Burnt",
+			payload.MetricsOrderBurntAudio,
+			"flame",
+		},
+		{
+			"print_raw",
+			metrics.MetricConnectsToGoogleSpeech,
+			"Connections",
+			payload.MetrocsOrderConnections,
+			"app.connected.to.app.below.fill",
+		},
+	} {
+		var rendered string
+		if rendered, err = b.renderer.Render(s.template, map[string]any{"AppAddress": b.appAddress, "Metric": s.metric, "Title": s.title}); err != nil {
+			return fmt.Errorf("cannot render %s script: %w", s.template, err)
+		}
+		metricPayload := make(payload.Payload).
+			AddTrigger(s.title, payload.TriggerShellScript, payload.TouchBar, payload.ActionTypeEmptyPlaceholder, false).
+			AddShell(rendered, 5, payload.ShellTypeNone).
+			AddIcon(s.icon, 22, false)
+		if _, err = b.addTrigger(ctx, metricPayload, s.order, metricsUUID); err != nil {
+			return fmt.Errorf("cannot create metric trigger: %w", err)
 		}
 	}
 

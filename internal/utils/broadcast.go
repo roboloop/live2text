@@ -19,7 +19,7 @@ func Broadcaster[T any](ctx context.Context, logger *slog.Logger, input <-chan T
 
 	go func() {
 		defer func() {
-			logger.ErrorContext(ctx, "Shutting down...")
+			logger.InfoContext(ctx, "Shutting down...")
 			for _, output := range outputs {
 				close(output)
 			}

@@ -6,23 +6,33 @@ import (
 	externalmetrics "github.com/VictoriaMetrics/metrics"
 )
 
-var metricBytesSentToGoogleSpeech = "recognizer_bytes_sent_to_google_speech"
-var metricBytesWrittenOnDisk = "recognizer_bytes_written_on_disk"
-var metricBytesReadFromAudio = "recognizer_bytes_read_from_audio"
+const (
+	MetricBytesSentToGoogleSpeech        = "recognizer_bytes_sent_to_google_speech"
+	MetricBytesWrittenOnDisk             = "recognizer_bytes_written_on_disk"
+	MetricBytesReadFromAudio             = "recognizer_bytes_read_from_audio"
+	MetricMillisecondsSentToGoogleSpeech = "recognizer_milliseconds_sent_to_google_speech"
+	MetricConnectsToGoogleSpeech         = "recognizer_connections_to_google_speech"
+)
 
 type metrics struct {
 	set *externalmetrics.Set
 
-	bytesSentToGoogleSpeechCounter *externalmetrics.Counter
-	bytesWrittenOnDiskCounter      *externalmetrics.Counter
-	bytesReadFromAudio             *externalmetrics.Counter
+	bytesSentToGoogleSpeechCounter        *externalmetrics.Counter
+	bytesWrittenOnDiskCounter             *externalmetrics.Counter
+	bytesReadFromAudio                    *externalmetrics.Counter
+	millisecondsSentToGoogleSpeechCounter *externalmetrics.Counter
+	connectsToGoogleSpeechCounter         *externalmetrics.Counter
 }
 
 func NewMetrics() Metrics {
 	set := externalmetrics.NewSet()
-	bytesSentToGoogleSpeechCounter := set.NewCounter(metricBytesSentToGoogleSpeech)
-	bytesWrittenOnDiskCounter := set.NewCounter(metricBytesWrittenOnDisk)
-	bytesReadFromAudioCounter := set.NewCounter(metricBytesReadFromAudio)
+	var (
+		bytesSentToGoogleSpeechCounter        = set.NewCounter(MetricBytesSentToGoogleSpeech)
+		bytesWrittenOnDiskCounter             = set.NewCounter(MetricBytesWrittenOnDisk)
+		bytesReadFromAudioCounter             = set.NewCounter(MetricBytesReadFromAudio)
+		millisecondsSentToGoogleSpeechCounter = set.NewCounter(MetricMillisecondsSentToGoogleSpeech)
+		connectsToGoogleSpeechCounter         = set.NewCounter(MetricConnectsToGoogleSpeech)
+	)
 
 	return &metrics{
 		set,
@@ -30,6 +40,8 @@ func NewMetrics() Metrics {
 		bytesSentToGoogleSpeechCounter,
 		bytesWrittenOnDiskCounter,
 		bytesReadFromAudioCounter,
+		millisecondsSentToGoogleSpeechCounter,
+		connectsToGoogleSpeechCounter,
 	}
 }
 
@@ -43,6 +55,14 @@ func (m *metrics) AddBytesWrittenOnDisk(bytes int) {
 
 func (m *metrics) AddBytesReadFromAudio(bytes int) {
 	m.bytesReadFromAudio.Add(bytes)
+}
+
+func (m *metrics) AddMillisecondsSentToGoogleSpeech(milliseconds int) {
+	m.millisecondsSentToGoogleSpeechCounter.Add(milliseconds)
+}
+
+func (m *metrics) AddConnectionsToGoogleSpeech(n int) {
+	m.connectsToGoogleSpeechCounter.Add(n)
 }
 
 func (m *metrics) WritePrometheus(w io.Writer) {

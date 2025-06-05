@@ -113,7 +113,7 @@ func (rt *RecognizeTask) Run(ctx context.Context) error {
 		defer wg.Done()
 		defer close(recognizedCh)
 		for {
-			if streamErr := rt.stream(ctx, audioBroadcaster[1], deviceListener.SampleRate, recognizedCh); streamErr != nil {
+			if streamErr := rt.stream(ctx, audioBroadcaster[1], deviceListener.SampleRate, deviceListener.ChunkSizeMs, recognizedCh); streamErr != nil {
 				return streamErr
 			}
 		}
@@ -148,11 +148,13 @@ func (rt *RecognizeTask) Run(ctx context.Context) error {
 		})
 	})
 
-	if err = g.Wait(); err != nil {
+	if err = g.Wait(); err != nil && !errors.Is(err, context.Canceled) {
 		rt.logger.ErrorContext(ctx, "Recognition failed", "error", err)
 	}
 
 	wg.Wait()
+
+	rt.logger.InfoContext(ctx, "Shutting down task...", "id", rt.id)
 
 	return err
 }
@@ -176,6 +178,7 @@ func (rt *RecognizeTask) stream(
 	ctx context.Context,
 	ch <-chan []int16,
 	sampleRate int,
+	chunkSizeMs int,
 	recognizedCh chan<- recognized,
 ) error {
 	rt.logger.InfoContext(ctx, "New streaming recognize request")
@@ -209,9 +212,11 @@ func (rt *RecognizeTask) stream(
 		return fmt.Errorf("cannot send config request: %w", err)
 	}
 
+	rt.metrics.AddConnectionsToGoogleSpeech(1)
+
 	g, errCtx := errgroup.WithContext(streamCtx)
 	g.Go(func() error {
-		return rt.streamContent(errCtx, stream, ch)
+		return rt.streamContent(errCtx, stream, chunkSizeMs, ch)
 	})
 	g.Go(func() error {
 		return rt.readRecognized(errCtx, stream, recognizedCh)
@@ -241,6 +246,7 @@ func (rt *RecognizeTask) stream(
 func (rt *RecognizeTask) streamContent(
 	ctx context.Context,
 	stream speechpb.Speech_StreamingRecognizeClient,
+	chunkSizeMs int,
 	ch <-chan []int16,
 ) error {
 	var err error
@@ -266,6 +272,7 @@ func (rt *RecognizeTask) streamContent(
 			}
 
 			rt.metrics.AddBytesSentToGoogleSpeech(len(content))
+			rt.metrics.AddMillisecondsSentToGoogleSpeech(chunkSizeMs)
 		}
 	}
 }

@@ -17,6 +17,7 @@ const (
 	SettingsOrderDevice
 	SettingsOrderLanguage
 	SettingsOrderFloating
+	SettingsOrderMetrics
 )
 
 const (
@@ -32,6 +33,15 @@ const (
 const (
 	FloatingOrderCloseGroup Order = iota
 	FloatingOrderSelectedState
+)
+
+const (
+	MetricsOrderCloseGroup Order = iota
+	MetricsOrderReadAudio
+	MetricsOrderSentAudio
+	MetricsOrderSendAudioMs
+	MetricsOrderBurntAudio
+	MetrocsOrderConnections
 )
 
 func (p Payload) AddOrder(order Order) Payload {

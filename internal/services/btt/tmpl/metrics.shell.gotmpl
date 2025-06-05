@@ -1,0 +1,61 @@
+{{- define "bytes_to_human" }}
+bytes_to_human() {
+  bytes=$1
+  units=("B" "KB" "MB" "GB")
+  while true; do
+    next=$(echo "$bytes/1024" | bc)
+    [[ "$next" -eq 0 ]] && break
+    bytes=$(echo "scale=2; $bytes/1024" | bc)
+    ((i++))
+  done
+
+  printf "%.2f %s\n" "$bytes" "${units[$i]}"
+}
+{{- end }}
+
+{{- define "ms_to_human" }}
+ms_to_human() {
+  local ms=$1
+  local sec min hr
+
+  sec=$(bc <<< "scale=4; ${ms}/1000")
+  (( $(echo "${sec} < 60" | bc -l) )) && printf "%.2f sec\n" "${sec}" && return 0
+
+  min=$(bc <<< "scale=4; $sec/60")
+  (( $(echo "${min} < 60" | bc -l) )) && printf "%.2f min\n" "${min}" && return 0
+
+  hr=$(bc <<< "scale=4; ${min}/60")
+  printf "%.2f hr\n" "${hr}"
+}
+{{- end }}
+
+{{- define "print_size_metric" }}
+{{- template "log" . }}
+{{- template "bytes_to_human" . }}
+human_size="N/A"
+metric="{{ .Metric }}"
+bytes=$(curl -sSLf "http://{{ .AppAddress }}/metrics" 2>/dev/null | grep "${metric}" | cut -d' ' -f2)
+[[ -n "${bytes}" ]] && human_size=$(bytes_to_human "${bytes}")
+
+echo "{{ .Title }}: ${human_size}"
+{{- end }}
+
+{{- define "print_duration_metric" }}
+{{- template "log" . }}
+{{- template "ms_to_human" . }}
+human_duration="N/A"
+metric="{{ .Metric }}"
+ms=$(curl -sSLf "http://{{ .AppAddress }}/metrics" 2>/dev/null | grep "${metric}" | cut -d' ' -f2)
+[[ -n "${ms}" ]] && human_duration=$(ms_to_human "${ms}")
+
+echo "{{ .Title }}: ${human_duration}"
+{{- end }}
+
+{{- define "print_raw" }}
+raw="N/A"
+metric="{{ .Metric }}"
+value=$(curl -sSLf "http://{{ .AppAddress }}/metrics" 2>/dev/null | grep "${metric}" | cut -d' ' -f2)
+[[ -n "${value}" ]] && raw="${value}"
+
+echo "{{ .Title }}: ${raw}"
+{{- end }}

@@ -1,0 +1,5 @@
+{{- define "log" }}
+{{- if .Debug }}
+echo "$(date +"%Y-%m-%d %H:%M:%S.%N") Called: {{ .DefinitionName }}" >> ~/.btt/btt.log
+{{- end }}
+{{- end }}

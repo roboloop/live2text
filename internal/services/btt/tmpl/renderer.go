@@ -9,8 +9,14 @@ import (
 	_ "embed"
 )
 
+//go:embed common.shell.gotmpl
+var common []byte
+
 //go:embed scripts.shell.gotmpl
 var scripts []byte
+
+//go:embed metrics.shell.gotmpl
+var metrics []byte
 
 //go:embed pages.html.gotmpl
 var pages []byte
@@ -23,7 +29,9 @@ type Renderer struct {
 
 func NewRenderer(appName string, debug bool) *Renderer {
 	tmpl := template.New("templates")
+	tmpl = template.Must(tmpl.Parse(string(common)))
 	tmpl = template.Must(tmpl.Parse(string(scripts)))
+	tmpl = template.Must(tmpl.Parse(string(metrics)))
 	tmpl = template.Must(tmpl.Parse(string(pages)))
 
 	return &Renderer{tmpl: tmpl, appName: appName, debug: debug}
@@ -32,7 +40,7 @@ func NewRenderer(appName string, debug bool) *Renderer {
 func (r *Renderer) Render(name string, data map[string]any) (string, error) {
 	cloned := maps.Clone(data)
 	cloned["Debug"] = r.debug
-	cloned["Name"] = name
+	cloned["DefinitionName"] = name
 	cloned["AppName"] = r.appName
 
 	var buf bytes.Buffer
