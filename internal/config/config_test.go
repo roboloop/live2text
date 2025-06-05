@@ -1,10 +1,11 @@
 package config_test
 
 import (
-	"live2text/internal/config"
 	"log/slog"
 	"reflect"
 	"testing"
+
+	"live2text/internal/config"
 )
 
 func TestInitialize(t *testing.T) {

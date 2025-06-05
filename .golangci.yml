@@ -23,9 +23,9 @@ formatters:
     - goimports # checks if the code and import statements are formatted according to the 'goimports' command
     - golines # checks if code is formatted, and fixes long lines
 
-    ## you may want to enable
-    #- gci # checks if code and import statements are formatted, with additional rules
-    #- gofmt # checks if the code is formatted according to 'gofmt' command
+    # you may want to enable
+    - gci # checks if code and import statements are formatted, with additional rules
+    - gofmt # checks if the code is formatted according to 'gofmt' command
 
     ## disabled
     #- gofumpt # [replaced by goimports, gofumports is not available yet] checks if code and import statements are formatted, with additional rules
@@ -43,6 +43,17 @@ formatters:
       # Target maximum line length.
       # Default: 100
       max-len: 120
+
+    gci:
+      sections:
+        - standard # Standard section: captures all standard packages.
+        - default # Default section: contains all imports that could not be matched to another section type.
+        - blank # Blank section: contains all blank imports. This section is not present unless explicitly enabled.
+        - dot # Dot section: contains all dot imports. This section is not present unless explicitly enabled.
+        - alias # Alias section: contains all alias imports. This section is not present unless explicitly enabled.
+        - localmodule # Local module section: contains all local packages. This section is not present unless explicitly enabled.
+
+      custom-order: true
 
 linters:
   enable:

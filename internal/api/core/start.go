@@ -4,14 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"live2text/internal/api/json"
-	"live2text/internal/api/validation"
-	"live2text/internal/services"
-	"live2text/internal/services/recognition"
 	"net/http"
 	"slices"
 
 	"github.com/gordonklaus/portaudio"
+
+	"live2text/internal/api/json"
+	"live2text/internal/api/validation"
+	"live2text/internal/services"
+	"live2text/internal/services/recognition"
 )
 
 type startRequest struct {

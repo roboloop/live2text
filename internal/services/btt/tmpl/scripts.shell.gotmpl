@@ -4,6 +4,11 @@ echo "$(date +"%Y-%m-%d %H:%M:%S.%N") Called: {{ .Name }}" >> ~/.btt/btt.log
 {{- end }}
 {{- end }}
 
+{{- define "health-check" }}
+ok=$(curl -sSLf "http://{{ .AppAddress }}/api/health" 2>/dev/null)
+[[ -z "${ok}" ]] && echo "⚠️ {{ .AppName}} is not running!" && exit 1
+{{- end }}
+
 {{- define "print_status" }}
 {{- template "log" . }}
 
@@ -13,9 +18,7 @@ ok=$(curl -sSLf "http://{{ .AppAddress }}/api/health" 2>/dev/null)
 
 {{- define "print_selected_device" }}
 {{- template "log" . }}
-
-ok=$(curl -sSLf "http://{{ .AppAddress }}/api/health" 2>/dev/null)
-[[ -z "${ok}" ]] && echo "⚠️ {{ .AppName}} is not running!" && exit 1
+{{- template "health-check" . }}
 
 device=$(curl -sSLf 'http://{{ .AppAddress }}/api/btt/selected-device')
 [[ -z "${device}" ]] && echo "⚠️ No device selected" || echo "✅ ${device}"
@@ -23,12 +26,18 @@ device=$(curl -sSLf 'http://{{ .AppAddress }}/api/btt/selected-device')
 
 {{- define "print_selected_language" }}
 {{- template "log" . }}
-
-ok=$(curl -sSLf "http://{{ .AppAddress }}/api/health" 2>/dev/null)
-[[ -z "${ok}" ]] && echo "⚠️ {{ .AppName}} is not running!" && exit 1
+{{- template "health-check" . }}
 
 language=$(curl -sSLf 'http://{{ .AppAddress }}/api/btt/selected-language')
 [[ -z "${language}" ]] && echo "⚠️ No language selected" || echo "✅ ${language}"
+{{- end }}
+
+{{- define "print_selected_floating_state" }}
+{{- template "log" . }}
+{{- template "health-check" . }}
+
+state=$(curl -sSLf 'http://{{ .AppAddress }}/api/btt/selected-floating-state')
+[[ -z "${state}" ]] && echo "⚠️ No floating state selected" || echo "✅ ${state}"
 {{- end }}
 
 {{- define "select_device" }}
@@ -45,6 +54,14 @@ curl -X POST -H 'Content-Type: application/json' -sSLf --data-raw '{"language": 
   http://{{ .AppAddress }}/api/btt/select-language
 {{- end }}
 
+{{- define "select_floating_state" }}
+{{- template "log" . }}
+
+curl -X POST -H 'Content-Type: application/json' -sSLf --data-raw '{"floating_state": "{{ .FloatingState }}"}' \
+  http://{{ .AppAddress }}/api/btt/select-floating-state
+{{- end }}
+
+
 {{- define "open_settings" }}
 {{- template "log" . }}
 
@@ -55,9 +72,7 @@ curl -sSLf -X POST http://{{ .AppAddress }}/api/btt/load-devices
 
 {{- define "toggle" }}
 {{- template "log" . }}
-
-ok=$(curl -sSLf "http://{{ .AppAddress }}/api/health" 2>/dev/null)
-[[ -z "${ok}" ]] && echo "{{ .AppName}} is not running!" && exit 1
+{{- template "health-check" . }}
 
 curl -X POST -sSLf "http://{{ .AppAddress }}/api/btt/toggle-listening"
 {{- end }}

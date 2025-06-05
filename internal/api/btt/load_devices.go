@@ -1,8 +1,9 @@
 package btt
 
 import (
-	"live2text/internal/api/json"
 	"net/http"
+
+	"live2text/internal/api/json"
 )
 
 func (s *Server) LoadDevices(w http.ResponseWriter, r *http.Request) {

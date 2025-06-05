@@ -1,11 +1,12 @@
 package json_test
 
 import (
-	"live2text/internal/api/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"live2text/internal/api/json"
 )
 
 type testStruct struct {

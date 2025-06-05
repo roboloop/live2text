@@ -36,6 +36,7 @@ func (c *client) send(ctx context.Context, method string, query url.Values) ([]b
 	u := c.bttURL
 	u.Path = "/" + method + "/"
 	u.RawQuery = strings.ReplaceAll(query.Encode(), "+", "%20")
+	u.ForceQuery = true
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {

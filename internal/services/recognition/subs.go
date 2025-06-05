@@ -7,8 +7,8 @@ import (
 
 var ErrNoTask = errors.New("no task found")
 
-func (r *recognition) Subs(_ context.Context, device string) (string, error) {
-	task := r.taskManager.Get(device)
+func (r *recognition) Subs(_ context.Context, id string) (string, error) {
+	task := r.taskManager.Get(id)
 	if task == nil {
 		return "", ErrNoTask
 	}

@@ -7,12 +7,12 @@ import (
 
 var ErrNoDeviceBusy = errors.New("no device busy")
 
-func (r *recognition) Stop(_ context.Context, device string) error {
-	if !r.taskManager.Has(device) {
+func (r *recognition) Stop(_ context.Context, id string) error {
+	if !r.taskManager.Has(id) {
 		return ErrNoDeviceBusy
 	}
 
-	r.taskManager.Cancel(device)
+	r.taskManager.Cancel(id)
 
 	return nil
 }

@@ -1,9 +1,10 @@
 package audio
 
 import (
+	"log/slog"
+
 	audiowrapper "live2text/internal/services/audio_wrapper"
 	"live2text/internal/services/metrics"
-	"log/slog"
 )
 
 type audio struct {

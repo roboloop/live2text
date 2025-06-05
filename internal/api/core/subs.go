@@ -2,9 +2,10 @@ package core
 
 import (
 	"errors"
+	"net/http"
+
 	"live2text/internal/api/json"
 	"live2text/internal/services/recognition"
-	"net/http"
 )
 
 type subsRequest struct {

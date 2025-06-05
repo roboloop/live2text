@@ -5,14 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"live2text/internal/background"
-	"live2text/internal/services/audio"
-	"live2text/internal/services/burner"
-	"live2text/internal/services/metrics"
-	"live2text/internal/services/recognition/console"
-	"live2text/internal/services/recognition/subs"
-	speechwrapper "live2text/internal/services/speech_wrapper"
-	"live2text/internal/utils"
 	"log/slog"
 	"math"
 	"math/rand/v2"
@@ -28,6 +20,15 @@ import (
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"live2text/internal/background"
+	"live2text/internal/services/audio"
+	"live2text/internal/services/burner"
+	"live2text/internal/services/metrics"
+	"live2text/internal/services/recognition/console"
+	"live2text/internal/services/recognition/subs"
+	speechwrapper "live2text/internal/services/speech_wrapper"
+	"live2text/internal/utils"
 )
 
 type recognized struct {

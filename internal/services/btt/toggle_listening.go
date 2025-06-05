@@ -3,6 +3,7 @@ package btt
 import (
 	"context"
 	"fmt"
+
 	"live2text/internal/services/btt/payload"
 )
 
@@ -53,6 +54,10 @@ func (b *btt) stop(ctx context.Context, uuid, id string) error {
 		return fmt.Errorf("cannot update app trigger: %w", err)
 	}
 
+	if err = b.hideFloatingState(ctx); err != nil {
+		return fmt.Errorf("cannot hide floating state: %w", err)
+	}
+
 	return nil
 }
 
@@ -94,6 +99,10 @@ func (b *btt) start(ctx context.Context, uuid string) error {
 
 	if _, err = b.httpClient.Send(ctx, "update_trigger", appPayload, map[string]string{"uuid": uuid}); err != nil {
 		return fmt.Errorf("cannot update app trigger: %w", err)
+	}
+
+	if err = b.showFloatingState(ctx); err != nil {
+		return fmt.Errorf("cannot show floating state: %w", err)
 	}
 
 	return nil

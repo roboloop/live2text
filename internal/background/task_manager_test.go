@@ -3,9 +3,10 @@ package background_test
 import (
 	"context"
 	"errors"
-	"live2text/internal/background"
 	"slices"
 	"testing"
+
+	"live2text/internal/background"
 )
 
 type dummyTask struct {

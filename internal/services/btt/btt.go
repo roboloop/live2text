@@ -2,23 +2,26 @@ package btt
 
 import (
 	"context"
+	"log/slog"
+
 	"live2text/internal/config"
 	"live2text/internal/services/audio"
-	"live2text/internal/services/btt/exec"
 	"live2text/internal/services/btt/http"
 	"live2text/internal/services/btt/tmpl"
 	"live2text/internal/services/recognition"
-	"log/slog"
 )
 
 const (
-	appName               = "Live2Text"
-	settingsTitle         = appName + "Settings"
-	appTitle              = appName + "App"
-	deviceGroupTitle      = "Device"
-	languageGroupTitle    = "Language"
-	selectedLanguageTitle = "Selected Language"
-	selectedDeviceTitle   = "Selected Device"
+	appName                    = "Live2Text"
+	appTitle                   = "App"
+	settingsTitle              = "Settings"
+	deviceGroupTitle           = "Device"
+	languageGroupTitle         = "Language"
+	floatingStateGroupTitle    = "Floating State"
+	streamingTextTitle         = "Streaming Text"
+	selectedLanguageTitle      = "Selected Language"
+	selectedDeviceTitle        = "Selected Device"
+	selectedFloatingStateTitle = "Selected Floating State"
 
 	defaultInterval = 0.25
 )
@@ -28,7 +31,6 @@ type btt struct {
 	audio       audio.Audio
 	recognition recognition.Recognition
 	httpClient  http.Client
-	execClient  exec.Client
 	renderer    *tmpl.Renderer
 
 	appAddress string
@@ -43,7 +45,6 @@ func NewBtt(
 	audio audio.Audio,
 	recognition recognition.Recognition,
 	httpClient http.Client,
-	execClient exec.Client,
 	cfg *config.Config,
 ) Btt {
 	debug := logger.Handler().Enabled(context.Background(), slog.LevelDebug)
@@ -54,7 +55,6 @@ func NewBtt(
 		recognition: recognition,
 		renderer:    tmpl.NewRenderer(appName, debug),
 		httpClient:  httpClient,
-		execClient:  execClient,
 
 		appAddress: cfg.AppAddress,
 		bttAddress: cfg.BttAddress,

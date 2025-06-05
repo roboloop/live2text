@@ -16,6 +16,7 @@ const (
 	SettingsOrderStatus
 	SettingsOrderDevice
 	SettingsOrderLanguage
+	SettingsOrderFloating
 )
 
 const (
@@ -26,6 +27,11 @@ const (
 const (
 	LanguageOrderCloseGroup Order = iota
 	LanguageOrderSelectedLanguage
+)
+
+const (
+	FloatingOrderCloseGroup Order = iota
+	FloatingOrderSelectedState
 )
 
 func (p Payload) AddOrder(order Order) Payload {

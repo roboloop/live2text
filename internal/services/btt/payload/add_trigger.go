@@ -7,6 +7,8 @@ const (
 	TriggerTouchBarButton TriggerID = 629
 	TriggerNamed          TriggerID = 643
 	TriggerShellScript    TriggerID = 642
+	TriggerFloatingMenu   TriggerID = 767
+	TriggerWebView        TriggerID = 778
 )
 
 type TriggerType string
@@ -14,15 +16,19 @@ type TriggerType string
 const (
 	TouchBar      TriggerType = "BTTTriggerTypeTouchBar"
 	OtherTriggers TriggerType = "BTTTriggerTypeOtherTriggers"
+	FloatingMenu  TriggerType = "BTTTriggerTypeFloatingMenu"
 )
 
 type ActionType int
 
 const (
-	ActionTypeEmptyPlaceholder ActionType = 366
-	ActionTypeExecuteScript    ActionType = 206
-	ActionTypeCloseGroup       ActionType = 191
-	ActionTypeOpenGroup        ActionType = 205
+	ActionTypeEmptyPlaceholder   ActionType = 366
+	ActionTypeExecuteScript      ActionType = 206
+	ActionTypeCloseGroup         ActionType = 191
+	ActionTypeOpenGroup          ActionType = 205
+	ActionTypeOpenFloatingMenu   ActionType = 386
+	ActionTypeCloseFloatingMenu  ActionType = 387
+	ActionTypeToggleFloatingMenu ActionType = 388
 )
 
 func (p Payload) AddTrigger(
@@ -36,11 +42,12 @@ func (p Payload) AddTrigger(
 		"BTTTouchBarButtonName":   name,
 		"BTTWidgetName":           name,
 		"BTTTriggerName":          name,
+		"BTTMenuName":             name,
 		"BTTTriggerType":          triggerID,
 		"BTTTriggerClass":         triggerType,
 		"BTTPredefinedActionType": actionType,
-		"BTTGroupName":            noteName,
-		"BTTNotes":                noteName,
+		"BTTGroupName":            LabelName,
+		"BTTNotes":                LabelName,
 		"BTTTriggerConfig": map[string]any{
 			"BTTKeepGroupOpenWhileSwitchingApps": true,
 		},
@@ -48,7 +55,7 @@ func (p Payload) AddTrigger(
 
 	if triggerType == OtherTriggers {
 		p.AddMap(map[string]any{
-			"BTTGestureNotes": noteName,
+			"BTTGestureNotes": LabelName,
 		})
 	}
 

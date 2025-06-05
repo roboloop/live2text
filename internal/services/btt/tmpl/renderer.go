@@ -2,14 +2,18 @@ package tmpl
 
 import (
 	"bytes"
-	_ "embed"
 	"fmt"
 	"maps"
 	"text/template"
+
+	_ "embed"
 )
 
 //go:embed scripts.shell.gotmpl
 var scripts []byte
+
+//go:embed pages.html.gotmpl
+var pages []byte
 
 type Renderer struct {
 	tmpl    *template.Template
@@ -18,7 +22,10 @@ type Renderer struct {
 }
 
 func NewRenderer(appName string, debug bool) *Renderer {
-	tmpl := template.Must(template.New("scripts").Parse(string(scripts)))
+	tmpl := template.New("templates")
+	tmpl = template.Must(tmpl.Parse(string(scripts)))
+	tmpl = template.Must(tmpl.Parse(string(pages)))
+
 	return &Renderer{tmpl: tmpl, appName: appName, debug: debug}
 }
 

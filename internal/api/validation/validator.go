@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"live2text/internal/services"
 	"net/http"
+
+	"live2text/internal/services"
 )
 
 type Validator interface {

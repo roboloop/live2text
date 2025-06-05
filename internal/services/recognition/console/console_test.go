@@ -2,8 +2,9 @@ package console_test
 
 import (
 	"bytes"
-	"live2text/internal/services/recognition/console"
 	"testing"
+
+	"live2text/internal/services/recognition/console"
 )
 
 func TestWriter(t *testing.T) {

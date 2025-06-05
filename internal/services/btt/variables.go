@@ -6,20 +6,12 @@ import (
 )
 
 const (
-	hostVariable     = "LIVE2TEXT_HOST"
-	scriptVariable   = "LIVE2TEXT_SCRIPT"
-	subsUUIDVariable = "LIVE2TEXT_SUBS_UUID"
-
-	deviceUUIDVariable         = "LIVE2TEXT_DEVICE_UUID"
-	selectedDeviceVariable     = "LIVE2TEXT_SELECTED_DEVICE"
-	selectedDeviceUUIDVariable = "LIVE2TEXT_SELECTED_DEVICE_UUID"
-
-	languageUUIDVariable         = "LIVE2TEXT_LANGUAGE_UUID"
-	selectedLanguageVariable     = "LIVE2TEXT_SELECTED_LANGUAGE"
-	selectedLanguageUUIDVariable = "LIVE2TEXT_SELECTED_LANGUAGE_UUID"
-
-	listeningSocketVariable = "LIVE2TEXT_LISTENING_SOCKET"
-	taskIDVariable          = "LIVE2TEXT_TASK_ID"
+	variablePrefix                = "LIVE2TEXT_"
+	hostVariable                  = variablePrefix + "HOST"
+	selectedDeviceVariable        = variablePrefix + "SELECTED_DEVICE"
+	selectedLanguageVariable      = variablePrefix + "SELECTED_LANGUAGE"
+	selectedFloatingStateVariable = variablePrefix + "SELECTED_FLOATING_STATE"
+	taskIDVariable                = variablePrefix + "TASK_ID"
 )
 
 func (b *btt) getStringVariable(ctx context.Context, variable string) (string, error) {

@@ -3,12 +3,13 @@ package audio
 import (
 	"context"
 	"fmt"
-	audiowrapper "live2text/internal/services/audio_wrapper"
-	"live2text/internal/services/metrics"
 	"log/slog"
 	"time"
 
 	"github.com/gordonklaus/portaudio"
+
+	audiowrapper "live2text/internal/services/audio_wrapper"
+	"live2text/internal/services/metrics"
 )
 
 type DeviceListener struct {

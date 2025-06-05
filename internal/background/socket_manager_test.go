@@ -5,13 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"live2text/internal/background"
-	"live2text/internal/utils"
 	"math/rand"
 	"net"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"live2text/internal/background"
+	"live2text/internal/utils"
 )
 
 func TestSocketManager(t *testing.T) {

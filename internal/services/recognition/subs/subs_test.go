@@ -1,9 +1,10 @@
 package subs_test
 
 import (
-	"live2text/internal/services/recognition/subs"
 	"strings"
 	"testing"
+
+	"live2text/internal/services/recognition/subs"
 )
 
 func TestAddNonFinalText(t *testing.T) {

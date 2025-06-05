@@ -8,12 +8,19 @@ Converts speech to text using Google Cloud Speech-to-Text and shows the live tra
 - [Google Cloud account](https://cloud.google.com/)
 - [gcloud CLI](https://cloud.google.com/sdk/docs/install)
 - [Better Touch Tool](https://folivora.ai/)
-- [jq](https://github.com/jqlang/jq)
 
 ## Local publish
 
 ```shell
 go build -o ~/go/bin/live2text cmd/live2text/main.go
+```
+
+```shell
+golangci-lint fmt
+```
+
+```shell
+golangci-lint run
 ```
 
 ## TODO

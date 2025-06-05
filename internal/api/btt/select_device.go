@@ -3,11 +3,12 @@ package btt
 import (
 	"context"
 	"fmt"
-	"live2text/internal/api/json"
 	"net/http"
 	"slices"
 
 	"github.com/gordonklaus/portaudio"
+
+	"live2text/internal/api/json"
 )
 
 type selectDeviceRequest struct {

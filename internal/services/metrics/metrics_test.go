@@ -3,9 +3,10 @@ package metrics_test
 import (
 	"bytes"
 	"fmt"
-	"live2text/internal/services/metrics"
 	"strings"
 	"testing"
+
+	"live2text/internal/services/metrics"
 )
 
 func TestMetrics(t *testing.T) {

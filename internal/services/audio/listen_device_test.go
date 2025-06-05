@@ -2,12 +2,13 @@ package audio_test
 
 import (
 	"errors"
-	"live2text/internal/services/audio"
-	audiowrapper "live2text/internal/services/audio_wrapper"
-	"live2text/internal/utils"
 	"testing"
 
 	"github.com/gordonklaus/portaudio"
+
+	"live2text/internal/services/audio"
+	audiowrapper "live2text/internal/services/audio_wrapper"
+	"live2text/internal/utils"
 )
 
 func TestListenDevice(t *testing.T) {

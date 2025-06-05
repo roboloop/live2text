@@ -1,15 +1,15 @@
 package btt_test
 
 import (
+	"log/slog"
+
 	"live2text/internal/config"
 	"live2text/internal/services/audio"
-	bttexec "live2text/internal/services/btt/exec"
 	btthttp "live2text/internal/services/btt/http"
 	"live2text/internal/services/recognition"
-	"log/slog"
 )
 
-func newMocks() (*audio.MockAudio, *recognition.MockRecognition, *btthttp.MockClient, *bttexec.MockClient, *config.Config) { //nolint:unparam
+func newMocks() (*audio.MockAudio, *recognition.MockRecognition, *btthttp.MockClient, *config.Config) { //nolint:unparam
 	cfg := &config.Config{
 		AppAddress: "127.0.0.1:1234",
 		BttAddress: "127.0.0.1:5678",
@@ -41,10 +41,5 @@ func newMocks() (*audio.MockAudio, *recognition.MockRecognition, *btthttp.MockCl
 		SendError:    nil,
 	}
 
-	mockExecClient := &bttexec.MockClient{
-		ExecResponse: nil,
-		ExecError:    nil,
-	}
-
-	return mockAudio, mockRecognition, mockHTTPClient, mockExecClient, cfg
+	return mockAudio, mockRecognition, mockHTTPClient, cfg
 }

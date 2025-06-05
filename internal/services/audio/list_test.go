@@ -2,13 +2,14 @@ package audio_test
 
 import (
 	"errors"
-	"live2text/internal/services/audio"
-	audiowrapper "live2text/internal/services/audio_wrapper"
-	"live2text/internal/utils"
 	"reflect"
 	"testing"
 
 	"github.com/gordonklaus/portaudio"
+
+	"live2text/internal/services/audio"
+	audiowrapper "live2text/internal/services/audio_wrapper"
+	"live2text/internal/utils"
 )
 
 func TestList(t *testing.T) {

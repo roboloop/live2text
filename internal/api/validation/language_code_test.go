@@ -1,8 +1,9 @@
 package validation_test
 
 import (
-	"live2text/internal/api/validation"
 	"testing"
+
+	"live2text/internal/api/validation"
 )
 
 func TestIsValidLanguageCode(t *testing.T) {

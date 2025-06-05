@@ -1,12 +1,13 @@
 package recognition
 
 import (
+	"log/slog"
+
 	"live2text/internal/background"
 	"live2text/internal/services/audio"
 	"live2text/internal/services/burner"
 	"live2text/internal/services/metrics"
 	speechwrapper "live2text/internal/services/speech_wrapper"
-	"log/slog"
 )
 
 type recognition struct {

@@ -6,19 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"live2text/internal/api"
-	"live2text/internal/background"
-	"live2text/internal/config"
-	"live2text/internal/services"
-	"live2text/internal/services/audio"
-	audiowrapper "live2text/internal/services/audio_wrapper"
-	"live2text/internal/services/btt"
-	bttexec "live2text/internal/services/btt/exec"
-	btthttp "live2text/internal/services/btt/http"
-	"live2text/internal/services/burner"
-	"live2text/internal/services/metrics"
-	"live2text/internal/services/recognition"
-	speechwrapper "live2text/internal/services/speech_wrapper"
 	"log"
 	"log/slog"
 	"net"
@@ -28,6 +15,19 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"live2text/internal/api"
+	"live2text/internal/background"
+	"live2text/internal/config"
+	"live2text/internal/services"
+	"live2text/internal/services/audio"
+	audiowrapper "live2text/internal/services/audio_wrapper"
+	"live2text/internal/services/btt"
+	btthttp "live2text/internal/services/btt/http"
+	"live2text/internal/services/burner"
+	"live2text/internal/services/metrics"
+	"live2text/internal/services/recognition"
+	speechwrapper "live2text/internal/services/speech_wrapper"
 )
 
 func main() {
@@ -132,15 +132,9 @@ func newLoggers(level slog.Level) (*slog.Logger, *log.Logger) {
 }
 
 func newBtt(logger *slog.Logger, audio audio.Audio, recognition recognition.Recognition, cfg *config.Config) btt.Btt {
-	const (
-		appName = "live2text"
-		bttName = "BetterTouchTool"
-	)
-
 	httpClient := btthttp.NewClient(logger, cfg.BttAddress)
-	execClient := bttexec.NewClient(logger, appName, bttName)
 
-	return btt.NewBtt(logger, audio, recognition, httpClient, execClient, cfg)
+	return btt.NewBtt(logger, audio, recognition, httpClient, cfg)
 }
 
 func newServer(ctx context.Context, address string, handler http.Handler, logger *log.Logger) *http.Server {
@@ -149,7 +143,7 @@ func newServer(ctx context.Context, address string, handler http.Handler, logger
 		Handler:      handler,
 		ErrorLog:     logger,
 		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
+		WriteTimeout: 0,
 		IdleTimeout:  60 * time.Second,
 		BaseContext:  func(_ net.Listener) context.Context { return ctx },
 	}

@@ -27,6 +27,12 @@ func (w *responseWriter) Write(body []byte) (int, error) {
 	return w.ResponseWriter.Write(body)
 }
 
+func (w *responseWriter) Flush() {
+	if flusher, ok := w.ResponseWriter.(http.Flusher); ok {
+		flusher.Flush()
+	}
+}
+
 func LoggerMiddleware(next http.Handler, logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		since := time.Now()

@@ -2,9 +2,10 @@ package utils_test
 
 import (
 	"context"
-	"live2text/internal/utils"
 	"testing"
 	"time"
+
+	"live2text/internal/utils"
 )
 
 func TestBroadcaster(t *testing.T) {

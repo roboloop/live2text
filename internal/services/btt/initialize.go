@@ -5,28 +5,34 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"live2text/internal/services/btt/payload"
 	"net/url"
 	"strings"
+
+	"live2text/internal/services/btt/payload"
 )
 
 func (b *btt) Initialize(ctx context.Context) error {
+	// if err := b.addFloatingSection(ctx, ""); err != nil {
+	// 	return fmt.Errorf("cannot create floating section: %w", err)
+	// }
+	//
+	// return nil
 	if err := b.setPersistentStringVariable(ctx, hostVariable, b.appAddress); err != nil {
 		return fmt.Errorf("cannot set app address: %w", err)
 	}
 
-	if err := b.addSettingsMenu(ctx); err != nil {
-		return fmt.Errorf("cannot settings menu: %w", err)
+	if err := b.addSettingsSection(ctx); err != nil {
+		return fmt.Errorf("cannot settings section: %w", err)
 	}
 
-	if err := b.addMainMenu(ctx); err != nil {
-		return fmt.Errorf("cannot add main menu: %w", err)
+	if err := b.addMainSection(ctx); err != nil {
+		return fmt.Errorf("cannot add main section: %w", err)
 	}
 
 	return nil
 }
 
-func (b *btt) addSettingsMenu(ctx context.Context) error {
+func (b *btt) addSettingsSection(ctx context.Context) error {
 	settingsPayload := make(
 		payload.Payload,
 	).AddTrigger(settingsTitle, payload.TriggerDirectory, payload.TouchBar, payload.ActionTypeExecuteScript, true)
@@ -54,18 +60,22 @@ func (b *btt) addSettingsMenu(ctx context.Context) error {
 		return fmt.Errorf("cannot create status trigger: %w", err)
 	}
 
-	if err = b.addDeviceMenu(ctx, settingsUUID); err != nil {
-		return fmt.Errorf("cannot create device menu: %w", err)
+	if err = b.addDeviceSection(ctx, settingsUUID); err != nil {
+		return fmt.Errorf("cannot create device section: %w", err)
 	}
 
-	if err = b.addLanguageMenu(ctx, settingsUUID); err != nil {
-		return fmt.Errorf("cannot create language menu: %w", err)
+	if err = b.addLanguageSection(ctx, settingsUUID); err != nil {
+		return fmt.Errorf("cannot create language section: %w", err)
+	}
+
+	if err = b.addFloatingSection(ctx, settingsUUID); err != nil {
+		return fmt.Errorf("cannot create floating section: %w", err)
 	}
 
 	return nil
 }
 
-func (b *btt) addDeviceMenu(ctx context.Context, parentUUID string) error {
+func (b *btt) addDeviceSection(ctx context.Context, parentUUID string) error {
 	devicePayload := make(payload.Payload).
 		AddTrigger(deviceGroupTitle, payload.TriggerDirectory, payload.TouchBar, payload.ActionTypeExecuteScript, false).
 		AddIcon("microphone", 22, false)
@@ -78,7 +88,7 @@ func (b *btt) addDeviceMenu(ctx context.Context, parentUUID string) error {
 		AddClose(settingsTitle).
 		AddIcon("xmark.circle.fill", 25, true)
 	if _, err = b.addTrigger(ctx, closePayload, payload.DeviceOrderCloseGroup, deviceUUID); err != nil {
-		return fmt.Errorf("cannot create close trigger: %w", err)
+		return fmt.Errorf("cannot create selected device trigger: %w", err)
 	}
 
 	rendered, err := b.renderer.Render("print_selected_device", map[string]any{"AppAddress": b.appAddress})
@@ -90,13 +100,13 @@ func (b *btt) addDeviceMenu(ctx context.Context, parentUUID string) error {
 		AddShell(rendered, 15, payload.ShellTypeNone).
 		AddMap(map[string]any{"BTTTriggerConfig": map[string]any{"BTTTouchBarFreeSpaceAfterButton": 25}})
 	if _, err = b.addTrigger(ctx, selectedDevicePayload, payload.DeviceOrderSelectedDevice, deviceUUID); err != nil {
-		return fmt.Errorf("cannot create close trigger: %w", err)
+		return fmt.Errorf("cannot create select device trigger: %w", err)
 	}
 
 	return nil
 }
 
-func (b *btt) addLanguageMenu(ctx context.Context, parentUUID string) error {
+func (b *btt) addLanguageSection(ctx context.Context, parentUUID string) error {
 	devicePayload := make(payload.Payload).
 		AddTrigger(languageGroupTitle, payload.TriggerDirectory, payload.TouchBar, payload.ActionTypeExecuteScript, false).
 		AddIcon("character", 22, false)
@@ -121,7 +131,7 @@ func (b *btt) addLanguageMenu(ctx context.Context, parentUUID string) error {
 		AddShell(rendered, 15, payload.ShellTypeNone).
 		AddMap(map[string]any{"BTTTriggerConfig": map[string]any{"BTTTouchBarFreeSpaceAfterButton": 25}})
 	if _, err = b.addTrigger(ctx, selectedDevicePayload, payload.LanguageOrderSelectedLanguage, languageUUID); err != nil {
-		return fmt.Errorf("cannot create close trigger: %w", err)
+		return fmt.Errorf("cannot create selected language trigger: %w", err)
 	}
 
 	for i, language := range b.languages {
@@ -137,14 +147,89 @@ func (b *btt) addLanguageMenu(ctx context.Context, parentUUID string) error {
 			AddTrigger(language, payload.TriggerTouchBarButton, payload.TouchBar, payload.ActionTypeEmptyPlaceholder, false).
 			AddShell(rendered, 0, payload.ShellTypeAdditional)
 		if _, err = b.addTrigger(ctx, languagePayload, payload.LanguageOrderSelectedLanguage+payload.Order(1+i), languageUUID); err != nil {
-			return fmt.Errorf("cannot create close trigger: %w", err)
+			return fmt.Errorf("cannot create select language trigger: %w", err)
 		}
 	}
 
 	return nil
 }
 
-func (b *btt) addMainMenu(ctx context.Context) error {
+func (b *btt) addFloatingSection(ctx context.Context, parentUUID string) error {
+	// Add floating menu
+	floatingMenuPayload := make(
+		payload.Payload,
+	).AddFloatingMenu(floatingStateGroupTitle, payload.TriggerFloatingMenu, payload.FloatingMenu, true)
+	floatingMenuUUID, err := b.addTrigger(ctx, floatingMenuPayload, 0, "")
+	if err != nil {
+		return fmt.Errorf("cannot create floating menu: %w", err)
+	}
+	rendered, err := b.renderer.Render("floating_page", map[string]any{"AppAddress": b.appAddress})
+	if err != nil {
+		return fmt.Errorf("cannot render floating_page html: %w", err)
+	}
+
+	webViewPayload := make(
+		payload.Payload,
+	).AddFloatingMenu(streamingTextTitle, payload.TriggerWebView, payload.FloatingMenu, false).
+		AddMap(map[string]any{
+			"BTTMenuConfig": map[string]any{
+				"BTTMenuItemText": rendered,
+			},
+		})
+
+	if _, err = b.addTrigger(ctx, webViewPayload, 0, floatingMenuUUID); err != nil {
+		return fmt.Errorf("cannot create web view : %w", err)
+	}
+
+	// Add floating section in settings
+	floatingPayload := make(payload.Payload).
+		AddTrigger(floatingStateGroupTitle, payload.TriggerDirectory, payload.TouchBar, payload.ActionTypeExecuteScript, false).
+		AddIcon("macwindow", 22, false)
+	floatingUUID, err := b.addTrigger(ctx, floatingPayload, payload.SettingsOrderFloating, parentUUID)
+	if err != nil {
+		return fmt.Errorf("cannot create floating group: %w", err)
+	}
+
+	closePayload := make(payload.Payload).
+		AddClose(settingsTitle).
+		AddIcon("xmark.circle.fill", 25, true)
+	if _, err = b.addTrigger(ctx, closePayload, payload.FloatingOrderCloseGroup, floatingUUID); err != nil {
+		return fmt.Errorf("cannot create close trigger: %w", err)
+	}
+
+	if rendered, err = b.renderer.Render("print_selected_floating_state", map[string]any{"AppAddress": b.appAddress}); err != nil {
+		return fmt.Errorf("cannot render print_selected_floating_state script: %w", err)
+	}
+	selectedFloatingPayload := make(payload.Payload).
+		AddTrigger(selectedFloatingStateTitle, payload.TriggerShellScript, payload.TouchBar, payload.ActionTypeEmptyPlaceholder, false).
+		AddShell(rendered, 15, payload.ShellTypeNone).
+		AddMap(map[string]any{"BTTTriggerConfig": map[string]any{"BTTTouchBarFreeSpaceAfterButton": 25}})
+	if _, err = b.addTrigger(ctx, selectedFloatingPayload, payload.FloatingOrderSelectedState, floatingUUID); err != nil {
+		return fmt.Errorf("cannot create selected floating trigger: %w", err)
+	}
+
+	floatingStates := []string{"Shown", "Hidden"}
+	for i, floatingState := range floatingStates {
+		rendered, err = b.renderer.Render(
+			"select_floating_state",
+			map[string]any{"AppAddress": b.appAddress, "FloatingState": floatingState},
+		)
+		if err != nil {
+			return fmt.Errorf("cannot render select_floating_state script: %w", err)
+		}
+
+		statePayload := make(payload.Payload).
+			AddTrigger(floatingState, payload.TriggerTouchBarButton, payload.TouchBar, payload.ActionTypeEmptyPlaceholder, false).
+			AddShell(rendered, 0, payload.ShellTypeAdditional)
+		if _, err = b.addTrigger(ctx, statePayload, payload.FloatingOrderSelectedState+payload.Order(1+i), floatingUUID); err != nil {
+			return fmt.Errorf("cannot create floating state trigger: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (b *btt) addMainSection(ctx context.Context) error {
 	// TODO: code is repeated
 	jsonPayload := map[string]any{
 		"BTTPredefinedActionType": payload.ActionTypeOpenGroup,

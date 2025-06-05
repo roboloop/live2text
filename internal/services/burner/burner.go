@@ -1,8 +1,9 @@
 package burner
 
 import (
-	"live2text/internal/services/metrics"
 	"log/slog"
+
+	"live2text/internal/services/metrics"
 )
 
 type burner struct {

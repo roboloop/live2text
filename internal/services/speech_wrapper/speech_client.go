@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	speech "cloud.google.com/go/speech/apiv1"
 	"cloud.google.com/go/speech/apiv1/speechpb"
+
+	speech "cloud.google.com/go/speech/apiv1"
 )
 
 type speechClient struct {

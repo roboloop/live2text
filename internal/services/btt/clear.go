@@ -2,7 +2,6 @@ package btt
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"sync"
@@ -19,7 +18,7 @@ func (b *btt) Clear(ctx context.Context) error {
 		return fmt.Errorf("cannot trigger close group: %w", err)
 	}
 
-	if triggers, err = b.getTriggers(ctx); err != nil {
+	if triggers, err = b.getTriggers(ctx, ""); err != nil {
 		return fmt.Errorf("cannot extract triggers' uuids: %w", err)
 	}
 	for _, trigger := range triggers {
@@ -43,27 +42,6 @@ func (b *btt) triggerCloseGroup(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-func (b *btt) getTriggers(ctx context.Context) ([]map[string]any, error) {
-	out, err := b.execClient.Exec(ctx, "get_triggers")
-	if err != nil {
-		return nil, fmt.Errorf("cannot exec get_triggers command: %w", err)
-	}
-
-	var unmarshalled []map[string]any
-	if err = json.Unmarshal(out, &unmarshalled); err != nil {
-		return nil, fmt.Errorf("failed to parse JSON: %w", err)
-	}
-
-	var result []map[string]any
-	for _, trigger := range unmarshalled {
-		if _, ok := trigger["BTTUUID"].(string); ok {
-			result = append(result, trigger)
-		}
-	}
-
-	return result, nil
 }
 
 func (b *btt) deleteTriggers(ctx context.Context, uuids []string) error {

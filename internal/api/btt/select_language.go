@@ -2,9 +2,10 @@ package btt
 
 import (
 	"context"
+	"net/http"
+
 	"live2text/internal/api/json"
 	"live2text/internal/api/validation"
-	"net/http"
 )
 
 type selectLanguageRequest struct {

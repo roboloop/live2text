@@ -3,10 +3,11 @@ package btt
 import (
 	"context"
 	"fmt"
-	"live2text/internal/services/btt/payload"
 	"sync"
 
 	"github.com/gordonklaus/portaudio"
+
+	"live2text/internal/services/btt/payload"
 )
 
 var mu sync.Mutex
@@ -32,12 +33,11 @@ func (b *btt) LoadDevices(ctx context.Context) error {
 		return fmt.Errorf("cannot find device group: %w", err)
 	}
 
-	if triggers, err = b.getTriggers(ctx); err != nil {
+	if triggers, err = b.getTriggers(ctx, deviceGroupUUID); err != nil {
 		return fmt.Errorf("cannot get triggers: %w", err)
 	}
 	for _, trigger := range triggers {
-		if trigger["BTTTriggerParentUUID"] == deviceGroupUUID &&
-			payload.Order(trigger["BTTOrder"].(float64)) > payload.DeviceOrderSelectedDevice {
+		if payload.Order(trigger["BTTOrder"].(float64)) > payload.DeviceOrderSelectedDevice {
 			deviceTriggers = append(deviceTriggers, trigger)
 		}
 	}

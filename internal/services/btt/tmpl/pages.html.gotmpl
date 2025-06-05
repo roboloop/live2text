@@ -1,0 +1,78 @@
+{{- define "floating_page" }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>{{ .AppName }}</title>
+    <style>
+        body {
+            font-family: -apple-system, "SF Pro Display", sans-serif;
+            color: white;
+            background-color: black;
+            cursor: default;
+            transition: background-color 0.25s, color 0.25s;
+        }
+        ::selection {
+            background: transparent;
+            color: inherit;
+        }
+        .flash {
+            background-color: white !important;
+            color: black !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="output">Streaming text...</div>
+
+    <script>
+        window.addEventListener('blur', function() {
+            if (window.getSelection) {
+                window.getSelection().removeAllRanges()
+            }
+        })
+        const output = document.getElementById('output');
+
+        document.addEventListener('dblclick', () => {
+            const selection = window.getSelection();
+            const selectedText = selection.toString();
+            if (!selectedText.length) {
+                return
+            }
+
+            const textarea = document.createElement('textarea');
+            textarea.value = selectedText;
+            document.body.appendChild(textarea);
+            textarea.select();
+
+            try {
+                document.execCommand('copy');
+                document.body.classList.add('flash');
+                setTimeout(() => {
+                    document.body.classList.remove('flash');
+                }, 500);
+            } catch (err) {
+                console.error('Copy error!');
+            }
+
+            document.body.removeChild(textarea);
+            selection.removeAllRanges();
+        });
+
+
+        const eventSource = new EventSource('http://{{ .AppAddress }}/api/btt/text-stream')
+        eventSource.addEventListener('message', (event) => {
+          output.innerHTML = `<p>${event.data}</p>`
+        })
+
+        eventSource.addEventListener('failed', (event) => {
+          output.innerHTML = `<p>Failed: ${event.data}</p>`
+        })
+
+        eventSource.onerror = () => {
+          console.error('Connection/network error!')
+          eventSource.close()
+        }
+    </script>
+</body>
+</html>
+{{- end }}

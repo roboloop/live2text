@@ -3,12 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
-	"live2text/internal/config"
-	"live2text/internal/services/btt"
-	"live2text/internal/services/btt/exec"
-	"live2text/internal/services/btt/http"
 	"log/slog"
 	"os"
+
+	"live2text/internal/config"
+	"live2text/internal/services/btt"
+	"live2text/internal/services/btt/http"
 )
 
 func main() {
@@ -41,13 +41,7 @@ func run(ctx context.Context, args []string) error {
 }
 
 func newBtt(logger *slog.Logger, cfg *config.Config) btt.Btt {
-	const (
-		appName = "live2text"
-		bttName = "BetterTouchTool"
-	)
-
 	httpClient := http.NewClient(logger, cfg.BttAddress)
-	execClient := exec.NewClient(logger, appName, bttName)
 
-	return btt.NewBtt(logger, nil, nil, httpClient, execClient, cfg)
+	return btt.NewBtt(logger, nil, nil, httpClient, cfg)
 }
