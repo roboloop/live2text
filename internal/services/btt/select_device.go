@@ -19,5 +19,7 @@ func (b *btt) SelectDevice(ctx context.Context, device string) error {
 		return fmt.Errorf("cannot refresh selected device widget: %w", err)
 	}
 
+	// TODO: restart if it's running?
+
 	return nil
 }

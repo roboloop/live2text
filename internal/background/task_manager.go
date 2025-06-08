@@ -30,7 +30,7 @@ type task struct {
 
 type TaskManager struct {
 	ctx context.Context
-	mu  sync.Mutex
+	mu  sync.RWMutex
 	wg  sync.WaitGroup
 
 	tasks map[string]*task
@@ -94,8 +94,8 @@ func (tm *TaskManager) Cancel(name string) bool {
 }
 
 func (tm *TaskManager) Status() TaskManagerStatus {
-	tm.mu.Lock()
-	defer tm.mu.Unlock()
+	tm.mu.RLock()
+	defer tm.mu.RUnlock()
 
 	total := len(tm.tasks)
 	names := make([]string, 0, total)
@@ -104,6 +104,13 @@ func (tm *TaskManager) Status() TaskManagerStatus {
 	}
 
 	return TaskManagerStatus{total, names}
+}
+
+func (tm *TaskManager) TotalRunningTasks() float64 {
+	tm.mu.RLock()
+	defer tm.mu.RUnlock()
+
+	return float64(len(tm.tasks))
 }
 
 func (tm *TaskManager) Get(name string) RunnableTask {

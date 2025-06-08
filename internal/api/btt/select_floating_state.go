@@ -12,7 +12,7 @@ type selectFloatingStateRequest struct {
 	FloatingState string `json:"floating_state"`
 }
 
-func (r selectFloatingStateRequest) Valid(context.Context, *Server) (map[string]string, error) {
+func (r selectFloatingStateRequest) Valid(_ context.Context, _ *Server) (map[string]string, error) {
 	problems := make(map[string]string)
 
 	if r.FloatingState != btt.FloatingStateShown && r.FloatingState != btt.FloatingStateHidden {

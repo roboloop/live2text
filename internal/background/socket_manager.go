@@ -14,9 +14,8 @@ import (
 var ErrNoSocketFound = errors.New("no socket found")
 
 type SocketManager struct {
-	ctx       context.Context
 	logger    *slog.Logger
-	mu        sync.Mutex
+	mu        sync.RWMutex
 	wg        sync.WaitGroup
 	listeners map[string]net.Listener
 }
@@ -25,12 +24,12 @@ type SocketManagerStatus struct {
 	TotalListeners int
 }
 
-func NewSocketManager(ctx context.Context, logger *slog.Logger) *SocketManager {
-	return &SocketManager{ctx: ctx, logger: logger, listeners: map[string]net.Listener{}}
+func NewSocketManager(logger *slog.Logger) *SocketManager {
+	return &SocketManager{logger: logger, listeners: map[string]net.Listener{}}
 }
 
-func (sm *SocketManager) Listen(socketPath string, fn func(net.Conn)) error {
-	listener, errListen := (&net.ListenConfig{}).Listen(sm.ctx, "unix", socketPath)
+func (sm *SocketManager) Listen(ctx context.Context, socketPath string, fn func(net.Conn)) error {
+	listener, errListen := (&net.ListenConfig{}).Listen(context.Background(), "unix", socketPath)
 	if errListen != nil {
 		return fmt.Errorf("cannot dial a unix socket: %w", errListen)
 	}
@@ -41,6 +40,18 @@ func (sm *SocketManager) Listen(socketPath string, fn func(net.Conn)) error {
 	sm.wg.Add(1)
 	go func() {
 		defer sm.wg.Done()
+
+		acceptDoneCh := make(chan struct{})
+		go func() {
+			select {
+			case <-ctx.Done():
+				if err := listener.Close(); err != nil {
+					sm.logger.ErrorContext(ctx, "Cannot close listener", "error", err)
+				}
+			case <-acceptDoneCh:
+			}
+		}()
+
 		for {
 			conn, err := listener.Accept()
 			if err != nil {
@@ -48,9 +59,10 @@ func (sm *SocketManager) Listen(socketPath string, fn func(net.Conn)) error {
 					sm.mu.Lock()
 					delete(sm.listeners, socketPath)
 					sm.mu.Unlock()
+					close(acceptDoneCh)
 					return
 				}
-				sm.logger.ErrorContext(sm.ctx, "Cannot accept socket connection", "path", socketPath, "error", err)
+				sm.logger.ErrorContext(ctx, "Cannot accept socket connection", "path", socketPath, "error", err)
 				continue
 			}
 			go fn(conn)
@@ -84,5 +96,15 @@ func (sm *SocketManager) Close() error {
 }
 
 func (sm *SocketManager) Status() SocketManagerStatus {
+	sm.mu.RLock()
+	defer sm.mu.RUnlock()
+
 	return SocketManagerStatus{len(sm.listeners)}
+}
+
+func (sm *SocketManager) TotalOpenSockets() float64 {
+	sm.mu.RLock()
+	defer sm.mu.RUnlock()
+
+	return float64(len(sm.listeners))
 }

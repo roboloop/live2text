@@ -6,8 +6,10 @@ ok=$(curl -sSLf "http://{{ .AppAddress }}/api/health" 2>/dev/null)
 {{- define "print_status" }}
 {{- template "log" . }}
 
-ok=$(curl -sSLf "http://{{ .AppAddress }}/api/health" 2>/dev/null)
-[[ -n "${ok}" ]] && echo "✅" || echo "⚠️"
+ok=$(curl -sSLf "http://{{ .AppAddress }}/api/health")
+[[ -z "${ok}" ]] && echo "⚠️" && exit 0
+is_running=$(curl -sSLf "http://{{ .AppAddress }}/api/btt/is-running")
+[[ "${is_running}" == "true" ]] && echo "🔴" || echo "✅"
 {{- end }}
 
 {{- define "print_selected_device" }}
@@ -24,6 +26,14 @@ device=$(curl -sSLf 'http://{{ .AppAddress }}/api/btt/selected-device')
 
 language=$(curl -sSLf 'http://{{ .AppAddress }}/api/btt/selected-language')
 [[ -z "${language}" ]] && echo "⚠️ No language selected" || echo "✅ ${language}"
+{{- end }}
+
+{{- define "print_selected_view_mode" }}
+{{- template "log" . }}
+{{- template "health-check" . }}
+
+view_mode=$(curl -sSLf 'http://{{ .AppAddress }}/api/btt/selected-view-mode')
+[[ -z "${view_mode}" ]] && echo "⚠️ No view mode selected" || echo "✅ ${view_mode}"
 {{- end }}
 
 {{- define "print_selected_floating_state" }}
@@ -48,6 +58,13 @@ curl -X POST -H 'Content-Type: application/json' -sSLf --data-raw '{"language": 
   http://{{ .AppAddress }}/api/btt/select-language
 {{- end }}
 
+{{- define "select_view_mode" }}
+{{- template "log" . }}
+
+curl -X POST -H 'Content-Type: application/json' -sSLf --data-raw '{"view_mode": "{{ .ViewMode }}"}' \
+  http://{{ .AppAddress }}/api/btt/select-view-mode
+{{- end }}
+
 {{- define "select_floating_state" }}
 {{- template "log" . }}
 
@@ -59,9 +76,22 @@ curl -X POST -H 'Content-Type: application/json' -sSLf --data-raw '{"floating_st
 {{- define "open_settings" }}
 {{- template "log" . }}
 
-# Must not make calls to the app
+# Must not rely on the app
 curl -sSLf http://{{ .BttAddress }}/trigger_action/?{{ .Query }}
 curl -sSLf -X POST http://{{ .AppAddress }}/api/btt/load-devices
+{{- end }}
+
+{{- define "close_settings" }}
+{{- template "log" . }}
+
+is_running=$(curl -sSLf http://{{ .AppAddress }}/api/btt/is-running)
+view_mode=$(curl -sSLf http://{{ .AppAddress }}/api/btt/selected-view-mode)
+close_group_query="{{ .CloseGroupQuery }}"
+open_clean_view_query="{{ .OpenCleanViewQuery }}"
+[[ "true" == "${is_running}" && "{{ .CleanViewMode }}" == "${view_mode}" ]] && query="${open_clean_view_query}" || query="${close_group_query}"
+
+# Must not rely on the app
+curl -sSLf "http://{{ .BttAddress }}/trigger_action/?${query}"
 {{- end }}
 
 {{- define "toggle" }}

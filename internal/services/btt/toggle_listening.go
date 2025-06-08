@@ -13,27 +13,21 @@ func (b *btt) ToggleListening(ctx context.Context) error {
 		return fmt.Errorf("cannot get listeting socket variable: %w", err)
 	}
 
-	appTrigger, err := b.getTrigger(ctx, appTitle)
-	if err != nil {
-		return fmt.Errorf("cannot get app trigger: %w", err)
-	}
-	uuid := appTrigger[bttUUID].(string)
-
 	if id != "" {
-		return b.stop(ctx, uuid, id)
+		return b.StopListening(ctx, id)
 	}
 
-	return b.start(ctx, uuid)
+	return b.StartListening(ctx)
 }
 
-func (b *btt) stop(ctx context.Context, uuid, id string) error {
+func (b *btt) StopListening(ctx context.Context, id string) error {
 	var err error
 	if err = b.setPersistentStringVariable(ctx, taskIDVariable, ""); err != nil {
 		return fmt.Errorf("cannot remove task id: %w", err)
 	}
 
 	if err = b.recognition.Stop(ctx, id); err != nil {
-		b.logger.ErrorContext(ctx, "Cannot stop task", "error", err)
+		b.logger.InfoContext(ctx, "Cannot stop task", "error", err)
 	}
 
 	rendered, err := b.renderer.Render("listen_socket", map[string]any{})
@@ -45,13 +39,23 @@ func (b *btt) stop(ctx context.Context, uuid, id string) error {
 		AddShell(rendered, 0.0, payload.ShellTypeNone).
 		AddMap(map[string]any{
 			"BTTTriggerConfig": map[string]any{
-				// "BTTTouchBarAppleScriptStringRunOnInit": 0,
 				"BTTTouchBarScriptUpdateInterval": 0.0,
 			},
 		})
 
-	if _, err = b.httpClient.Send(ctx, "update_trigger", appPayload, map[string]string{"uuid": uuid}); err != nil {
+	appUUID, cleanViewAppUUID, err := b.appTriggers(ctx)
+	if err != nil {
+		return fmt.Errorf("cannot get app triggers: %w", err)
+	}
+	if _, err = b.httpClient.Send(ctx, "update_trigger", appPayload, map[string]string{"uuid": appUUID}); err != nil {
 		return fmt.Errorf("cannot update app trigger: %w", err)
+	}
+	if _, err = b.httpClient.Send(ctx, "update_trigger", appPayload, map[string]string{"uuid": cleanViewAppUUID}); err != nil {
+		return fmt.Errorf("cannot update clean view app trigger: %w", err)
+	}
+
+	if err = b.disableCleanView(ctx); err != nil {
+		return fmt.Errorf("cannot disable clean view: %w", err)
 	}
 
 	if err = b.hideFloatingState(ctx); err != nil {
@@ -61,7 +65,7 @@ func (b *btt) stop(ctx context.Context, uuid, id string) error {
 	return nil
 }
 
-func (b *btt) start(ctx context.Context, uuid string) error {
+func (b *btt) StartListening(ctx context.Context) error {
 	var (
 		device     string
 		language   string
@@ -92,13 +96,23 @@ func (b *btt) start(ctx context.Context, uuid string) error {
 		AddShell(rendered, b.interval, payload.ShellTypeNone).
 		AddMap(map[string]any{
 			"BTTTriggerConfig": map[string]any{
-				// "BTTTouchBarAppleScriptStringRunOnInit": 1,
 				"BTTTouchBarScriptUpdateInterval": defaultInterval,
 			},
 		})
 
-	if _, err = b.httpClient.Send(ctx, "update_trigger", appPayload, map[string]string{"uuid": uuid}); err != nil {
+	appUUID, cleanViewAppUUID, err := b.appTriggers(ctx)
+	if err != nil {
+		return fmt.Errorf("cannot get app triggers: %w", err)
+	}
+	if _, err = b.httpClient.Send(ctx, "update_trigger", appPayload, map[string]string{"uuid": appUUID}); err != nil {
 		return fmt.Errorf("cannot update app trigger: %w", err)
+	}
+	if _, err = b.httpClient.Send(ctx, "update_trigger", appPayload, map[string]string{"uuid": cleanViewAppUUID}); err != nil {
+		return fmt.Errorf("cannot update clean view app trigger: %w", err)
+	}
+
+	if err = b.enableCleanMode(ctx); err != nil {
+		return fmt.Errorf("cannot enable clean mode: %w", err)
 	}
 
 	if err = b.showFloatingState(ctx); err != nil {
@@ -106,4 +120,20 @@ func (b *btt) start(ctx context.Context, uuid string) error {
 	}
 
 	return nil
+}
+
+func (b *btt) appTriggers(ctx context.Context) (string, string, error) {
+	appTrigger, err := b.getTrigger(ctx, appTitle)
+	if err != nil {
+		return "", "", fmt.Errorf("cannot get app trigger: %w", err)
+	}
+	cleanViewAppTrigger, err := b.getTrigger(ctx, cleanViewAppTitle)
+	if err != nil {
+		return "", "", fmt.Errorf("cannot get clean view app trigger: %w", err)
+	}
+
+	appUUID := appTrigger[bttUUID].(string)
+	cleanViewAppUUID := cleanViewAppTrigger[bttUUID].(string)
+
+	return appUUID, cleanViewAppUUID, nil
 }

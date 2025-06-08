@@ -19,5 +19,7 @@ func (b *btt) SelectLanguage(ctx context.Context, language string) error {
 		return fmt.Errorf("cannot refresh selected language widget: %w", err)
 	}
 
+	// TODO: restart if it's running?
+
 	return nil
 }

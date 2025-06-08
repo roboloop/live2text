@@ -62,9 +62,9 @@ func run(ctx context.Context, args []string) error {
 	sl, l := newLoggers(cfg.LogLevel)
 
 	tm := background.NewTaskManager(ctx)
-	sm := background.NewSocketManager(ctx, sl)
+	sm := background.NewSocketManager(sl)
 
-	m := metrics.NewMetrics()
+	m := metrics.NewMetrics(tm.TotalRunningTasks, sm.TotalOpenSockets)
 	a := audio.NewAudio(sl, m, aw)
 	b := burner.NewBurner(sl, m)
 	r := recognition.NewRecognition(sl, m, a, b, sc, tm, sm)

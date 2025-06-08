@@ -11,6 +11,7 @@ const (
 	selectedDeviceVariable        = variablePrefix + "SELECTED_DEVICE"
 	selectedLanguageVariable      = variablePrefix + "SELECTED_LANGUAGE"
 	selectedFloatingStateVariable = variablePrefix + "SELECTED_FLOATING_STATE"
+	selectedViewModeVariable      = variablePrefix + "SELECTED_VIEW_MODE"
 	taskIDVariable                = variablePrefix + "TASK_ID"
 )
 

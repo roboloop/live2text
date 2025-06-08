@@ -8,13 +8,16 @@ type Btt interface {
 
 	SelectedDevice(ctx context.Context) (string, error)
 	SelectedLanguage(ctx context.Context) (string, error)
+	SelectedViewMode(ctx context.Context) (string, error)
 	SelectedFloatingState(ctx context.Context) (string, error)
 
 	SelectDevice(ctx context.Context, device string) error
 	SelectLanguage(ctx context.Context, language string) error
+	SelectViewMode(ctx context.Context, viewMode ViewMode) error
 	SelectFloatingState(ctx context.Context, floatingState FloatingState) error
 
 	LoadDevices(ctx context.Context) error
+	IsRunning(ctx context.Context) (bool, error)
 	ToggleListening(ctx context.Context) error
 
 	RefreshWidget(ctx context.Context, uuid string) error

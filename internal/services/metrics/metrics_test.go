@@ -10,7 +10,7 @@ import (
 )
 
 func TestMetrics(t *testing.T) {
-	m := metrics.NewMetrics()
+	m := metrics.NewMetrics(nil, nil)
 	m.AddBytesSentToGoogleSpeech(10)
 	m.AddBytesWrittenOnDisk(20)
 	m.AddBytesReadFromAudio(30)

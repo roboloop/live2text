@@ -8,6 +8,12 @@ const (
 	ShellTypeAdditional
 )
 
+const (
+	IntervalDefault = 15
+	IntervalMetrics = 5
+	IntervalNone    = 0
+)
+
 func (p Payload) AddShell(shell string, interval float64, shellType ShellType) Payload {
 	trigger := map[string]any{
 		"BTTShellScriptWidgetGestureConfig": "/bin/bash:::-c:::-:::",
@@ -18,7 +24,7 @@ func (p Payload) AddShell(shell string, interval float64, shellType ShellType) P
 	}
 
 	embed := map[string]any{
-		"BTTPredefinedActionType":  206,
+		"BTTPredefinedActionType":  ActionTypeExecuteScript,
 		"BTTShellTaskActionScript": shell,
 		"BTTShellTaskActionConfig": "/bin/bash:::-c:::-:::",
 	}

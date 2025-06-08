@@ -22,6 +22,7 @@ const (
 type ActionType int
 
 const (
+	ActionTypeNone                          = 0
 	ActionTypeEmptyPlaceholder   ActionType = 366
 	ActionTypeExecuteScript      ActionType = 206
 	ActionTypeCloseGroup         ActionType = 191
@@ -39,19 +40,24 @@ func (p Payload) AddTrigger(
 	hidden bool,
 ) Payload {
 	p.AddMap(map[string]any{
-		"BTTTouchBarButtonName":   name,
-		"BTTWidgetName":           name,
-		"BTTTriggerName":          name,
-		"BTTMenuName":             name,
-		"BTTTriggerType":          triggerID,
-		"BTTTriggerClass":         triggerType,
-		"BTTPredefinedActionType": actionType,
-		"BTTGroupName":            LabelName,
-		"BTTNotes":                LabelName,
+		"BTTTouchBarButtonName": name,
+		"BTTWidgetName":         name,
+		"BTTTriggerName":        name,
+		"BTTMenuName":           name,
+		"BTTTriggerType":        triggerID,
+		"BTTTriggerClass":       triggerType,
+		"BTTGroupName":          LabelName,
+		"BTTNotes":              LabelName,
 		"BTTTriggerConfig": map[string]any{
 			"BTTKeepGroupOpenWhileSwitchingApps": true,
 		},
 	})
+
+	if actionType != ActionTypeNone {
+		p.AddMap(map[string]any{
+			"BTTPredefinedActionType": actionType,
+		})
+	}
 
 	if triggerType == OtherTriggers {
 		p.AddMap(map[string]any{

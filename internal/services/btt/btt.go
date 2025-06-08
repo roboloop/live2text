@@ -11,18 +11,23 @@ import (
 	"live2text/internal/services/recognition"
 )
 
+// Must be uniq names.
 const (
 	appName                    = "Live2Text"
 	appTitle                   = "App"
 	settingsTitle              = "Settings"
+	cleanViewTitle             = "Clean view"
+	cleanViewAppTitle          = "Clean view App"
 	deviceGroupTitle           = "Device"
 	languageGroupTitle         = "Language"
+	viewModeTitle              = "View Mode"
 	floatingStateGroupTitle    = "Floating State"
 	metricsGroupTitle          = "Metrics"
 	streamingTextTitle         = "Streaming Text"
 	selectedLanguageTitle      = "Selected Language"
 	selectedDeviceTitle        = "Selected Device"
 	selectedFloatingStateTitle = "Selected Floating State"
+	selectedViewModeTitle      = "Selected View Mode"
 
 	defaultInterval = 0.25
 )

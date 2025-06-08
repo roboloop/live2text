@@ -142,7 +142,7 @@ func (rt *RecognizeTask) Run(ctx context.Context) error {
 	g.Go(func() error {
 		defer wg.Done()
 
-		return rt.socketManager.Listen(rt.socketPath, func(conn net.Conn) {
+		return rt.socketManager.Listen(ctx, rt.socketPath, func(conn net.Conn) {
 			defer conn.Close()
 			_, _ = conn.Write([]byte(rt.subs.Format()))
 		})

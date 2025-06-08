@@ -4,7 +4,8 @@ type Order int
 
 const (
 	MainOrderSettings Order = 20
-	MainOrderSubs     Order = 21
+	MainOrderViewMode Order = 21
+	MainOrderSubs     Order = 22
 )
 
 const (
@@ -16,6 +17,7 @@ const (
 	SettingsOrderStatus
 	SettingsOrderDevice
 	SettingsOrderLanguage
+	SettingsOrderViewMode
 	SettingsOrderFloating
 	SettingsOrderMetrics
 )
@@ -31,6 +33,11 @@ const (
 )
 
 const (
+	ViewModeOrderCloseGroup Order = iota
+	ViewModeOrderSelectedViewMode
+)
+
+const (
 	FloatingOrderCloseGroup Order = iota
 	FloatingOrderSelectedState
 )
@@ -41,7 +48,9 @@ const (
 	MetricsOrderSentAudio
 	MetricsOrderSendAudioMs
 	MetricsOrderBurntAudio
-	MetrocsOrderConnections
+	MetricsOrderConnections
+	MetricsOrderTasks
+	MetricsOrderSockets
 )
 
 func (p Payload) AddOrder(order Order) Payload {

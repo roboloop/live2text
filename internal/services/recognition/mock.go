@@ -1,6 +1,8 @@
 package recognition
 
-import "context"
+import (
+	"context"
+)
 
 type MockRecognition struct {
 	StartID         string
@@ -11,6 +13,11 @@ type MockRecognition struct {
 
 	SubsText  string
 	SubsError error
+}
+
+func (m *MockRecognition) Has(_ string) bool {
+	// TODO implement me
+	panic("implement me")
 }
 
 func (m *MockRecognition) Start(context.Context, string, string) (string, string, error) {

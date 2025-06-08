@@ -1,7 +1,6 @@
 package background_test
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -30,10 +29,10 @@ func TestSocketManager(t *testing.T) {
 			err       error
 		)
 
-		sm, socketPath := newSocketManager(ctx)
+		sm, socketPath := newSocketManager()
 		defer sm.Close()
 
-		err = sm.Listen(socketPath, func(conn net.Conn) {
+		err = sm.Listen(ctx, socketPath, func(conn net.Conn) {
 			defer conn.Close()
 			incoming = read(conn)
 
@@ -60,8 +59,8 @@ func TestSocketManager(t *testing.T) {
 	})
 
 	t.Run("Listener was closed by socket path", func(t *testing.T) {
-		sm, socketPath := newSocketManager(ctx)
-		err := sm.Listen(socketPath, defaultFn)
+		sm, socketPath := newSocketManager()
+		err := sm.Listen(ctx, socketPath, defaultFn)
 		assertNoError(t, err)
 
 		err = sm.CloseByPath(socketPath)
@@ -69,7 +68,7 @@ func TestSocketManager(t *testing.T) {
 	})
 
 	t.Run("No listener found to close by socket path", func(t *testing.T) {
-		sm, _ := newSocketManager(ctx)
+		sm, _ := newSocketManager()
 
 		err := sm.CloseByPath("foo")
 		if err != nil && !errors.Is(err, background.ErrNoSocketFound) {
@@ -78,16 +77,16 @@ func TestSocketManager(t *testing.T) {
 	})
 
 	t.Run("Wait until listener is closed", func(t *testing.T) {
-		sm, socketPath := newSocketManager(ctx)
-		err := sm.Listen(socketPath, defaultFn)
+		sm, socketPath := newSocketManager()
+		err := sm.Listen(ctx, socketPath, defaultFn)
 		assertNoError(t, err)
 		sm.Close()
 	})
 
 	t.Run("Socket manager status", func(t *testing.T) {
-		sm, _ := newSocketManager(ctx)
-		sm.Listen("foo", defaultFn)
-		sm.Listen("bar", defaultFn)
+		sm, _ := newSocketManager()
+		sm.Listen(ctx, "foo", defaultFn)
+		sm.Listen(ctx, "bar", defaultFn)
 		totalListeners := sm.Status().TotalListeners
 		if totalListeners != 2 {
 			t.Errorf("Status() mismatch: got %v, expected %v", totalListeners, 2)
@@ -97,10 +96,10 @@ func TestSocketManager(t *testing.T) {
 	})
 }
 
-func newSocketManager(ctx context.Context) (*background.SocketManager, string) {
+func newSocketManager() (*background.SocketManager, string) {
 	path := filepath.Join(os.TempDir(), fmt.Sprintf("%s-%d.sock", "live2text", rand.Uint64()))
 
-	return background.NewSocketManager(ctx, utils.NilLogger), path
+	return background.NewSocketManager(utils.NilLogger), path
 }
 
 func read(r io.Reader) string {

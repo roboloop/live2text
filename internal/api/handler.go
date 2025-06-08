@@ -32,13 +32,16 @@ func NewHandler(logger *slog.Logger, services services.Services) http.Handler {
 
 	mux.HandleFunc("GET /api/btt/selected-device", server.btt.SelectedDevice)
 	mux.HandleFunc("GET /api/btt/selected-language", server.btt.SelectedLanguage)
+	mux.HandleFunc("GET /api/btt/selected-view-mode", server.btt.SelectedViewMode)
 	mux.HandleFunc("GET /api/btt/selected-floating-state", server.btt.SelectedFloatingState)
 	mux.HandleFunc("POST /api/btt/select-device", server.btt.SelectDevice)
 	mux.HandleFunc("POST /api/btt/select-language", server.btt.SelectLanguage)
+	mux.HandleFunc("POST /api/btt/select-view-mode", server.btt.SelectViewMode)
 	mux.HandleFunc("POST /api/btt/select-floating-state", server.btt.SelectFloatingState)
 
 	mux.HandleFunc("POST /api/btt/load-devices", server.btt.LoadDevices)
 	mux.HandleFunc("POST /api/btt/toggle-listening", server.btt.ToggleListening)
+	mux.HandleFunc("GET /api/btt/is-running", server.btt.IsRunning)
 
 	mux.HandleFunc("GET /btt/floating-page", server.btt.FloatingPage)
 	mux.HandleFunc("GET /api/btt/text-stream", server.btt.TextStream)
