@@ -3,65 +3,34 @@ package json_test
 import (
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"live2text/internal/api/json"
 )
 
 func TestEncode(t *testing.T) {
-	tests := []struct {
-		name         string
-		input        any
-		status       int
-		expectedCode int
-		expectedJSON string
-	}{
-		{
-			name: "successful encoding",
-			input: struct {
-				Name  string `json:"name"`
-				Value int    `json:"value"`
-			}{
-				Name: "test", Value: 123,
-			},
-			status:       http.StatusOK,
-			expectedCode: http.StatusOK,
-			expectedJSON: `{"name":"test","value":123}`,
-		},
-		{
-			name:         "nil pointer encoding",
-			input:        (*struct{})(nil),
-			status:       http.StatusOK,
-			expectedCode: http.StatusOK,
-			expectedJSON: `null`,
-		},
-		{
-			name: "map encoding",
-			input: map[string]any{
-				"name":  "test",
-				"value": 123,
-			},
-			status:       http.StatusCreated,
-			expectedCode: http.StatusCreated,
-			expectedJSON: `{"name":"test","value":123}`,
-		},
-	}
+	t.Parallel()
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			w := httptest.NewRecorder()
-			json.Encode(tt.input, w, tt.status)
+	t.Run("encode error", func(t *testing.T) {
+		t.Parallel()
 
-			if w.Code != tt.expectedCode {
-				t.Errorf("Expected status code %d, got %d", tt.expectedCode, w.Code)
-			}
-			if contentType := w.Header().Get("Content-Type"); contentType != "application/json" {
-				t.Errorf("Expected content type 'application/json', got '%s'", contentType)
-			}
-			if tt.expectedJSON != strings.TrimSpace(w.Body.String()) {
-				t.Errorf("JSON not equal:\nExpected: %v\nActual: %v", tt.expectedJSON, w.Body.String())
-			}
-		})
-	}
+		w := httptest.NewRecorder()
+		json.Encode(func() {}, w, http.StatusOK)
+
+		require.Equal(t, http.StatusInternalServerError, w.Code)
+		require.Contains(t, w.Body.String(), "unsupported type")
+	})
+
+	t.Run("successful encoding", func(t *testing.T) {
+		t.Parallel()
+
+		w := httptest.NewRecorder()
+		json.Encode("ok", w, http.StatusOK)
+
+		require.Equal(t, http.StatusOK, w.Code)
+		require.Contains(t, w.Body.String(), `"ok"`)
+		require.Equal(t, "application/json", w.Header().Get("Content-Type"))
+	})
 }

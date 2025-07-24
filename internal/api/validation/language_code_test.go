@@ -3,17 +3,21 @@ package validation_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"live2text/internal/api/validation"
 )
 
 func TestIsValidLanguageCode(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
-		name string
-		code string
-		want bool
+		name     string
+		code     string
+		expected bool
 	}{
 		{"valid 1", "en-US", true},
-		{"valid 2", "ru-RU", true},
+		{"valid 2", "es-ES", true},
 
 		{"invalid 1", "invalid", false},
 		{"invalid 2", "eng-US", false},
@@ -22,9 +26,10 @@ func TestIsValidLanguageCode(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := validation.IsValidLanguageCode(tt.code); got != tt.want {
-				t.Errorf("IsValidLanguageCode() = %v, want %v", got, tt.want)
-			}
+			t.Parallel()
+
+			result := validation.IsValidLanguageCode(tt.code)
+			require.Equal(t, tt.expected, result)
 		})
 	}
 }

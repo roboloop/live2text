@@ -6,6 +6,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
+	encodingjson "encoding/json"
+
 	"live2text/internal/api/json"
 )
 
@@ -14,71 +18,43 @@ type testStruct struct {
 	Value int    `json:"value"`
 }
 
-//nolint:gocognit // TODO: simplify?
 func TestDecode(t *testing.T) {
-	tests := []struct {
-		name string
+	t.Parallel()
 
-		contentType string
-		body        string
+	t.Run("unsupported content type", func(t *testing.T) {
+		t.Parallel()
 
-		expected     testStruct
-		expectError  bool
-		expectedCode int
-		expectMsg    string
-	}{
-		{
-			name:         "successful decoding",
-			contentType:  "application/json",
-			body:         `{"name":"test","value":123}`,
-			expected:     testStruct{"test", 123},
-			expectError:  false,
-			expectedCode: http.StatusOK,
-		},
-		{
-			name:         "invalid content type",
-			contentType:  "text/plain",
-			body:         `{"name":"test","value":123}`,
-			expected:     testStruct{},
-			expectError:  true,
-			expectedCode: http.StatusBadRequest,
-			expectMsg:    "cannot decode content type",
-		},
-		{
-			name:         "invalid JSON",
-			contentType:  "application/json",
-			body:         `{"name":"test","value":invalid}`,
-			expected:     testStruct{},
-			expectError:  true,
-			expectedCode: http.StatusBadRequest,
-			expectMsg:    "cannot decode request",
-		},
-	}
+		req := httptest.NewRequest(http.MethodGet, "/", strings.NewReader(""))
+		req.Header.Set("Content-Type", "text/plain")
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			req, err := http.NewRequest(http.MethodPost, "/test", strings.NewReader(tt.body))
-			if err != nil {
-				t.Fatalf("Failed to create request: %v", err)
-			}
-			req.Header.Set("Content-Type", tt.contentType)
-			w := httptest.NewRecorder()
-			result, hasError := json.Decode[testStruct](w, req)
+		_, err := json.Decode[testStruct](req)
 
-			if hasError != tt.expectError {
-				t.Errorf("Expected error: %v, got %v", tt.expectError, hasError)
-			}
-			if result != tt.expected {
-				t.Errorf("Expected result: %+v, got %+v", tt.expected, result)
-			}
-			if tt.expectError {
-				if w.Code != tt.expectedCode {
-					t.Errorf("Expected status code %d, got %d", tt.expectedCode, w.Code)
-				}
-				if !strings.Contains(w.Body.String(), tt.expectMsg) {
-					t.Errorf("Expected error message to contain %q, got %q", tt.expectMsg, w.Body.String())
-				}
-			}
-		})
-	}
+		require.ErrorContains(t, err, "cannot decode content type 'text/plain'")
+	})
+
+	t.Run("invalid json", func(t *testing.T) {
+		t.Parallel()
+
+		req := httptest.NewRequest(http.MethodGet, "/", strings.NewReader("invalid"))
+		req.Header.Set("Content-Type", "application/json")
+
+		_, err := json.Decode[testStruct](req)
+
+		require.ErrorContains(t, err, "cannot decode request")
+		var syntaxErr *encodingjson.SyntaxError
+		require.ErrorAs(t, err, &syntaxErr)
+	})
+
+	t.Run("successful decoding", func(t *testing.T) {
+		t.Parallel()
+
+		body := `{"name":"foo","value":42}`
+		req := httptest.NewRequest(http.MethodGet, "/", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+
+		decoded, err := json.Decode[testStruct](req)
+
+		require.NoError(t, err)
+		require.Equal(t, testStruct{"foo", 42}, decoded)
+	})
 }

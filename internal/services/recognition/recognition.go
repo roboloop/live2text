@@ -4,38 +4,22 @@ import (
 	"log/slog"
 
 	"live2text/internal/background"
-	"live2text/internal/services/audio"
-	"live2text/internal/services/burner"
-	"live2text/internal/services/metrics"
-	speechwrapper "live2text/internal/services/speech_wrapper"
 )
 
 type recognition struct {
-	logger        *slog.Logger
-	metrics       metrics.Metrics
-	audio         audio.Audio
-	burner        burner.Burner
-	speechClient  speechwrapper.Client
-	taskManager   *background.TaskManager
-	socketManager *background.SocketManager
+	logger      *slog.Logger
+	taskManager *background.TaskManager
+	taskFactory TaskFactory
 }
 
 func NewRecognition(
 	logger *slog.Logger,
-	metrics metrics.Metrics,
-	audio audio.Audio,
-	burner burner.Burner,
-	speechClient speechwrapper.Client,
 	taskManager *background.TaskManager,
-	socketManager *background.SocketManager,
+	taskFactory TaskFactory,
 ) Recognition {
 	return &recognition{
-		logger.With("service", "Recognition"),
-		metrics,
-		audio,
-		burner,
-		speechClient,
-		taskManager,
-		socketManager,
+		logger:      logger,
+		taskManager: taskManager,
+		taskFactory: taskFactory,
 	}
 }

@@ -1,30 +1,27 @@
 package btt
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"slices"
 
-	"github.com/gordonklaus/portaudio"
-
 	"live2text/internal/api/json"
+	"live2text/internal/api/validation"
+	"live2text/internal/services"
 )
 
 type selectDeviceRequest struct {
 	Device string `json:"device"`
 }
 
-func (r selectDeviceRequest) Valid(_ context.Context, api *Server) (map[string]string, error) {
+func (r selectDeviceRequest) validate(s services.Services) (map[string]string, error) {
 	problems := make(map[string]string)
 
-	devices, err := api.services.Audio().List()
+	devices, err := s.Audio().ListOfNames()
 	if err != nil {
 		return nil, fmt.Errorf("cannot get list of devices: %w", err)
 	}
-	if !slices.ContainsFunc(devices, func(device *portaudio.DeviceInfo) bool {
-		return device.Name == r.Device
-	}) {
+	if !slices.Contains(devices, r.Device) {
 		problems["device"] = "device not found"
 	}
 
@@ -32,13 +29,22 @@ func (r selectDeviceRequest) Valid(_ context.Context, api *Server) (map[string]s
 }
 
 func (s *Server) SelectDevice(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-	request, responded := json.Decode[selectDeviceRequest](w, r)
-	if responded {
+	request, err := json.Decode[selectDeviceRequest](r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err := s.services.Btt().SelectDevice(r.Context(), request.Device)
+	problems, err := request.validate(s.services)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	} else if len(problems) > 0 {
+		validation.Error(w, problems)
+		return
+	}
+
+	err = s.services.Btt().SelectDevice(r.Context(), request.Device)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

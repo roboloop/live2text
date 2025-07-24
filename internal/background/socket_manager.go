@@ -16,16 +16,12 @@ var ErrNoSocketFound = errors.New("no socket found")
 type SocketManager struct {
 	logger    *slog.Logger
 	mu        sync.RWMutex
-	wg        sync.WaitGroup
 	listeners map[string]net.Listener
-}
-
-type SocketManagerStatus struct {
-	TotalListeners int
+	done      map[string]chan struct{}
 }
 
 func NewSocketManager(logger *slog.Logger) *SocketManager {
-	return &SocketManager{logger: logger, listeners: map[string]net.Listener{}}
+	return &SocketManager{logger: logger, listeners: map[string]net.Listener{}, done: map[string]chan struct{}{}}
 }
 
 func (sm *SocketManager) Listen(ctx context.Context, socketPath string, fn func(net.Conn)) error {
@@ -35,20 +31,17 @@ func (sm *SocketManager) Listen(ctx context.Context, socketPath string, fn func(
 	}
 	sm.mu.Lock()
 	sm.listeners[socketPath] = listener
+	sm.done[socketPath] = make(chan struct{})
 	sm.mu.Unlock()
 
-	sm.wg.Add(1)
 	go func() {
-		defer sm.wg.Done()
-
-		acceptDoneCh := make(chan struct{})
 		go func() {
 			select {
 			case <-ctx.Done():
 				if err := listener.Close(); err != nil {
 					sm.logger.ErrorContext(ctx, "Cannot close listener", "error", err)
 				}
-			case <-acceptDoneCh:
+			case <-sm.done[socketPath]:
 			}
 		}()
 
@@ -58,8 +51,8 @@ func (sm *SocketManager) Listen(ctx context.Context, socketPath string, fn func(
 				if errors.Is(err, net.ErrClosed) {
 					sm.mu.Lock()
 					delete(sm.listeners, socketPath)
+					close(sm.done[socketPath])
 					sm.mu.Unlock()
-					close(acceptDoneCh)
 					return
 				}
 				sm.logger.ErrorContext(ctx, "Cannot accept socket connection", "path", socketPath, "error", err)
@@ -72,39 +65,41 @@ func (sm *SocketManager) Listen(ctx context.Context, socketPath string, fn func(
 	return nil
 }
 
-func (sm *SocketManager) CloseByPath(socketPath string) error {
-	listener, ok := sm.listeners[socketPath]
+func (sm *SocketManager) WaitFor(socketPath string) error {
+	sm.mu.Lock()
+	doneCh, ok := sm.done[socketPath]
+	sm.mu.Unlock()
 	if !ok {
 		return ErrNoSocketFound
 	}
 
-	if err := listener.Close(); err != nil {
-		return err
-	}
+	<-doneCh
 	return nil
+}
+
+func (sm *SocketManager) CloseFor(socketPath string) error {
+	sm.mu.Lock()
+	listener, ok := sm.listeners[socketPath]
+	sm.mu.Unlock()
+	if !ok {
+		return ErrNoSocketFound
+	}
+
+	return listener.Close()
 }
 
 func (sm *SocketManager) Close() error {
-	g, _ := errgroup.WithContext(context.Background())
+	g := errgroup.Group{}
 	for _, listener := range sm.listeners {
 		g.Go(listener.Close)
 	}
-	if err := g.Wait(); err != nil {
-		return err
-	}
-	return nil
+
+	return g.Wait()
 }
 
-func (sm *SocketManager) Status() SocketManagerStatus {
+func (sm *SocketManager) TotalOpenSockets() int {
 	sm.mu.RLock()
 	defer sm.mu.RUnlock()
 
-	return SocketManagerStatus{len(sm.listeners)}
-}
-
-func (sm *SocketManager) TotalOpenSockets() float64 {
-	sm.mu.RLock()
-	defer sm.mu.RUnlock()
-
-	return float64(len(sm.listeners))
+	return len(sm.listeners)
 }

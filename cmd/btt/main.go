@@ -6,9 +6,15 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/lmittmann/tint"
+	"golang.org/x/term"
+
 	"live2text/internal/config"
+	"live2text/internal/env"
 	"live2text/internal/services/btt"
-	"live2text/internal/services/btt/http"
+	bttclient "live2text/internal/services/btt/client"
+	httpclient "live2text/internal/services/btt/client/http"
+	"live2text/internal/services/btt/tmpl"
 )
 
 func main() {
@@ -20,28 +26,41 @@ func main() {
 }
 
 func run(ctx context.Context, args []string) error {
-	cfg, err := config.Initialize(args)
+	cfg, err := config.InitializeBtt(os.Stderr, args)
 	if err != nil {
 		return fmt.Errorf("cannot initialize config: %w", err)
 	}
 
-	handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		Level: cfg.LogLevel,
-	})
-	logger := slog.New(handler)
-	bttClient := newBtt(logger, cfg)
-	if err = bttClient.Clear(ctx); err != nil {
+	logger := newLogger(cfg.LogLevel)
+	ic := newInitializingComponent(logger, cfg)
+	if err = ic.Clear(ctx); err != nil {
 		return fmt.Errorf("cannot clear: %w", err)
 	}
-	if err = bttClient.Initialize(ctx); err != nil {
-		return fmt.Errorf("cannot initialize: %w", err)
+	if !cfg.Clear {
+		if err = ic.Initialize(ctx); err != nil {
+			return fmt.Errorf("cannot initialize: %w", err)
+		}
 	}
 
 	return nil
 }
 
-func newBtt(logger *slog.Logger, cfg *config.Config) btt.Btt {
-	httpClient := http.NewClient(logger, cfg.BttAddress)
+func newLogger(level slog.Level) *slog.Logger {
+	noColor := !term.IsTerminal(int(os.Stderr.Fd()))
 
-	return btt.NewBtt(logger, nil, nil, httpClient, cfg)
+	handler := tint.NewHandler(os.Stderr, &tint.Options{
+		Level:   level,
+		NoColor: noColor,
+	})
+
+	return slog.New(handler)
+}
+
+func newInitializingComponent(logger *slog.Logger, cfg *config.BttConfig) btt.InitializingComponent {
+	httpClient := httpclient.NewClient(logger, cfg.BttAddress, nil)
+	client := bttclient.NewClient(httpClient, cfg.AppName)
+
+	renderer := tmpl.NewRenderer(cfg.AppName, cfg.AppAddress, cfg.BttAddress, env.IsDebugMode())
+
+	return btt.NewInitializingComponent(client, renderer, cfg.Languages)
 }

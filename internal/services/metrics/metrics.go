@@ -7,13 +7,13 @@ import (
 )
 
 const (
-	MetricBytesSentToGoogleSpeech        = "recognizer_bytes_sent_to_google_speech"
-	MetricBytesWrittenOnDisk             = "recognizer_bytes_written_on_disk"
-	MetricBytesReadFromAudio             = "recognizer_bytes_read_from_audio"
-	MetricMillisecondsSentToGoogleSpeech = "recognizer_milliseconds_sent_to_google_speech"
-	MetricConnectsToGoogleSpeech         = "recognizer_connections_to_google_speech"
-	MetricTotalRunningTasks              = "recognizer_total_running_tasks"
-	MetricTotalOpenSockets               = "recognizer_total_open_sockets"
+	MetricBytesSentToGoogleSpeech        = "app_bytes_sent_to_google_speech"
+	MetricBytesWrittenOnDisk             = "app_bytes_written_on_disk"
+	MetricBytesReadFromAudio             = "app_bytes_read_from_audio"
+	MetricMillisecondsSentToGoogleSpeech = "app_milliseconds_sent_to_google_speech"
+	MetricConnectsToGoogleSpeech         = "app_connections_to_google_speech"
+	MetricTotalRunningTasks              = "app_total_running_tasks"
+	MetricTotalOpenSockets               = "app_total_open_sockets"
 )
 
 type metrics struct {
@@ -21,14 +21,21 @@ type metrics struct {
 
 	bytesSentToGoogleSpeechCounter        *externalmetrics.Counter
 	bytesWrittenOnDiskCounter             *externalmetrics.Counter
-	bytesReadFromAudio                    *externalmetrics.Counter
+	bytesReadFromAudioCounter             *externalmetrics.Counter
 	millisecondsSentToGoogleSpeechCounter *externalmetrics.Counter
 	connectsToGoogleSpeechCounter         *externalmetrics.Counter
 	totalRunningTasksGauge                *externalmetrics.Gauge
 	totalOpenSocketsGauge                 *externalmetrics.Gauge
 }
 
-func NewMetrics(totalRunningTasks, totalOpenSockets func() float64) Metrics {
+func NewMetrics(totalRunningTasks, totalOpenSockets func() int) Metrics {
+	totalRunningTasksFn := func() float64 {
+		return float64(totalRunningTasks())
+	}
+	totalOpenSocketsFn := func() float64 {
+		return float64(totalOpenSockets())
+	}
+
 	set := externalmetrics.NewSet()
 	var (
 		bytesSentToGoogleSpeechCounter        = set.NewCounter(MetricBytesSentToGoogleSpeech)
@@ -36,8 +43,8 @@ func NewMetrics(totalRunningTasks, totalOpenSockets func() float64) Metrics {
 		bytesReadFromAudioCounter             = set.NewCounter(MetricBytesReadFromAudio)
 		millisecondsSentToGoogleSpeechCounter = set.NewCounter(MetricMillisecondsSentToGoogleSpeech)
 		connectsToGoogleSpeechCounter         = set.NewCounter(MetricConnectsToGoogleSpeech)
-		totalRunningTasksGauge                = set.NewGauge(MetricTotalRunningTasks, totalRunningTasks)
-		totalOpenSocketsGauge                 = set.NewGauge(MetricTotalOpenSockets, totalOpenSockets)
+		totalRunningTasksGauge                = set.NewGauge(MetricTotalRunningTasks, totalRunningTasksFn)
+		totalOpenSocketsGauge                 = set.NewGauge(MetricTotalOpenSockets, totalOpenSocketsFn)
 	)
 
 	return &metrics{
@@ -62,7 +69,7 @@ func (m *metrics) AddBytesWrittenOnDisk(bytes int) {
 }
 
 func (m *metrics) AddBytesReadFromAudio(bytes int) {
-	m.bytesReadFromAudio.Add(bytes)
+	m.bytesReadFromAudioCounter.Add(bytes)
 }
 
 func (m *metrics) AddMillisecondsSentToGoogleSpeech(milliseconds int) {

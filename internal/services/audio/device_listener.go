@@ -4,70 +4,70 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"time"
-
-	"github.com/gordonklaus/portaudio"
 
 	audiowrapper "live2text/internal/services/audio_wrapper"
 	"live2text/internal/services/metrics"
 )
 
-type DeviceListener struct {
-	logger        *slog.Logger
-	metrics       metrics.Metrics
+type deviceListener struct {
+	logger  *slog.Logger
+	metrics metrics.Metrics
+
 	externalAudio audiowrapper.Audio
-
-	deviceInfo *portaudio.DeviceInfo
-
-	Channels    int
-	SampleRate  int
-	ChunkSizeMs int
-	Ch          <-chan []int16
-	ch          chan []int16
+	deviceInfo    *audiowrapper.DeviceInfo
+	parameters    *audiowrapper.StreamParameters
+	ch            chan []int16
 }
 
 func NewDeviceListener(
 	logger *slog.Logger,
 	metrics metrics.Metrics,
 	externalAudio audiowrapper.Audio,
-	deviceInfo *portaudio.DeviceInfo,
-) *DeviceListener {
-	const defaultChunkSizeMs = 100
-	ch := make(chan []int16, 1024)
-	return &DeviceListener{
-		logger:        logger,
+	deviceInfo *audiowrapper.DeviceInfo,
+) DeviceListener {
+	const (
+		defaultChannels    = 1
+		defaultChunkSizeMs = 100
+		channelBufferSize  = 1024
+	)
+	// We have to fit in 10mb per connection (5 min default).
+	// The size per minute is: 48000 * 2 * 60 / 1024 = 5.625mb (if bitrate is 48000)
+	sampleRate := int(deviceInfo.DefaultSampleRate / 2)
+
+	return &deviceListener{
+		logger:        logger.With("component", "device_listener", "device", deviceInfo.Name),
 		metrics:       metrics,
 		externalAudio: externalAudio,
 		deviceInfo:    deviceInfo,
-
-		Channels: 1,
-		// TODO: we have to fit in 10mb per connection (5 min default). The size per minute is: 48000 * 2 * 60 / 1024 = 5.625mb (if bitrate is 48000)
-		SampleRate:  int(deviceInfo.DefaultSampleRate / 2), // 48000 / 2.
-		ChunkSizeMs: defaultChunkSizeMs,
-		Ch:          ch,
-		ch:          ch,
+		parameters: &audiowrapper.StreamParameters{
+			Channels:    defaultChannels,
+			ChunkSizeMs: defaultChunkSizeMs,
+			SampleRate:  sampleRate,
+		},
+		ch: make(chan []int16, channelBufferSize),
 	}
 }
 
-func (dl *DeviceListener) Listen(ctx context.Context) error {
-	bufferSize := dl.SampleRate * dl.ChunkSizeMs / int(time.Second.Milliseconds())
-	buffer := make([]int16, bufferSize*dl.Channels)
+func (dl *deviceListener) GetChannel() <-chan []int16 {
+	return dl.ch
+}
 
-	stream, err := dl.externalAudio.OpenStream(portaudio.StreamParameters{
-		Input: portaudio.StreamDeviceParameters{
-			Device:   dl.deviceInfo,
-			Channels: dl.Channels,
-			Latency:  dl.deviceInfo.DefaultHighInputLatency,
-		},
-		SampleRate:      float64(dl.SampleRate),
-		FramesPerBuffer: bufferSize,
-	}, &buffer)
+func (dl *deviceListener) GetParameters() *audiowrapper.StreamParameters {
+	return dl.parameters
+}
+
+func (dl *deviceListener) Listen(ctx context.Context) error {
+	stream, err := dl.externalAudio.StreamDevice(dl.deviceInfo, &audiowrapper.StreamParameters{
+		Channels:    dl.parameters.Channels,
+		SampleRate:  dl.parameters.SampleRate,
+		ChunkSizeMs: dl.parameters.ChunkSizeMs,
+	})
 	if err != nil {
 		return fmt.Errorf("cannot open the stream: %w", err)
 	}
 	defer func() {
 		if errStream := stream.Close(); errStream != nil {
-			dl.logger.ErrorContext(ctx, "Cannot close stream", "error", err)
+			dl.logger.ErrorContext(ctx, "Cannot close stream", "error", errStream)
 		}
 	}()
 
@@ -76,27 +76,28 @@ func (dl *DeviceListener) Listen(ctx context.Context) error {
 	}
 	defer func() {
 		if errStream := stream.Stop(); errStream != nil {
-			dl.logger.ErrorContext(ctx, "Cannot stop stream", "error", err)
+			dl.logger.ErrorContext(ctx, "Cannot stop the stream", "error", errStream)
 		}
 	}()
 
+	// TODO: incorrect finalizing
 	for {
-		if err = stream.Read(); err != nil {
-			return fmt.Errorf("cannot read stream: %w", err)
+		data, errRead := stream.Read()
+		if errRead != nil {
+			return fmt.Errorf("cannot read the stream: %w", errRead)
 		}
-		clone := make([]int16, len(buffer))
-		copy(clone, buffer)
 
-		dl.metrics.AddBytesReadFromAudio(len(buffer) * 2)
+		dl.metrics.AddBytesReadFromAudio(len(data) * 2) // 2 bytes in int16
 
 		select {
 		case <-ctx.Done():
 			dl.logger.InfoContext(ctx, "shutdown of audio reader")
 			close(dl.ch)
 			return nil
-		case dl.ch <- clone:
+		case dl.ch <- data:
+
 		default:
-			dl.logger.ErrorContext(ctx, "The channel is full, segment was dropped")
+			dl.logger.ErrorContext(ctx, "The channel is full, the segment was dropped")
 		}
 	}
 }

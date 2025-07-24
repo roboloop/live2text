@@ -1,0 +1,222 @@
+openapi: 3.1.0
+info:
+  title: Live2Text API
+  description: API for Live2Text application with BTT integration
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8090
+    description: Local server
+
+paths:
+  /api/btt/selected-language:
+    get:
+      summary: Get selected language
+      description: Returns the currently selected language for transcription
+      operationId: getSelectedLanguage
+      tags:
+        - btt
+      responses:
+        '200':
+          description: The currently selected language code
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /api/btt/selected-view-mode:
+    get:
+      summary: Get selected view mode
+      description: Returns the currently selected view mode
+      operationId: getSelectedViewMode
+      tags:
+        - btt
+      responses:
+        '200':
+          description: The currently selected view mode
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /api/btt/selected-floating-state:
+    get:
+      summary: Get selected floating state
+      description: Returns the current floating state
+      operationId: getSelectedFloatingState
+      tags:
+        - btt
+      responses:
+        '200':
+          description: The current floating state
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /api/btt/select-device:
+    post:
+      summary: Select a device
+      description: Sets the device to use for transcription
+      operationId: selectDevice
+      tags:
+        - btt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                device:
+                  type: string
+                  description: The device name to select
+      responses:
+        '200':
+          description: Device selected successfully
+
+  /api/btt/select-language:
+    post:
+      summary: Select a language
+      description: Sets the language to use for transcription
+      operationId: selectLanguage
+      tags:
+        - btt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                language:
+                  type: string
+                  description: The language code to select
+      responses:
+        '200':
+          description: Language selected successfully
+
+  /api/btt/select-view-mode:
+    post:
+      summary: Select a view mode
+      description: Sets the view mode for the application
+      operationId: selectViewMode
+      tags:
+        - btt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                viewMode:
+                  type: string
+                  description: The view mode to select
+      responses:
+        '200':
+          description: View mode selected successfully
+
+  /api/btt/select-floating-state:
+    post:
+      summary: Select floating state
+      description: Sets the floating state of the application
+      operationId: selectFloatingState
+      tags:
+        - btt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                state:
+                  type: string
+                  description: The floating state to select
+      responses:
+        '200':
+          description: Floating state selected successfully
+
+  /api/btt/load-devices:
+    post:
+      summary: Load available devices
+      description: Loads the list of available input devices
+      operationId: loadDevices
+      tags:
+        - btt
+      responses:
+        '200':
+          description: Devices loaded successfully
+
+  /api/btt/toggle-listening:
+    post:
+      summary: Toggle listening state
+      description: Toggles the listening state (start/stop) of the transcription service
+      operationId: toggleListening
+      tags:
+        - btt
+      responses:
+        '200':
+          description: Listening state toggled successfully
+
+  /api/btt/is-running:
+    get:
+      summary: Check if transcription is running
+      description: Returns whether the transcription service is currently running
+      operationId: isRunning
+      tags:
+        - btt
+      responses:
+        '200':
+          description: Running status of the transcription service
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum: ["true", "false"]
+
+  /btt/floating-page:
+    get:
+      summary: Get floating page HTML
+      description: Returns the HTML for the floating page interface
+      operationId: getFloatingPage
+      tags:
+        - btt
+      responses:
+        '200':
+          description: HTML content for the floating page
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /api/btt/text-stream:
+    get:
+      summary: Stream transcribed text
+      description: Provides a real-time stream of transcribed text
+      operationId: getTextStream
+      tags:
+        - btt
+      responses:
+        '200':
+          description: Stream of transcribed text
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+components:
+  schemas:
+    Device:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the device
+        name:
+          type: string
+          description: Human-readable name of the device
+      required:
+        - id
+        - name

@@ -16,12 +16,11 @@ const (
 
 func (s *Server) TextStream(w http.ResponseWriter, r *http.Request) {
 	// http://localhost:8080/btt/floating-page
-	defer r.Body.Close()
 	w.Header().Set("Content-Type", "text/event-stream; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
 
-	// Always 200 code for SSE
+	// Always code 200 for SSE
 	w.WriteHeader(http.StatusOK)
 	_, ok := w.(http.Flusher)
 	if !ok {
@@ -49,7 +48,6 @@ func (s *Server) TextStream(w http.ResponseWriter, r *http.Request) {
 			if ok {
 				s.logger.ErrorContext(r.Context(), "Error during stream", "error", err)
 				sendSSE(w, eventFailed, err.Error())
-				// time.Sleep(30 * time.Second)
 				return
 			}
 		case <-r.Context().Done():

@@ -1,13 +1,10 @@
 package core
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"slices"
-
-	"github.com/gordonklaus/portaudio"
 
 	"live2text/internal/api/json"
 	"live2text/internal/api/validation"
@@ -25,16 +22,14 @@ type startResponse struct {
 	SocketPath string `json:"socketPath"`
 }
 
-func (r startRequest) Valid(_ context.Context, s services.Services) (map[string]string, error) {
+func (r startRequest) validate(s services.Services) (map[string]string, error) {
 	problems := make(map[string]string)
 
-	devices, err := s.Audio().List()
+	devices, err := s.Audio().ListOfNames()
 	if err != nil {
 		return nil, fmt.Errorf("cannot get list of devices: %w", err)
 	}
-	if !slices.ContainsFunc(devices, func(device *portaudio.DeviceInfo) bool {
-		return device.Name == r.Device
-	}) {
+	if !slices.Contains(devices, r.Device) {
 		problems["device"] = "device not found"
 	}
 
@@ -46,13 +41,18 @@ func (r startRequest) Valid(_ context.Context, s services.Services) (map[string]
 }
 
 func (s *Server) Start(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-	var request startRequest
-	var responded bool
-	if request, responded = json.Decode[startRequest](w, r); responded {
+	request, err := json.Decode[startRequest](r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if responded = validation.Validate(request, s.services, w, r); responded {
+
+	problems, err := request.validate(s.services)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	} else if len(problems) > 0 {
+		validation.Error(w, problems)
 		return
 	}
 

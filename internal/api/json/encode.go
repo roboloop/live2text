@@ -15,8 +15,5 @@ func Encode[T any](v T, w http.ResponseWriter, status int) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	if _, err := w.Write(buf.Bytes()); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	_, _ = w.Write(buf.Bytes())
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/youpy/go-wav"
 )
 
-func (b *burner) Burn(ctx context.Context, w io.Writer, input <-chan []int16, channels int, sampleRate int) error {
+func (b *burner) Burn(ctx context.Context, w io.Writer, input <-chan []int16, channels, sampleRate int) error {
 	const bitsPerSample = uint16(16)
 	const bitsPerByte = 8
 	var samples []wav.Sample
@@ -18,7 +18,7 @@ func (b *burner) Burn(ctx context.Context, w io.Writer, input <-chan []int16, ch
 		case <-ctx.Done():
 			b.logger.InfoContext(ctx, "Writing samples...", "total", len(samples))
 
-			//nolint:gosec // the values always small TODO
+			//nolint:gosec // the values always small, so just ignore type conversion
 			writer := wav.NewWriter(w, uint32(len(samples)), uint16(channels), uint32(sampleRate), bitsPerSample)
 			if err := writer.WriteSamples(samples); err != nil {
 				return fmt.Errorf("cannot write samples: %w", err)
@@ -28,7 +28,7 @@ func (b *burner) Burn(ctx context.Context, w io.Writer, input <-chan []int16, ch
 			b.metrics.AddBytesWrittenOnDisk(len(samples) * int(bitsPerSample/bitsPerByte))
 			return nil
 		case value := <-input:
-			b.logger.DebugContext(ctx, "Getting samples", "len", len(value))
+			// b.logger.DebugContext(ctx, "Getting samples", "len", len(value))
 			if channels == 1 {
 				samples = append(samples, int16ToSample(value)...)
 			} else {

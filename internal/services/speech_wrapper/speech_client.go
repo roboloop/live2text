@@ -13,7 +13,11 @@ type speechClient struct {
 	c *speech.Client
 }
 
-func NewClient(ctx context.Context) (Client, error) {
+type streamingRecognizeClient struct {
+	speechpb.Speech_StreamingRecognizeClient
+}
+
+func NewSpeechClient(ctx context.Context) (SpeechClient, error) {
 	sc, err := speech.NewClient(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create speech client: %w", err)
@@ -22,13 +26,13 @@ func NewClient(ctx context.Context) (Client, error) {
 	return &speechClient{sc}, nil
 }
 
-func (sc *speechClient) StreamingRecognize(ctx context.Context) (speechpb.Speech_StreamingRecognizeClient, error) {
+func (sc *speechClient) StreamingRecognize(ctx context.Context) (StreamingRecognizeClient, error) {
 	stream, err := sc.c.StreamingRecognize(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("cannot streaming recognize: %w", err)
 	}
 
-	return stream, nil
+	return &streamingRecognizeClient{stream}, nil
 }
 
 func (sc *speechClient) Close() error {

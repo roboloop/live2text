@@ -1,26 +1,33 @@
 package background_test
 
 import (
-	"errors"
+	"context"
 	"fmt"
 	"io"
 	"math/rand"
 	"net"
 	"os"
 	"path/filepath"
+	"syscall"
 	"testing"
+	"time"
+
+	"github.com/stretchr/testify/require"
 
 	"live2text/internal/background"
-	"live2text/internal/utils"
+	"live2text/internal/utils/logger"
 )
 
 func TestSocketManager(t *testing.T) {
-	ctx := t.Context()
+	t.Parallel()
+
 	defaultFn := func(conn net.Conn) {
 		conn.Close()
 	}
 
-	t.Run("Socket communication between client and server", func(t *testing.T) {
+	t.Run("socket communication between client and server", func(t *testing.T) {
+		t.Parallel()
+
 		var (
 			ping      = "ping"
 			pong      = "pong"
@@ -32,65 +39,105 @@ func TestSocketManager(t *testing.T) {
 		sm, socketPath := newSocketManager()
 		defer sm.Close()
 
-		err = sm.Listen(ctx, socketPath, func(conn net.Conn) {
+		err = sm.Listen(t.Context(), socketPath, func(conn net.Conn) {
 			defer conn.Close()
 			incoming = read(conn)
-
 			fmt.Fprintf(conn, "%s", pong)
 		})
-		assertNoError(t, err)
+		require.NoError(t, err)
 
 		conn, err := net.Dial("unix", socketPath)
-		assertNoError(t, err)
+		require.NoError(t, err)
 		defer conn.Close()
 
 		_, err = fmt.Fprintf(conn, "%s", ping)
-		assertNoError(t, err)
+		require.NoError(t, err)
 
 		outcoming = read(conn)
-		assertNoError(t, err)
 
-		if incoming != ping {
-			t.Errorf("Incoming mismatch: got %v, expected %v", incoming, ping)
-		}
-		if outcoming != pong {
-			t.Errorf("Outcoming mismatch: got %v, expected %v", outcoming, ping)
-		}
+		require.Equal(t, ping, incoming, "Incoming mismatch")
+		require.Equal(t, pong, outcoming, "Outcoming mismatch")
 	})
 
-	t.Run("Listener was closed by socket path", func(t *testing.T) {
+	t.Run("socket is busy", func(t *testing.T) {
+		t.Parallel()
+
 		sm, socketPath := newSocketManager()
-		err := sm.Listen(ctx, socketPath, defaultFn)
-		assertNoError(t, err)
+		defer sm.Close()
+		err := sm.Listen(t.Context(), socketPath, defaultFn)
+		require.NoError(t, err)
 
-		err = sm.CloseByPath(socketPath)
-		assertNoError(t, err)
+		err = sm.Listen(t.Context(), socketPath, defaultFn)
+		require.Error(t, err)
+		require.ErrorIs(t, err, syscall.EADDRINUSE)
 	})
 
-	t.Run("No listener found to close by socket path", func(t *testing.T) {
+	t.Run("listener closed by socket path", func(t *testing.T) {
+		t.Parallel()
+
+		sm, socketPath := newSocketManager()
+		err := sm.Listen(t.Context(), socketPath, defaultFn)
+		require.NoError(t, err)
+
+		err = sm.CloseFor(socketPath)
+		require.NoError(t, err)
+	})
+
+	t.Run("listener closed by context", func(t *testing.T) {
+		t.Parallel()
+
+		sm, socketPath := newSocketManager()
+		ctx, cancel := context.WithCancel(t.Context())
+		err := sm.Listen(ctx, socketPath, defaultFn)
+		require.NoError(t, err)
+		cancel()
+		time.Sleep(100 * time.Millisecond)
+		err = sm.CloseFor(socketPath)
+		require.ErrorIs(t, err, background.ErrNoSocketFound)
+	})
+
+	t.Run("no listener found to close by socket path", func(t *testing.T) {
+		t.Parallel()
+
 		sm, _ := newSocketManager()
 
-		err := sm.CloseByPath("foo")
-		if err != nil && !errors.Is(err, background.ErrNoSocketFound) {
-			t.Errorf("ClosedByPath() expected error: got %v, expected %v", err, background.ErrNoSocketFound)
-		}
+		err := sm.CloseFor("foo")
+		require.ErrorIs(t, err, background.ErrNoSocketFound)
 	})
 
-	t.Run("Wait until listener is closed", func(t *testing.T) {
+	t.Run("wait for listener is done", func(t *testing.T) {
+		t.Parallel()
+
 		sm, socketPath := newSocketManager()
-		err := sm.Listen(ctx, socketPath, defaultFn)
-		assertNoError(t, err)
+		ctx, cancel := context.WithCancel(t.Context())
+		sm.Listen(ctx, socketPath, defaultFn)
+		cancel()
+
+		err := sm.WaitFor(socketPath)
+
+		require.NoError(t, err)
 		sm.Close()
 	})
 
-	t.Run("Socket manager status", func(t *testing.T) {
+	t.Run("unable wait for listener", func(t *testing.T) {
+		t.Parallel()
+
+		sm, socketPath := newSocketManager()
+		err := sm.WaitFor(socketPath)
+
+		require.Error(t, err)
+		require.ErrorIs(t, err, background.ErrNoSocketFound)
+		sm.Close()
+	})
+
+	t.Run("total open sockets", func(t *testing.T) {
+		t.Parallel()
+
 		sm, _ := newSocketManager()
-		sm.Listen(ctx, "foo", defaultFn)
-		sm.Listen(ctx, "bar", defaultFn)
-		totalListeners := sm.Status().TotalListeners
-		if totalListeners != 2 {
-			t.Errorf("Status() mismatch: got %v, expected %v", totalListeners, 2)
-		}
+		sm.Listen(t.Context(), "foo", defaultFn)
+		sm.Listen(t.Context(), "bar", defaultFn)
+		totalOpenSockets := sm.TotalOpenSockets()
+		require.Equal(t, 2, totalOpenSockets)
 
 		sm.Close()
 	})
@@ -99,7 +146,7 @@ func TestSocketManager(t *testing.T) {
 func newSocketManager() (*background.SocketManager, string) {
 	path := filepath.Join(os.TempDir(), fmt.Sprintf("%s-%d.sock", "live2text", rand.Uint64()))
 
-	return background.NewSocketManager(utils.NilLogger), path
+	return background.NewSocketManager(logger.NilLogger), path
 }
 
 func read(r io.Reader) string {

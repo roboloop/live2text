@@ -5,13 +5,13 @@ import (
 	"log/slog"
 )
 
-func Broadcaster[T any](ctx context.Context, logger *slog.Logger, input <-chan T, total int) []<-chan T {
-	logger = logger.With("service", "Broadcaster")
+func Broadcaster[T any](ctx context.Context, logger *slog.Logger, input <-chan T, names []string) []<-chan T {
+	logger = logger.With("component", "broadcaster")
 	var (
 		outputs []chan T
 		results []<-chan T
 	)
-	for range total {
+	for range names {
 		ch := make(chan T, cap(input))
 		outputs = append(outputs, ch)
 		results = append(results, ch)
@@ -35,7 +35,7 @@ func Broadcaster[T any](ctx context.Context, logger *slog.Logger, input <-chan T
 					case output <- msg:
 						continue
 					default:
-						logger.ErrorContext(ctx, "Message dropped", "output", i)
+						logger.ErrorContext(ctx, "Message dropped", "name", names[i])
 					}
 				}
 			}

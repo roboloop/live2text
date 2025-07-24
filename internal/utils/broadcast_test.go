@@ -5,52 +5,58 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"live2text/internal/utils"
+	"live2text/internal/utils/logger"
 )
 
 func TestBroadcaster(t *testing.T) {
-	t.Run("Happy path", func(t *testing.T) {
+	t.Parallel()
+
+	t.Run("happy path", func(t *testing.T) {
+		t.Parallel()
+
 		ctx, cancel := context.WithCancel(t.Context())
 		defer cancel()
 
-		value := 42
 		inputCh := make(chan int, 1)
-		outputs := utils.Broadcaster(ctx, utils.NilLogger, inputCh, 2)
+		outputs := utils.Broadcaster(ctx, logger.NilLogger, inputCh, []string{"test1", "test2"})
+
+		value := 42
 		inputCh <- value
-		for i, output := range outputs {
+		for _, output := range outputs {
 			select {
-			case val := <-output:
-				if val != value {
-					t.Errorf("Output got %v, expected %v", value, val)
-				}
+			case v := <-output:
+				require.Equal(t, value, v)
 			case <-time.After(10 * time.Millisecond):
-				t.Errorf("Output [%d]: timed out waiting for value", i)
+				t.Fatal("timed out waiting for value")
 			}
 		}
 	})
 
-	t.Run("Discard from channel", func(t *testing.T) {
-		t.Skip("broken test")
+	t.Run("drops when blocked", func(t *testing.T) {
+		t.Parallel()
+
 		ctx, cancel := context.WithCancel(t.Context())
 		defer cancel()
 
 		inputCh := make(chan int, 1)
-		testLogger, testHandler := utils.NewTestLogger()
-		outputs := utils.Broadcaster(ctx, testLogger, inputCh, 1)
+		testLogger, testHandler := logger.NewCaptureLogger()
+		outputs := utils.Broadcaster(ctx, testLogger, inputCh, []string{"test1"})
 		output := outputs[0]
 
 		inputCh <- 10
-		if val := <-output; val != 10 {
-			t.Errorf("Output got %v, expected %v", val, 10)
-			return
-		}
+		require.Equal(t, 10, <-output)
 
 		inputCh <- 20
 		inputCh <- 30
-		time.Sleep(100 * time.Millisecond)
-		if len(testHandler.Logs) != 1 {
-			t.Errorf("Total logs got %v, expected %v", len(testHandler.Logs), 1)
-			return
-		}
+		time.Sleep(20 * time.Millisecond)
+
+		require.Len(t, testHandler.Logs, 1)
+		require.Contains(t, testHandler.Logs[0].Msg, "Message dropped")
+
+		require.Len(t, testHandler.Logs[0].Attrs, 2)
+		require.Contains(t, testHandler.Logs[0].Attrs[1].String(), "name=test1")
 	})
 }

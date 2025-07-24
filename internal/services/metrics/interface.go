@@ -4,6 +4,8 @@ import (
 	"io"
 )
 
+//go:generate minimock -g -i Metrics -s _mock.go -o .
+
 type Metrics interface {
 	AddBytesSentToGoogleSpeech(bytes int)
 	AddBytesWrittenOnDisk(bytes int)

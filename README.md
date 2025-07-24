@@ -8,27 +8,25 @@ Converts speech to text using Google Cloud Speech-to-Text and shows the live tra
 - [Google Cloud account](https://cloud.google.com/)
 - [gcloud CLI](https://cloud.google.com/sdk/docs/install)
 - [Better Touch Tool](https://folivora.ai/)
+- [portaudio](https://formulae.brew.sh/formula/portaudio)
 
-## Local publish
+## Local publishing
 
 ```shell
-go build -o ~/go/bin/live2text cmd/live2text/main.go
+make build
 ```
 
 ```shell
-golangci-lint fmt
+./bin/btt -btt-port 44444
 ```
 
 ```shell
-golangci-lint run
+./bin/live2text -btt-port 44444
 ```
 
 ## TODO
 
-- Refactor code (ensure consistent message formats in tests, errors, logs)
-- Fully implement graceful shutdown
-- Handle port occupation cases
-- Fix goroutine leaks
 - Improve README with explanations and demonstrations
-- More tests
 - Improve CI (remove duplicates, check the cache)
+- Dockerfile?
+- Repository badges

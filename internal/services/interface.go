@@ -9,6 +9,8 @@ import (
 	"live2text/internal/services/recognition"
 )
 
+//go:generate minimock -g -i Services -s _mock.go -o .
+
 type Services interface {
 	Audio() audio.Audio
 	AudioWrapper() audiowrapper.Audio

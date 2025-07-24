@@ -4,68 +4,43 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/gordonklaus/portaudio"
+	"github.com/gojuno/minimock/v3"
+	"github.com/stretchr/testify/require"
 
 	"live2text/internal/services/audio"
 	audiowrapper "live2text/internal/services/audio_wrapper"
-	"live2text/internal/utils"
+	"live2text/internal/services/metrics"
 )
 
 func TestListenDevice(t *testing.T) {
-	ctx := t.Context()
+	t.Parallel()
 
-	var (
-		deviceName   = "foo"
-		device       = &portaudio.DeviceInfo{Name: deviceName, MaxInputChannels: 1}
-		hostAPIInfo  = &portaudio.HostApiInfo{Devices: []*portaudio.DeviceInfo{device}}
-		listenerInfo = &audio.ListenerInfo{Device: device, Channels: 1, ChunkSizeMs: 100}
-	)
+	t.Run("cannot find the input device", func(t *testing.T) {
+		t.Parallel()
 
-	for _, tt := range []struct {
-		name string
+		a := setupAudio(t, func(_ *minimock.Controller, m *metrics.MetricsMock, ea *audiowrapper.AudioMock) {
+			ea.DevicesMock.Return(nil, errors.New("dummy error"))
+		}, nil)
 
-		mockAudioWrapper *audiowrapper.MockAudio
+		listener, err := a.ListenDevice("mic1")
 
-		deviceName string
+		require.Nil(t, listener)
+		require.Error(t, err)
+		require.ErrorContains(t, err, "cannot find the input device")
+	})
 
-		expected    *audio.ListenerInfo
-		expectedErr string
-	}{
-		{
-			name:             "No device",
-			mockAudioWrapper: &audiowrapper.MockAudio{DefaultHostAPIError: errors.New("internal")},
-			deviceName:       deviceName,
-			expected:         listenerInfo,
-			expectedErr:      "cannot find input device: cannot list host apis: internal",
-		},
-		{
-			name:             "Happy path",
-			mockAudioWrapper: &audiowrapper.MockAudio{DefaultHostAPIHostAPIInfo: hostAPIInfo, OpenStreamStream: &audiowrapper.MockStream{}},
-			deviceName:       deviceName,
-			expected:         listenerInfo,
-		},
-	} {
-		t.Run(tt.name, func(t *testing.T) {
-			a := audio.NewAudio(utils.NilLogger, nil, tt.mockAudioWrapper)
-			listener, err := a.ListenDevice(ctx, tt.deviceName)
+	t.Run("getting the device listener", func(t *testing.T) {
+		t.Parallel()
 
-			if tt.expectedErr != "" {
-				if err == nil {
-					t.Fatalf("ListenDevice() expected error %v, got nil", tt.expectedErr)
-				}
+		a := setupAudio(t, func(_ *minimock.Controller, m *metrics.MetricsMock, ea *audiowrapper.AudioMock) {
+			ea.DevicesMock.Return([]*audiowrapper.DeviceInfo{
+				{Name: "mic1", MaxInputChannels: 1, DefaultSampleRate: 24000},
+			}, nil)
+		}, nil)
 
-				if tt.expectedErr != err.Error() {
-					t.Errorf("Expected error: %v, got %v", tt.expectedErr, err.Error())
-				}
-				return
-			}
+		listener, err := a.ListenDevice("mic1")
 
-			if listener.Channels != tt.expected.Channels ||
-				listener.SampleRate != tt.expected.SampleRate ||
-				listener.ChunkSizeMs != tt.expected.ChunkSizeMs {
-				t.Errorf("ListenDevice() got %#v, expected %#v", listener, tt.expected)
-				return
-			}
-		})
-	}
+		require.NoError(t, err)
+		require.Implements(t, (*audio.DeviceListener)(nil), listener)
+	})
 }

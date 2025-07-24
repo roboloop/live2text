@@ -28,7 +28,7 @@ formatters:
     - gofmt # checks if the code is formatted according to 'gofmt' command
 
     ## disabled
-    #- gofumpt # [replaced by goimports, gofumports is not available yet] checks if code and import statements are formatted, with additional rules
+    - gofumpt # [replaced by goimports, gofumports is not available yet] checks if code and import statements are formatted, with additional rules
 
   # All settings can be found here https://github.com/golangci/golangci-lint/blob/HEAD/.golangci.reference.yml
   settings:
@@ -37,7 +37,7 @@ formatters:
       # with the given prefixes are grouped after 3rd-party packages.
       # Default: []
       local-prefixes:
-        - github.com/my/project
+        - live2text
 
     golines:
       # Target maximum line length.
@@ -54,6 +54,14 @@ formatters:
         - localmodule # Local module section: contains all local packages. This section is not present unless explicitly enabled.
 
       custom-order: true
+
+    gofumpt:
+      # Module path which contains the source code being formatted.
+      # Default: ""
+      module-path: "live2text"
+      # Choose whether to use the extra rules.
+      # Default: false
+      extra-rules: false
 
 linters:
   enable:
@@ -232,6 +240,8 @@ linters:
       # Such cases aren't reported by default.
       # Default: false
       check-type-assertions: false
+      exclude-functions:
+        - '(net/http.ResponseWriter).Write' # TODO: maybe not?
 
     exhaustive:
       # Program elements to check for exhaustiveness.
@@ -377,6 +387,14 @@ linters:
       patterns:
         - ".*"
 
+    revive:
+      rules:
+        - name: unused-parameter
+          disabled: false
+          # Skip test files
+          exclude:
+            - "**/*_test.go"
+
     rowserrcheck:
       # database/sql is always checked.
       # Default: []
@@ -417,6 +435,10 @@ linters:
         # https://staticcheck.dev/docs/checks/#QF1008
         - -QF1008
 
+    testifylint:
+      disable:
+        - float-compare
+
     usetesting:
       # Enable/disable `os.TempDir()` detections.
       # Default: false
@@ -447,3 +469,5 @@ linters:
           - gosec
           - noctx
           - wrapcheck
+          - unparam
+

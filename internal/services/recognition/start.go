@@ -4,35 +4,20 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/rand/v2"
-	"os"
-	"path/filepath"
 )
 
 var ErrDeviceIsBusy = errors.New("device is busy")
 
-func (r *recognition) Start(_ context.Context, device string, language string) (string, string, error) {
-	if r.taskManager.Has(device) {
+func (r *recognition) Start(_ context.Context, device, language string) (string, string, error) {
+	if r.taskManager.Get(device) != nil {
 		return "", "", ErrDeviceIsBusy
 	}
 
 	id := device
-	path := fmt.Sprintf("%s-%d.sock", "recognizer", rand.Uint64()) //nolint:gosec
-	socketPath := filepath.Join(os.TempDir(), path)
-	task := NewRecognizeTask(
-		r.logger,
-		r.metrics,
-		r.audio,
-		r.burner,
-		r.socketManager,
-		r.speechClient,
-		device,
-		language,
-		socketPath,
-	)
+	task := r.taskFactory.NewTask(device, language)
 	if err := r.taskManager.Go(id, task); err != nil {
-		return "", "", fmt.Errorf("cannot run the task: %w", err)
+		return "", "", fmt.Errorf("cannot run the Task: %w", err)
 	}
 
-	return id, socketPath, nil
+	return id, task.SocketPath(), nil
 }

@@ -1,0 +1,177 @@
+openapi: 3.1.0
+info:
+  title: Live2Text Core API
+  description: Core API for Live2Text transcription service
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8090
+    description: Local server
+
+paths:
+  /api/health:
+    get:
+      summary: Health check
+      description: Returns the health status of the API
+      operationId: health
+      tags:
+        - core
+      responses:
+        '200':
+          description: Health status of the API
+          content:
+            application/json:
+              schema:
+                type: string
+                example: "ok"
+
+  /api/devices:
+    get:
+      summary: List available devices
+      description: Returns a list of available audio input devices
+      operationId: getDevices
+      tags:
+        - core
+      responses:
+        '200':
+          description: List of available devices
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  devices:
+                    type: array
+                    items:
+                      type: string
+                      description: Device name
+
+  /api/start:
+    post:
+      summary: Start transcription
+      description: Starts the transcription service with the specified device and language
+      operationId: startTranscription
+      tags:
+        - core
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - device
+                - language
+              properties:
+                device:
+                  type: string
+                  description: Name of the audio input device to use
+                language:
+                  type: string
+                  description: Language code for transcription (e.g., en-US)
+      responses:
+        '200':
+          description: Transcription started successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Unique identifier for the transcription session
+                  socketPath:
+                    type: string
+                    description: Path to the socket for streaming transcription
+        '400':
+          description: Bad request - invalid device or language
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ValidationError'
+                  - $ref: '#/components/schemas/ErrorResponse'
+
+  /api/stop:
+    post:
+      summary: Stop transcription
+      description: Stops an active transcription session
+      operationId: stopTranscription
+      tags:
+        - core
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - id
+              properties:
+                id:
+                  type: string
+                  description: Unique identifier of the transcription session to stop
+      responses:
+        '200':
+          description: Transcription stopped successfully
+        '400':
+          description: Bad request - no active transcription with the given ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/text:
+    get:
+      summary: Get transcribed text
+      description: Returns the current transcribed text
+      operationId: getTranscribedText
+      tags:
+        - core
+      responses:
+        '200':
+          description: Current transcribed text
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /metrics:
+    get:
+      summary: Get metrics
+      description: Returns application metrics for monitoring
+      operationId: getMetrics
+      tags:
+        - core
+      responses:
+        '200':
+          description: Application metrics
+          content:
+            text/plain:
+              schema:
+                type: string
+                description: Prometheus-compatible metrics
+
+components:
+  schemas:
+    ValidationError:
+      type: object
+      properties:
+        problems:
+          type: object
+          additionalProperties:
+            type: string
+          description: Map of field names to error messages
+      example:
+        problems:
+          device: "device not found"
+          language: "language is not valid"
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+      example:
+        error: "device is busy"

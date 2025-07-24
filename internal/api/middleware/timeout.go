@@ -5,8 +5,19 @@ import (
 	"time"
 )
 
-func TimeoutMiddleware(next http.Handler, timeout time.Duration, excludedPaths []string) http.HandlerFunc {
+// TimeoutMiddleware timeouts any requests.
+func TimeoutMiddleware(
+	next http.Handler,
+	timeout time.Duration,
+	excludedPaths []string,
+	isDebug bool,
+) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if isDebug {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		for _, p := range excludedPaths {
 			if r.URL.Path == p {
 				next.ServeHTTP(w, r)

@@ -6,17 +6,7 @@ import (
 	"net/http"
 )
 
-func Decode[T any](w http.ResponseWriter, r *http.Request) (T, bool) {
-	decoded, err := decode[T](r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return decoded, true
-	}
-
-	return decoded, false
-}
-
-func decode[T any](r *http.Request) (T, error) {
+func Decode[T any](r *http.Request) (T, error) {
 	var value T
 	contentType := r.Header.Get("Content-Type")
 	if contentType != "application/json" {

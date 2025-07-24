@@ -7,8 +7,6 @@ import (
 )
 
 func (s *Server) IsRunning(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
 	isRunning, err := s.services.Btt().IsRunning(r.Context())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -11,16 +11,11 @@ type devicesResponse struct {
 }
 
 func (s *Server) Devices(w http.ResponseWriter, _ *http.Request) {
-	devices, err := s.services.Audio().List()
+	devices, err := s.services.Audio().ListOfNames()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	var deviceNames []string
-	for _, device := range devices {
-		deviceNames = append(deviceNames, device.Name)
-	}
-
-	json.Encode(&devicesResponse{deviceNames}, w, http.StatusOK)
+	json.Encode(&devicesResponse{devices}, w, http.StatusOK)
 }

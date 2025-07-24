@@ -8,8 +8,6 @@ import (
 
 type healthResponse string
 
-func (s *Server) Health(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
+func (s *Server) Health(w http.ResponseWriter, _ *http.Request) {
 	json.Encode(healthResponse("ok"), w, http.StatusOK)
 }

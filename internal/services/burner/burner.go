@@ -12,5 +12,5 @@ type burner struct {
 }
 
 func NewBurner(logger *slog.Logger, metrics metrics.Metrics) Burner {
-	return &burner{logger.With("service", "Burner"), metrics}
+	return &burner{logger: logger, metrics: metrics}
 }

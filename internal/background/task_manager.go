@@ -3,7 +3,7 @@ package background
 import (
 	"context"
 	"errors"
-	"maps"
+	"log/slog"
 	"sync"
 )
 
@@ -21,6 +21,12 @@ type RunnableTask interface {
 	Run(ctx context.Context) error
 }
 
+type RunnableTaskFunc func(ctx context.Context) error
+
+func (r RunnableTaskFunc) Run(ctx context.Context) error {
+	return r(ctx)
+}
+
 type task struct {
 	task   RunnableTask
 	cancel context.CancelFunc
@@ -33,27 +39,28 @@ type TaskManager struct {
 	mu  sync.RWMutex
 	wg  sync.WaitGroup
 
-	tasks map[string]*task
+	tasks  map[string]*task
+	logger *slog.Logger
 }
 
-type TaskManagerStatus struct {
-	TotalTasks int
-	TaskNames  []string
-}
-
-func NewTaskManager(ctx context.Context) *TaskManager {
-	return &TaskManager{ctx: ctx, tasks: map[string]*task{}}
+func NewTaskManager(ctx context.Context, logger *slog.Logger) *TaskManager {
+	// TODO: add logging
+	return &TaskManager{
+		ctx:    ctx,
+		tasks:  map[string]*task{},
+		logger: logger,
+	}
 }
 
 func (tm *TaskManager) Wait() {
 	tm.wg.Wait()
 }
 
-func (tm *TaskManager) Go(name string, runnableTask RunnableTask) error {
+func (tm *TaskManager) Go(id string, runnableTask RunnableTask) error {
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
 
-	if _, ok := tm.tasks[name]; ok {
+	if _, ok := tm.tasks[id]; ok {
 		return ErrTaskIsRunning
 	}
 
@@ -64,7 +71,7 @@ func (tm *TaskManager) Go(name string, runnableTask RunnableTask) error {
 		status: statusPreparing,
 		err:    nil,
 	}
-	tm.tasks[name] = t
+	tm.tasks[id] = t
 
 	tm.wg.Add(1)
 	go func() {
@@ -79,56 +86,35 @@ func (tm *TaskManager) Go(name string, runnableTask RunnableTask) error {
 	return nil
 }
 
-func (tm *TaskManager) Cancel(name string) bool {
+func (tm *TaskManager) Cancel(id string) bool {
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
 
-	t, ok := tm.tasks[name]
+	t, ok := tm.tasks[id]
 	if !ok {
 		return false
 	}
 	t.cancel()
-	delete(tm.tasks, name)
+	delete(tm.tasks, id)
 
 	return true
 }
 
-func (tm *TaskManager) Status() TaskManagerStatus {
+func (tm *TaskManager) TotalRunningTasks() int {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
 
-	total := len(tm.tasks)
-	names := make([]string, 0, total)
-	for name := range maps.Keys(tm.tasks) {
-		names = append(names, name)
-	}
-
-	return TaskManagerStatus{total, names}
+	return len(tm.tasks)
 }
 
-func (tm *TaskManager) TotalRunningTasks() float64 {
-	tm.mu.RLock()
-	defer tm.mu.RUnlock()
-
-	return float64(len(tm.tasks))
-}
-
-func (tm *TaskManager) Get(name string) RunnableTask {
+func (tm *TaskManager) Get(id string) RunnableTask {
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
 
-	t, ok := tm.tasks[name]
+	t, ok := tm.tasks[id]
 	if !ok {
 		return nil
 	}
 
 	return t.task
-}
-
-func (tm *TaskManager) Has(name string) bool {
-	tm.mu.Lock()
-	defer tm.mu.Unlock()
-
-	_, ok := tm.tasks[name]
-	return ok
 }

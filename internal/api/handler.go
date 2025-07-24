@@ -8,6 +8,7 @@ import (
 	"live2text/internal/api/btt"
 	"live2text/internal/api/core"
 	"live2text/internal/api/middleware"
+	"live2text/internal/env"
 	"live2text/internal/services"
 )
 
@@ -27,7 +28,7 @@ func NewHandler(logger *slog.Logger, services services.Services) http.Handler {
 	mux.HandleFunc("GET /api/devices", server.core.Devices)
 	mux.HandleFunc("POST /api/start", server.core.Start)
 	mux.HandleFunc("POST /api/stop", server.core.Stop)
-	mux.HandleFunc("GET /api/subs", server.core.Subs)
+	mux.HandleFunc("GET /api/text", server.core.Text)
 	mux.HandleFunc("GET /metrics", server.core.Metrics)
 
 	mux.HandleFunc("GET /api/btt/selected-device", server.btt.SelectedDevice)
@@ -50,7 +51,8 @@ func NewHandler(logger *slog.Logger, services services.Services) http.Handler {
 	handler = middleware.LoggerMiddleware(handler, logger)
 	handler = middleware.CORSMiddleware(handler)
 	handler = middleware.ErrorMiddleware(handler)
-	handler = middleware.TimeoutMiddleware(handler, 15*time.Second, []string{"/api/btt/text-stream"})
+	handler = middleware.TimeoutMiddleware(handler, 15*time.Second, []string{"/api/btt/text-stream"}, env.IsDebugMode())
+	handler = middleware.BodyCloserMiddleware(handler, logger)
 
 	return handler
 }

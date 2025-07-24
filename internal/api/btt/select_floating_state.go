@@ -1,10 +1,11 @@
+//nolint:dupl
 package btt
 
 import (
-	"context"
 	"net/http"
 
 	"live2text/internal/api/json"
+	"live2text/internal/api/validation"
 	"live2text/internal/services/btt"
 )
 
@@ -12,24 +13,29 @@ type selectFloatingStateRequest struct {
 	FloatingState string `json:"floating_state"`
 }
 
-func (r selectFloatingStateRequest) Valid(_ context.Context, _ *Server) (map[string]string, error) {
+func (r selectFloatingStateRequest) validate() map[string]string {
 	problems := make(map[string]string)
 
-	if r.FloatingState != btt.FloatingStateShown && r.FloatingState != btt.FloatingStateHidden {
+	if r.FloatingState != btt.FloatingShown && r.FloatingState != btt.FloatingHidden {
 		problems["floating_state"] = "floating_state is not valid"
 	}
 
-	return problems, nil
+	return problems
 }
 
 func (s *Server) SelectFloatingState(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-	request, responded := json.Decode[selectFloatingStateRequest](w, r)
-	if responded {
+	request, err := json.Decode[selectFloatingStateRequest](r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err := s.services.Btt().SelectFloatingState(r.Context(), btt.FloatingState(request.FloatingState))
+	if problems := request.validate(); len(problems) > 0 {
+		validation.Error(w, problems)
+		return
+	}
+
+	err = s.services.Btt().SelectFloating(r.Context(), btt.Floating(request.FloatingState))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

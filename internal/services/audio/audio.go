@@ -14,5 +14,5 @@ type audio struct {
 }
 
 func NewAudio(logger *slog.Logger, metrics metrics.Metrics, externalAudio audiowrapper.Audio) Audio {
-	return &audio{logger.With("service", "Audio"), metrics, externalAudio}
+	return &audio{logger: logger, metrics: metrics, externalAudio: externalAudio}
 }

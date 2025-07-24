@@ -4,17 +4,17 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/gordonklaus/portaudio"
+	audiowrapper "live2text/internal/services/audio_wrapper"
 )
 
-func (a *audio) FindInputDevice(deviceName string) (*portaudio.DeviceInfo, error) {
-	hostAPI, err := a.externalAudio.DefaultHostAPI()
+func (a *audio) FindInputDevice(deviceName string) (*audiowrapper.DeviceInfo, error) {
+	devices, err := a.externalAudio.Devices()
 	if err != nil {
-		return nil, fmt.Errorf("cannot list host apis: %w", err)
+		return nil, fmt.Errorf("cannot get a list of devices: %w", err)
 	}
 
-	var device *portaudio.DeviceInfo
-	for _, d := range hostAPI.Devices {
+	var device *audiowrapper.DeviceInfo
+	for _, d := range devices {
 		if d.Name == deviceName {
 			device = d
 		}

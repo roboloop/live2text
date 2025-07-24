@@ -4,7 +4,6 @@ import (
 	"net/http"
 )
 
-func (s *Server) Metrics(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
+func (s *Server) Metrics(w http.ResponseWriter, _ *http.Request) {
 	s.services.Metrics().WritePrometheus(w)
 }

@@ -51,7 +51,7 @@ ms=$(curl -sSLf "http://{{ .AppAddress }}/metrics" 2>/dev/null | grep "${metric}
 echo "{{ .Title }}: ${human_duration}"
 {{- end }}
 
-{{- define "print_raw" }}
+{{- define "print_raw_metric" }}
 raw="N/A"
 metric="{{ .Metric }}"
 value=$(curl -sSLf "http://{{ .AppAddress }}/metrics" 2>/dev/null | grep "${metric}" | cut -d' ' -f2)

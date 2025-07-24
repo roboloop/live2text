@@ -102,11 +102,13 @@ curl -X POST -sSLf "http://{{ .AppAddress }}/api/btt/toggle-listening"
 {{- end }}
 
 {{- define "listen_socket" }}
-{{ with index . "SocketPath" }}
-subs="$(nc -U "{{ . }}")"
-[[ -n "${subs}" ]] && echo "${subs}" || echo "no subs"
-{{ else }}
-echo "{{ .AppName}} App"
-{{ end }}
+text="$(nc -U "{{ .SocketPath }}")"
+[[ -n "${text}" ]] && echo "${text}" || echo "(no text recognized)"
 {{- end }}
+
+{{- define "app_placeholder" }}
+echo "{{ .AppName}} App"
+{{- end }}
+
+
 
