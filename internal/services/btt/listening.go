@@ -16,13 +16,14 @@ type listeningComponent struct {
 	logger      *slog.Logger
 	recognition recognition.Recognition
 
-	client            client.Client
-	storage           storage.Storage
-	renderer          tmpl.Renderer
-	deviceComponent   DeviceComponent
-	languageComponent LanguageComponent
-	viewModeComponent ViewModeComponent
-	floatingComponent FloatingComponent
+	client             client.Client
+	storage            storage.Storage
+	renderer           tmpl.Renderer
+	deviceComponent    DeviceComponent
+	languageComponent  LanguageComponent
+	viewModeComponent  ViewModeComponent
+	floatingComponent  FloatingComponent
+	clipboardComponent ClipboardComponent
 }
 
 func NewListeningComponent(
@@ -35,17 +36,19 @@ func NewListeningComponent(
 	languageComponent LanguageComponent,
 	viewModeComponent ViewModeComponent,
 	floatingComponent FloatingComponent,
+	clipboardComponent ClipboardComponent,
 ) ListeningComponent {
 	return &listeningComponent{
-		logger:            logger,
-		recognition:       recognition,
-		client:            client,
-		storage:           storage,
-		renderer:          renderer,
-		deviceComponent:   deviceComponent,
-		languageComponent: languageComponent,
-		viewModeComponent: viewModeComponent,
-		floatingComponent: floatingComponent,
+		logger:             logger,
+		recognition:        recognition,
+		client:             client,
+		storage:            storage,
+		renderer:           renderer,
+		deviceComponent:    deviceComponent,
+		languageComponent:  languageComponent,
+		viewModeComponent:  viewModeComponent,
+		floatingComponent:  floatingComponent,
+		clipboardComponent: clipboardComponent,
 	}
 }
 
@@ -95,6 +98,9 @@ func (l *listeningComponent) StartListening(ctx context.Context) error {
 	if err = l.floatingComponent.ShowFloating(ctx); err != nil {
 		return fmt.Errorf("cannot show floating: %w", err)
 	}
+	if err = l.clipboardComponent.ShowClipboard(ctx); err != nil {
+		return fmt.Errorf("cannot show clipboard: %w", err)
+	}
 
 	return nil
 }
@@ -127,6 +133,9 @@ func (l *listeningComponent) StopListening(ctx context.Context) error {
 	if err = l.floatingComponent.HideFloating(ctx); err != nil {
 		return fmt.Errorf("cannot hide floating: %w", err)
 	}
+	if err = l.clipboardComponent.HideClipboard(ctx); err != nil {
+		return fmt.Errorf("cannot hide clipboard: %w", err)
+	}
 
 	return nil
 }
@@ -149,4 +158,18 @@ func (l *listeningComponent) IsRunning(ctx context.Context) (bool, error) {
 	}
 
 	return l.recognition.Has(id), nil
+}
+
+func (l *listeningComponent) Text(ctx context.Context) (string, error) {
+	id, err := l.storage.GetValue(ctx, storage.TaskIDVariable)
+	if err != nil {
+		return "", fmt.Errorf("cannot get task id: %w", err)
+	}
+
+	text, err := l.recognition.Text(ctx, id)
+	if err != nil {
+		return "", fmt.Errorf("cannot get text: %w", err)
+	}
+
+	return text, nil
 }

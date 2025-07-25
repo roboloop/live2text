@@ -11,20 +11,20 @@ import (
 	"live2text/internal/services/btt"
 )
 
-func TestSelectedFloatingState(t *testing.T) {
+func TestSelectedClipboard(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name                      string
-		mockSelectedFloatingState func() (btt.Floating, error)
+		name                  string
+		mockSelectedClipboard func() (btt.Clipboard, error)
 
 		expectedCode    int
 		expectedHeaders map[string]string
 		expectedBody    string
 	}{
 		{
-			name: "getting selected floating state failed",
-			mockSelectedFloatingState: func() (btt.Floating, error) {
+			name: "getting selected clipboard failed",
+			mockSelectedClipboard: func() (btt.Clipboard, error) {
 				return "", errors.New("dummy error")
 			},
 			expectedCode: http.StatusInternalServerError,
@@ -32,7 +32,7 @@ func TestSelectedFloatingState(t *testing.T) {
 		},
 		{
 			name: "ok",
-			mockSelectedFloatingState: func() (btt.Floating, error) {
+			mockSelectedClipboard: func() (btt.Clipboard, error) {
 				return "foo", nil
 			},
 			expectedCode:    http.StatusOK,
@@ -47,11 +47,11 @@ func TestSelectedFloatingState(t *testing.T) {
 
 			server := setupServer(t, func(mc *minimock.Controller, s *services.ServicesMock) {
 				b := btt.NewBttMock(mc)
-				b.SelectedFloatingMock.Return(tt.mockSelectedFloatingState())
+				b.SelectedClipboardMock.Return(tt.mockSelectedClipboard())
 				s.BttMock.Return(b)
 			}, nil)
 
-			w := performRequest(t, server.SelectedFloatingState, "")
+			w := performRequest(t, server.SelectedClipboard, "")
 
 			assertResponse(t, w, tt.expectedCode, tt.expectedHeaders, tt.expectedBody)
 		})

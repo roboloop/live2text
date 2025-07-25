@@ -70,23 +70,27 @@ func (t Title) String() string {
 }
 
 const (
-	TitleApp          Title = "App"
-	TitleCleanViewApp Title = "Clean View App"
+	TitleApp                Title = "App"
+	TitleClipboard          Title = "Copy Text"
+	TitleCleanViewApp       Title = "Clean View App"
+	TitleCleanViewClipboard Title = "Clean View Copy Text"
 
 	TitleSettingsDir  Title = "Settings"
 	TitleCleanViewDir Title = "Clean View"
 	TitleCloseDir     Title = "Close Directory"
 
-	TitleDeviceDir   Title = "Device"
-	TitleLanguageDir Title = "Language"
-	TitleViewModeDir Title = "View Mode"
-	TitleFloatingDir Title = "Floating"
-	TitleMetricsDir  Title = "Metrics"
+	TitleDeviceDir    Title = "Device"
+	TitleLanguageDir  Title = "Language"
+	TitleViewModeDir  Title = "View Mode"
+	TitleFloatingDir  Title = "Floating"
+	TitleClipboardDir Title = "Clipboard"
+	TitleMetricsDir   Title = "Metrics"
 
-	TitleSelectedDevice   Title = "Selected Device"
-	TitleSelectedLanguage Title = "Selected Language"
-	TitleSelectedViewMode Title = "Selected View Mode"
-	TitleSelectedFloating Title = "Selected Floating"
+	TitleSelectedDevice    Title = "Selected Device"
+	TitleSelectedLanguage  Title = "Selected Language"
+	TitleSelectedViewMode  Title = "Selected View Mode"
+	TitleSelectedFloating  Title = "Selected Floating"
+	TitleSelectedClipboard Title = "Selected Clipboard"
 
 	TitleOpenSettings  Title = "Open Settings"
 	TitleStreamingText Title = "Streaming Text"

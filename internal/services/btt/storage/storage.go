@@ -8,13 +8,14 @@ import (
 )
 
 const (
-	variablePrefix           Key = "LIVE2TEXT_"
-	HostVariable                 = variablePrefix + "HOST"
-	SelectedDeviceVariable       = variablePrefix + "SELECTED_DEVICE"
-	SelectedLanguageVariable     = variablePrefix + "SELECTED_LANGUAGE"
-	SelectedFloatingVariable     = variablePrefix + "SELECTED_FLOATING"
-	SelectedViewModeVariable     = variablePrefix + "SELECTED_VIEW_MODE"
-	TaskIDVariable               = variablePrefix + "TASK_ID"
+	variablePrefix            Key = "LIVE2TEXT_"
+	HostVariable                  = variablePrefix + "HOST"
+	SelectedDeviceVariable        = variablePrefix + "SELECTED_DEVICE"
+	SelectedLanguageVariable      = variablePrefix + "SELECTED_LANGUAGE"
+	SelectedFloatingVariable      = variablePrefix + "SELECTED_FLOATING"
+	SelectedClipboardVariable     = variablePrefix + "SELECTED_CLIPBOARD"
+	SelectedViewModeVariable      = variablePrefix + "SELECTED_VIEW_MODE"
+	TaskIDVariable                = variablePrefix + "TASK_ID"
 )
 
 type storage struct {

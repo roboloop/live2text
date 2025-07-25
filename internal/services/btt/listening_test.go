@@ -26,7 +26,7 @@ func TestToggleListening(t *testing.T) {
 
 		lc := setupListeningComponent(
 			t,
-			func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock) {
+			func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock, cc *btt.ClipboardComponentMock) {
 				s.GetValueMock.Return("", errors.New("something happened"))
 			},
 			nil,
@@ -42,7 +42,7 @@ func TestToggleListening(t *testing.T) {
 
 		lc := setupListeningComponent(
 			t,
-			func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock) {
+			func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock, cc *btt.ClipboardComponentMock) {
 				s.GetValueMock.Return("", nil)
 
 				// dirty hack to prevent next code execution
@@ -61,7 +61,7 @@ func TestToggleListening(t *testing.T) {
 
 		lc := setupListeningComponent(
 			t,
-			func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock) {
+			func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock, cc *btt.ClipboardComponentMock) {
 				getValueCalls := 0
 				s.GetValueMock.Set(func(ctx context.Context, key storage.Key) (string, error) {
 					getValueCalls += 1
@@ -88,19 +88,19 @@ func TestStartListening(t *testing.T) {
 
 	tests := []struct {
 		name       string
-		setupMocks func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock)
+		setupMocks func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock, cc *btt.ClipboardComponentMock)
 		expectErr  string
 	}{
 		{
 			name: "cannot get selected device",
-			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock) {
+			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock, cc *btt.ClipboardComponentMock) {
 				dc.SelectedDeviceMock.Return("", errors.New("something happened"))
 			},
 			expectErr: "cannot get selected device",
 		},
 		{
 			name: "cannot get selected language",
-			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock) {
+			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock, cc *btt.ClipboardComponentMock) {
 				dc.SelectedDeviceMock.Return("foo", nil)
 				lc.SelectedLanguageMock.Return("", errors.New("something happened"))
 			},
@@ -108,7 +108,7 @@ func TestStartListening(t *testing.T) {
 		},
 		{
 			name: "cannot start recognition",
-			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock) {
+			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock, cc *btt.ClipboardComponentMock) {
 				dc.SelectedDeviceMock.Return("foo", nil)
 				lc.SelectedLanguageMock.Return("bar", nil)
 				rg.StartMock.Return("", "", errors.New("something happened"))
@@ -117,7 +117,7 @@ func TestStartListening(t *testing.T) {
 		},
 		{
 			name: "cannot set task id",
-			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock) {
+			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock, cc *btt.ClipboardComponentMock) {
 				dc.SelectedDeviceMock.Return("foo", nil)
 				lc.SelectedLanguageMock.Return("bar", nil)
 				rg.StartMock.Return("baz", "qux", nil)
@@ -127,7 +127,7 @@ func TestStartListening(t *testing.T) {
 		},
 		{
 			name: "cannot update app",
-			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock) {
+			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock, cc *btt.ClipboardComponentMock) {
 				dc.SelectedDeviceMock.Return("foo", nil)
 				lc.SelectedLanguageMock.Return("bar", nil)
 				rg.StartMock.Return("baz", "qux", nil)
@@ -139,7 +139,7 @@ func TestStartListening(t *testing.T) {
 		},
 		{
 			name: "cannot update clean view app",
-			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock) {
+			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock, cc *btt.ClipboardComponentMock) {
 				dc.SelectedDeviceMock.Return("foo", nil)
 				lc.SelectedLanguageMock.Return("bar", nil)
 				rg.StartMock.Return("baz", "qux", nil)
@@ -162,7 +162,7 @@ func TestStartListening(t *testing.T) {
 		},
 		{
 			name: "cannot enable clean mode",
-			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock) {
+			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock, cc *btt.ClipboardComponentMock) {
 				dc.SelectedDeviceMock.Return("foo", nil)
 				lc.SelectedLanguageMock.Return("bar", nil)
 				rg.StartMock.Return("baz", "qux", nil)
@@ -175,7 +175,7 @@ func TestStartListening(t *testing.T) {
 		},
 		{
 			name: "cannot show floating",
-			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock) {
+			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock, cc *btt.ClipboardComponentMock) {
 				dc.SelectedDeviceMock.Return("foo", nil)
 				lc.SelectedLanguageMock.Return("bar", nil)
 				rg.StartMock.Return("baz", "qux", nil)
@@ -188,8 +188,23 @@ func TestStartListening(t *testing.T) {
 			expectErr: "cannot show floating",
 		},
 		{
+			name: "cannot show clipboard",
+			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock, cc *btt.ClipboardComponentMock) {
+				dc.SelectedDeviceMock.Return("foo", nil)
+				lc.SelectedLanguageMock.Return("bar", nil)
+				rg.StartMock.Return("baz", "qux", nil)
+				s.SetValueMock.Return(nil)
+				r.ListenSocketMock.Return("quux")
+				c.UpdateTriggerMock.Times(2).Return(nil)
+				vmc.EnableCleanModeMock.Return(nil)
+				fc.ShowFloatingMock.Return(nil)
+				cc.ShowClipboardMock.Return(errors.New("something happened"))
+			},
+			expectErr: "cannot show clipboard",
+		},
+		{
 			name: "happy path",
-			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock) {
+			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock, cc *btt.ClipboardComponentMock) {
 				dc.SelectedDeviceMock.Expect(minimock.AnyContext).Return("foo", nil)
 				lc.SelectedLanguageMock.Expect(minimock.AnyContext).Return("bar", nil)
 				rg.StartMock.Expect(minimock.AnyContext, "foo", "bar").Return("baz", "qux", nil)
@@ -207,6 +222,7 @@ func TestStartListening(t *testing.T) {
 				}).Times(2).Return(nil)
 				vmc.EnableCleanModeMock.Expect(minimock.AnyContext).Return(nil)
 				fc.ShowFloatingMock.Expect(minimock.AnyContext).Return(nil)
+				cc.ShowClipboardMock.Expect(minimock.AnyContext).Return(nil)
 			},
 		},
 	}
@@ -233,19 +249,19 @@ func TestStopListening(t *testing.T) {
 
 	tests := []struct {
 		name       string
-		setupMocks func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock)
+		setupMocks func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock, cc *btt.ClipboardComponentMock)
 		expectErr  string
 	}{
 		{
 			name: "cannot get task id",
-			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock) {
+			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock, cc *btt.ClipboardComponentMock) {
 				s.GetValueMock.Return("", errors.New("something happened"))
 			},
 			expectErr: "cannot get task id",
 		},
 		{
 			name: "cannot empty task id",
-			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock) {
+			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock, cc *btt.ClipboardComponentMock) {
 				s.GetValueMock.Return("foo", nil)
 				rg.StopMock.Return(nil)
 				s.SetValueMock.Return(errors.New("something happened"))
@@ -254,7 +270,7 @@ func TestStopListening(t *testing.T) {
 		},
 		{
 			name: "cannot update app",
-			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock) {
+			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock, cc *btt.ClipboardComponentMock) {
 				s.GetValueMock.Return("foo", nil)
 				rg.StopMock.Return(nil)
 				s.SetValueMock.Return(nil)
@@ -265,7 +281,7 @@ func TestStopListening(t *testing.T) {
 		},
 		{
 			name: "cannot update clean view app",
-			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock) {
+			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock, cc *btt.ClipboardComponentMock) {
 				s.GetValueMock.Return("foo", nil)
 				rg.StopMock.Return(nil)
 				s.SetValueMock.Return(nil)
@@ -287,7 +303,7 @@ func TestStopListening(t *testing.T) {
 		},
 		{
 			name: "cannot disable clean mode",
-			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock) {
+			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock, cc *btt.ClipboardComponentMock) {
 				s.GetValueMock.Return("foo", nil)
 				rg.StopMock.Return(nil)
 				s.SetValueMock.Return(nil)
@@ -299,7 +315,7 @@ func TestStopListening(t *testing.T) {
 		},
 		{
 			name: "cannot hide floating",
-			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock) {
+			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock, cc *btt.ClipboardComponentMock) {
 				s.GetValueMock.Return("foo", nil)
 				rg.StopMock.Return(nil)
 				s.SetValueMock.Return(nil)
@@ -311,8 +327,22 @@ func TestStopListening(t *testing.T) {
 			expectErr: "cannot hide floating",
 		},
 		{
+			name: "cannot hide clipboard",
+			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock, cc *btt.ClipboardComponentMock) {
+				s.GetValueMock.Return("foo", nil)
+				rg.StopMock.Return(nil)
+				s.SetValueMock.Return(nil)
+				r.AppPlaceholderMock.Return("")
+				c.UpdateTriggerMock.Times(2).Return(nil)
+				vmc.DisableCleanViewMock.Return(nil)
+				fc.HideFloatingMock.Return(nil)
+				cc.HideClipboardMock.Return(errors.New("something happened"))
+			},
+			expectErr: "cannot hide clipboard",
+		},
+		{
 			name: "happy path",
-			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock) {
+			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock, cc *btt.ClipboardComponentMock) {
 				s.GetValueMock.Expect(minimock.AnyContext, "LIVE2TEXT_TASK_ID").Return("foo", nil)
 				rg.StopMock.Expect(minimock.AnyContext, "foo").Return(nil)
 				s.SetValueMock.Return(nil)
@@ -329,6 +359,7 @@ func TestStopListening(t *testing.T) {
 				}).Times(2).Return(nil)
 				vmc.DisableCleanViewMock.Expect(minimock.AnyContext).Return(nil)
 				fc.HideFloatingMock.Expect(minimock.AnyContext).Return(nil)
+				cc.HideClipboardMock.Expect(minimock.AnyContext).Return(nil)
 			},
 		},
 	}
@@ -355,7 +386,7 @@ func TestStopListening(t *testing.T) {
 		l, h := logger.NewCaptureLogger()
 		lc := setupListeningComponent(
 			t,
-			func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock) {
+			func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock, cc *btt.ClipboardComponentMock) {
 				s.GetValueMock.Return("foo", nil)
 				rg.StopMock.Return(errors.New("something happened"))
 
@@ -381,20 +412,20 @@ func TestIsRunning(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		setupMocks    func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock)
+		setupMocks    func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock, cc *btt.ClipboardComponentMock)
 		expectRunning bool
 		expectErr     string
 	}{
 		{
 			name: "cannot get task id",
-			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock) {
+			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock, cc *btt.ClipboardComponentMock) {
 				s.GetValueMock.Return("", errors.New("something happened"))
 			},
 			expectErr: "cannot get task id",
 		},
 		{
 			name: "task is running",
-			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock) {
+			setupMocks: func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock, cc *btt.ClipboardComponentMock) {
 				s.GetValueMock.Expect(minimock.AnyContext, "LIVE2TEXT_TASK_ID").Return("foo", nil)
 				rg.HasMock.Expect("foo").Return(true)
 			},
@@ -422,7 +453,7 @@ func TestIsRunning(t *testing.T) {
 
 func setupListeningComponent(
 	t *testing.T,
-	setupMocks func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock),
+	setupMocks func(mc *minimock.Controller, rg *recognition.RecognitionMock, c *client.ClientMock, s *storage.StorageMock, r *tmpl.RendererMock, dc *btt.DeviceComponentMock, lc *btt.LanguageComponentMock, vmc *btt.ViewModeComponentMock, fc *btt.FloatingComponentMock, cc *btt.ClipboardComponentMock),
 	l *slog.Logger,
 ) btt.ListeningComponent {
 	mc := minimock.NewController(t)
@@ -434,13 +465,14 @@ func setupListeningComponent(
 	lc := btt.NewLanguageComponentMock(mc)
 	vmc := btt.NewViewModeComponentMock(mc)
 	fc := btt.NewFloatingComponentMock(mc)
+	cc := btt.NewClipboardComponentMock(mc)
 
 	if setupMocks != nil {
-		setupMocks(mc, rg, c, s, r, dc, lc, vmc, fc)
+		setupMocks(mc, rg, c, s, r, dc, lc, vmc, fc, cc)
 	}
 	if l == nil {
 		l = logger.NilLogger
 	}
 
-	return btt.NewListeningComponent(l, rg, c, s, r, dc, lc, vmc, fc)
+	return btt.NewListeningComponent(l, rg, c, s, r, dc, lc, vmc, fc, cc)
 }

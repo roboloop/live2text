@@ -56,11 +56,19 @@ func TestPrintSelectedViewMode(t *testing.T) {
 	require.NotEmpty(t, strings.TrimSpace(result))
 }
 
-func TestPrintSelectedFloatingState(t *testing.T) {
+func TestPrintSelectedFloating(t *testing.T) {
 	t.Parallel()
 
 	renderer := setupRenderer(t)
-	result := renderer.PrintSelectedFloatingState()
+	result := renderer.PrintSelectedFloating()
+	require.NotEmpty(t, strings.TrimSpace(result))
+}
+
+func TestPrintSelectedClipboard(t *testing.T) {
+	t.Parallel()
+
+	renderer := setupRenderer(t)
+	result := renderer.PrintSelectedClipboard()
 	require.NotEmpty(t, strings.TrimSpace(result))
 }
 
@@ -88,11 +96,19 @@ func TestSelectViewMode(t *testing.T) {
 	require.NotEmpty(t, strings.TrimSpace(result))
 }
 
-func TestSelectFloatingState(t *testing.T) {
+func TestSelectFloating(t *testing.T) {
 	t.Parallel()
 
 	renderer := setupRenderer(t)
-	result := renderer.SelectFloatingState("foo")
+	result := renderer.SelectFloating("foo")
+	require.NotEmpty(t, strings.TrimSpace(result))
+}
+
+func TestSelectClipboard(t *testing.T) {
+	t.Parallel()
+
+	renderer := setupRenderer(t)
+	result := renderer.SelectClipboard("foo")
 	require.NotEmpty(t, strings.TrimSpace(result))
 }
 
@@ -141,6 +157,14 @@ func TestAppPlaceholder(t *testing.T) {
 
 	renderer := setupRenderer(t)
 	result := renderer.AppPlaceholder()
+	require.NotEmpty(t, strings.TrimSpace(result))
+}
+
+func TestCopyText(t *testing.T) {
+	t.Parallel()
+
+	renderer := setupRenderer(t)
+	result := renderer.CopyText()
 	require.NotEmpty(t, strings.TrimSpace(result))
 }
 

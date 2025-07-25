@@ -44,8 +44,8 @@ func NewFloatingComponent(
 }
 
 const (
-	FloatingShown  = "Shown"
-	FloatingHidden = "Hidden"
+	FloatingShown  Floating = "Shown"
+	FloatingHidden Floating = "Hidden"
 )
 
 func (fs Floating) isShown() bool {

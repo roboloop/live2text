@@ -22,52 +22,52 @@ func NewInitializingComponent(client client.Client, renderer tmpl.Renderer, lang
 
 type addingTriggerFunc func(ctx context.Context, parentUUID trigger.UUID, after trigger.Trigger) (trigger.Trigger, error)
 
-func (b *initializingComponent) Initialize(ctx context.Context) error {
+func (i *initializingComponent) Initialize(ctx context.Context) error {
 	after := trigger.NewTrigger().AddOrder(trigger.OrderSettings)
-	settingsDir, err := b.addSettingsSection(ctx, "", after)
+	settingsDir, err := i.addSettingsSection(ctx, "", after)
 	if err != nil {
 		return fmt.Errorf("cannot add settings section: %w", err)
 	}
-	cleanViewDir, err := b.addCleanViewSection(ctx, "", settingsDir)
+	cleanViewDir, err := i.addCleanViewSection(ctx, "", settingsDir)
 	if err != nil {
 		return fmt.Errorf("cannot add clean view section: %w", err)
 	}
-	_, err = b.addAppSection(ctx, "", cleanViewDir)
-	if err != nil {
+	if err = i.addAppSection(ctx, "", cleanViewDir); err != nil {
 		return fmt.Errorf("cannot add app section: %w", err)
 	}
 
 	return nil
 }
 
-func (b *initializingComponent) addSettingsSection(
+func (i *initializingComponent) addSettingsSection(
 	ctx context.Context,
 	parentUUID trigger.UUID,
 	after trigger.Trigger,
 ) (trigger.Trigger, error) {
 	settingsDir := trigger.NewHiddenDir(trigger.TitleSettingsDir).AddOrderAfter(after)
-	settingsUUID, err := b.client.AddTrigger(ctx, settingsDir, parentUUID)
+	settingsUUID, err := i.client.AddTrigger(ctx, settingsDir, parentUUID)
 	if err != nil {
 		return nil, fmt.Errorf("cannot add settings directory: %w", err)
 	}
 
-	return settingsDir, b.addTriggers(ctx, settingsUUID, []addingTriggerFunc{
-		b.addCloseSettingsSection,
-		b.addStatusSection,
-		b.addDeviceSection,
-		b.addLanguageSection,
-		b.addViewModeSection,
-		b.addFloatingStateSection,
-		b.addMetricsSection,
-	})
+	return settingsDir, i.addTriggers(ctx, settingsUUID, []addingTriggerFunc{
+		i.addCloseSettingsSection,
+		i.addStatusSection,
+		i.addDeviceSection,
+		i.addLanguageSection,
+		i.addViewModeSection,
+		i.addFloatingStateSection,
+		i.addClipboardSection,
+		i.addMetricsSection,
+	}, nil)
 }
 
-func (b *initializingComponent) addCloseSettingsSection(
+func (i *initializingComponent) addCloseSettingsSection(
 	ctx context.Context,
 	parentUUID trigger.UUID,
 	after trigger.Trigger,
 ) (trigger.Trigger, error) {
-	rendered := b.renderer.CloseSettings(
+	rendered := i.renderer.CloseSettings(
 		string(ViewModeClean),
 		trigger.NewCloseDirAction(),
 		trigger.NewOpenDirAction(trigger.TitleCleanViewDir),
@@ -75,115 +75,116 @@ func (b *initializingComponent) addCloseSettingsSection(
 	closeDir := trigger.NewTapButton(trigger.TitleCloseDir, rendered).
 		AddCloseIcon().
 		AddOrderAfter(after)
-	if _, err := b.client.AddTrigger(ctx, closeDir, parentUUID); err != nil {
+	if _, err := i.client.AddTrigger(ctx, closeDir, parentUUID); err != nil {
 		return nil, fmt.Errorf("cannot add close settings trigger: %w", err)
 	}
 
 	return closeDir, nil
 }
 
-func (b *initializingComponent) addStatusSection(
+func (i *initializingComponent) addStatusSection(
 	ctx context.Context,
 	parentUUID trigger.UUID,
 	after trigger.Trigger,
 ) (trigger.Trigger, error) {
-	printStatus := trigger.NewStatusInfoButton("⏳", b.renderer.PrintStatus()).AddOrderAfter(after)
-	if _, err := b.client.AddTrigger(ctx, printStatus, parentUUID); err != nil {
+	printStatus := trigger.NewStatusInfoButton("⏳", i.renderer.PrintStatus()).AddOrderAfter(after)
+	if _, err := i.client.AddTrigger(ctx, printStatus, parentUUID); err != nil {
 		return nil, fmt.Errorf("cannot add print status trigger: %w", err)
 	}
 
 	return printStatus, nil
 }
 
-func (b *initializingComponent) addDeviceSection(
+func (i *initializingComponent) addDeviceSection(
 	ctx context.Context,
 	parentUUID trigger.UUID,
 	after trigger.Trigger,
 ) (trigger.Trigger, error) {
 	deviceDir := trigger.NewDirButton(trigger.TitleDeviceDir, trigger.IconMicrophone).AddOrderAfter(after)
-	deviceUUID, err := b.client.AddTrigger(ctx, deviceDir, parentUUID)
+	deviceUUID, err := i.client.AddTrigger(ctx, deviceDir, parentUUID)
 	if err != nil {
 		return nil, fmt.Errorf("cannot add device directory: %w", err)
 	}
 
 	closeDir := trigger.NewOpenDirButton(trigger.TitleSettingsDir)
-	selectedDevice := trigger.NewSettingsInfoButton(trigger.TitleSelectedDevice, b.renderer.PrintSelectedDevice())
+	selectedDevice := trigger.NewSettingsInfoButton(trigger.TitleSelectedDevice, i.renderer.PrintSelectedDevice())
 
-	return deviceDir, b.addTriggers(ctx, deviceUUID, []addingTriggerFunc{
-		b.wrapAddingTrigger(closeDir),
-		b.wrapAddingTrigger(selectedDevice),
-	})
+	return deviceDir, i.addTriggers(ctx, deviceUUID, []addingTriggerFunc{
+		i.wrapAddingTrigger(closeDir),
+		i.wrapAddingTrigger(selectedDevice),
+	}, nil)
 }
 
-func (b *initializingComponent) addLanguageSection(
+func (i *initializingComponent) addLanguageSection(
 	ctx context.Context,
 	parentUUID trigger.UUID,
 	after trigger.Trigger,
 ) (trigger.Trigger, error) {
 	languageDir := trigger.NewDirButton(trigger.TitleLanguageDir, trigger.IconCharacter).AddOrderAfter(after)
-	languageUUID, err := b.client.AddTrigger(ctx, languageDir, parentUUID)
+	languageUUID, err := i.client.AddTrigger(ctx, languageDir, parentUUID)
 	if err != nil {
 		return nil, fmt.Errorf("cannot add language directory: %w", err)
 	}
 
 	closeDir := trigger.NewOpenDirButton(trigger.TitleSettingsDir)
-	selectedLanguage := trigger.NewSettingsInfoButton(trigger.TitleSelectedLanguage, b.renderer.PrintSelectedLanguage())
+	selectedLanguage := trigger.NewSettingsInfoButton(trigger.TitleSelectedLanguage, i.renderer.PrintSelectedLanguage())
 
 	addingTriggers := []addingTriggerFunc{
-		b.wrapAddingTrigger(closeDir),
-		b.wrapAddingTrigger(selectedLanguage),
+		i.wrapAddingTrigger(closeDir),
+		i.wrapAddingTrigger(selectedLanguage),
 	}
-	for _, l := range b.languages {
-		languageButton := trigger.NewTapButton(trigger.Title(l), b.renderer.SelectLanguage(l))
-		addingTriggers = append(addingTriggers, b.wrapAddingTrigger(languageButton))
+	for _, l := range i.languages {
+		languageButton := trigger.NewTapButton(trigger.Title(l), i.renderer.SelectLanguage(l))
+		addingTriggers = append(addingTriggers, i.wrapAddingTrigger(languageButton))
 	}
 
-	return languageDir, b.addTriggers(ctx, languageUUID, addingTriggers)
+	return languageDir, i.addTriggers(ctx, languageUUID, addingTriggers, nil)
 }
 
-func (b *initializingComponent) addViewModeSection(
+//nolint:dupl
+func (i *initializingComponent) addViewModeSection(
 	ctx context.Context,
 	parentUUID trigger.UUID,
 	after trigger.Trigger,
 ) (trigger.Trigger, error) {
 	viewModeDir := trigger.NewDirButton(trigger.TitleViewModeDir, trigger.IconMacwindow).AddOrderAfter(after)
-	viewModeUUID, err := b.client.AddTrigger(ctx, viewModeDir, parentUUID)
+	viewModeUUID, err := i.client.AddTrigger(ctx, viewModeDir, parentUUID)
 	if err != nil {
 		return nil, fmt.Errorf("cannot add view mode directory: %w", err)
 	}
 
 	closeDir := trigger.NewOpenDirButton(trigger.TitleSettingsDir)
-	selectedViewMode := trigger.NewSettingsInfoButton(trigger.TitleSelectedViewMode, b.renderer.PrintSelectedViewMode())
-	embedButton := trigger.NewTapButton(trigger.Title(ViewModeEmbed), b.renderer.SelectViewMode(string(ViewModeEmbed)))
-	cleanButton := trigger.NewTapButton(trigger.Title(ViewModeClean), b.renderer.SelectViewMode(string(ViewModeClean)))
+	selectedViewMode := trigger.NewSettingsInfoButton(trigger.TitleSelectedViewMode, i.renderer.PrintSelectedViewMode())
+	embedButton := trigger.NewTapButton(trigger.Title(ViewModeEmbed), i.renderer.SelectViewMode(string(ViewModeEmbed)))
+	cleanButton := trigger.NewTapButton(trigger.Title(ViewModeClean), i.renderer.SelectViewMode(string(ViewModeClean)))
 
-	return viewModeDir, b.addTriggers(ctx, viewModeUUID, []addingTriggerFunc{
-		b.wrapAddingTrigger(closeDir),
-		b.wrapAddingTrigger(selectedViewMode),
-		b.wrapAddingTrigger(embedButton),
-		b.wrapAddingTrigger(cleanButton),
-	})
+	return viewModeDir, i.addTriggers(ctx, viewModeUUID, []addingTriggerFunc{
+		i.wrapAddingTrigger(closeDir),
+		i.wrapAddingTrigger(selectedViewMode),
+		i.wrapAddingTrigger(embedButton),
+		i.wrapAddingTrigger(cleanButton),
+	}, nil)
 }
 
-func (b *initializingComponent) addFloatingStateSection(
+func (i *initializingComponent) addFloatingStateSection(
 	ctx context.Context,
 	parentUUID trigger.UUID,
 	after trigger.Trigger,
 ) (trigger.Trigger, error) {
 	// Adding floating menu
 	floatingMenu := trigger.NewFloatingMenu(trigger.TitleStreamingText)
-	floatingMenuUUID, err := b.client.AddTrigger(ctx, floatingMenu, "")
+	floatingMenuUUID, err := i.client.AddTrigger(ctx, floatingMenu, "")
 	if err != nil {
 		return nil, fmt.Errorf("cannot add floating menu: %w", err)
 	}
-	webView := trigger.NewWebView(trigger.TitleStreamingText, b.renderer.FloatingPage())
-	if _, err = b.client.AddTrigger(ctx, webView, floatingMenuUUID); err != nil {
+	webView := trigger.NewWebView(trigger.TitleStreamingText, i.renderer.FloatingPage())
+	if _, err = i.client.AddTrigger(ctx, webView, floatingMenuUUID); err != nil {
 		return nil, fmt.Errorf("cannot add floating view: %w", err)
 	}
 
 	// Adding buttons in settings section
 	floatingStateDir := trigger.NewDirButton(trigger.TitleFloatingDir, trigger.IconMacwindow).AddOrderAfter(after)
-	floatingStateUUID, err := b.client.AddTrigger(ctx, floatingStateDir, parentUUID)
+	floatingStateUUID, err := i.client.AddTrigger(ctx, floatingStateDir, parentUUID)
 	if err != nil {
 		return nil, fmt.Errorf("cannot add floating state directory: %w", err)
 	}
@@ -191,39 +192,76 @@ func (b *initializingComponent) addFloatingStateSection(
 	closeDir := trigger.NewOpenDirButton(trigger.TitleSettingsDir)
 	selectedFloatingState := trigger.NewSettingsInfoButton(
 		trigger.TitleSelectedFloating,
-		b.renderer.PrintSelectedFloatingState(),
+		i.renderer.PrintSelectedFloating(),
 	)
-	shownButton := trigger.NewTapButton(FloatingShown, b.renderer.SelectFloatingState(FloatingShown))
-	hiddenButton := trigger.NewTapButton(FloatingHidden, b.renderer.SelectFloatingState(FloatingHidden))
+	shownButton := trigger.NewTapButton(trigger.Title(FloatingShown), i.renderer.SelectFloating(string(FloatingShown)))
+	hiddenButton := trigger.NewTapButton(
+		trigger.Title(FloatingHidden),
+		i.renderer.SelectFloating(string(FloatingHidden)),
+	)
 
-	return floatingStateDir, b.addTriggers(ctx, floatingStateUUID, []addingTriggerFunc{
-		b.wrapAddingTrigger(closeDir),
-		b.wrapAddingTrigger(selectedFloatingState),
-		b.wrapAddingTrigger(shownButton),
-		b.wrapAddingTrigger(hiddenButton),
-	})
+	return floatingStateDir, i.addTriggers(ctx, floatingStateUUID, []addingTriggerFunc{
+		i.wrapAddingTrigger(closeDir),
+		i.wrapAddingTrigger(selectedFloatingState),
+		i.wrapAddingTrigger(shownButton),
+		i.wrapAddingTrigger(hiddenButton),
+	}, nil)
 }
 
-func (b *initializingComponent) addMetricsSection(
+//nolint:dupl
+func (i *initializingComponent) addClipboardSection(
+	ctx context.Context,
+	parentUUID trigger.UUID,
+	after trigger.Trigger,
+) (trigger.Trigger, error) {
+	clipboardDir := trigger.NewDirButton(trigger.TitleClipboardDir, trigger.IconClipboard).AddOrderAfter(after)
+	clipboardUUID, err := i.client.AddTrigger(ctx, clipboardDir, parentUUID)
+	if err != nil {
+		return nil, fmt.Errorf("cannot add clipboard directory: %w", err)
+	}
+
+	closeDir := trigger.NewOpenDirButton(trigger.TitleSettingsDir)
+	selectedClipboard := trigger.NewSettingsInfoButton(
+		trigger.TitleSelectedClipboard,
+		i.renderer.PrintSelectedClipboard(),
+	)
+	shownButton := trigger.NewTapButton(
+		trigger.Title(ClipboardShown),
+		i.renderer.SelectClipboard(string(ClipboardShown)),
+	)
+	hiddenButton := trigger.NewTapButton(
+		trigger.Title(ClipboardHidden),
+		i.renderer.SelectClipboard(string(ClipboardHidden)),
+	)
+
+	return clipboardDir, i.addTriggers(ctx, clipboardUUID, []addingTriggerFunc{
+		i.wrapAddingTrigger(closeDir),
+		i.wrapAddingTrigger(selectedClipboard),
+		i.wrapAddingTrigger(shownButton),
+		i.wrapAddingTrigger(hiddenButton),
+	}, nil)
+}
+
+func (i *initializingComponent) addMetricsSection(
 	ctx context.Context,
 	parentUUID trigger.UUID,
 	after trigger.Trigger,
 ) (trigger.Trigger, error) {
 	metricsDir := trigger.NewDirButton(trigger.TitleMetricsDir, trigger.IconChartBar).AddOrderAfter(after)
-	metricsUUID, err := b.client.AddTrigger(ctx, metricsDir, parentUUID)
+	metricsUUID, err := i.client.AddTrigger(ctx, metricsDir, parentUUID)
 	if err != nil {
 		return nil, fmt.Errorf("cannot add metrics directory: %w", err)
 	}
 
 	closeDir := trigger.NewOpenDirButton(trigger.TitleSettingsDir)
 
-	readScript := b.renderer.PrintMetric(tmpl.MetricTemplateSize, metrics.MetricBytesReadFromAudio, "Read")
+	readScript := i.renderer.PrintMetric(tmpl.MetricTemplateSize, metrics.MetricBytesReadFromAudio, "Read")
 	readButton := trigger.NewMetricsInfoButton("Read", readScript, trigger.IconWaveform)
 
-	sentBytesScript := b.renderer.PrintMetric(tmpl.MetricTemplateSize, metrics.MetricBytesSentToGoogleSpeech, "Sent")
+	sentBytesScript := i.renderer.PrintMetric(tmpl.MetricTemplateSize, metrics.MetricBytesSentToGoogleSpeech, "Sent")
 	sentBytesButton := trigger.NewMetricsInfoButton("Sent", sentBytesScript, trigger.IconSquareAndArrowUp)
 
-	sentDurationScript := b.renderer.PrintMetric(
+	sentDurationScript := i.renderer.PrintMetric(
 		tmpl.MetricTemplateDuration,
 		metrics.MetricMillisecondsSentToGoogleSpeech,
 		"Sent",
@@ -234,10 +272,10 @@ func (b *initializingComponent) addMetricsSection(
 		trigger.IconSquareAndArrowUpBadgeClock,
 	)
 
-	burntScript := b.renderer.PrintMetric(tmpl.MetricTemplateSize, metrics.MetricBytesWrittenOnDisk, "Burnt")
+	burntScript := i.renderer.PrintMetric(tmpl.MetricTemplateSize, metrics.MetricBytesWrittenOnDisk, "Burnt")
 	burntButton := trigger.NewMetricsInfoButton("Burnt", burntScript, trigger.IconFlame)
 
-	connectionsScript := b.renderer.PrintMetric(
+	connectionsScript := i.renderer.PrintMetric(
 		tmpl.MetricTemplateRaw,
 		metrics.MetricConnectsToGoogleSpeech,
 		"Connections",
@@ -248,30 +286,112 @@ func (b *initializingComponent) addMetricsSection(
 		trigger.IconAppConnectedToAppBelowFill,
 	)
 
-	tasksScript := b.renderer.PrintMetric(tmpl.MetricTemplateRaw, metrics.MetricTotalRunningTasks, "Tasks")
+	tasksScript := i.renderer.PrintMetric(tmpl.MetricTemplateRaw, metrics.MetricTotalRunningTasks, "Tasks")
 	tasksButton := trigger.NewMetricsInfoButton("Tasks", tasksScript, trigger.IconListBullet)
 
-	socketsScript := b.renderer.PrintMetric(tmpl.MetricTemplateRaw, metrics.MetricTotalOpenSockets, "Sockets")
+	socketsScript := i.renderer.PrintMetric(tmpl.MetricTemplateRaw, metrics.MetricTotalOpenSockets, "Sockets")
 	socketsButton := trigger.NewMetricsInfoButton("Sockets", socketsScript, trigger.IconRectangleStack)
 
-	return metricsDir, b.addTriggers(ctx, metricsUUID, []addingTriggerFunc{
-		b.wrapAddingTrigger(closeDir),
-		b.wrapAddingTrigger(readButton),
-		b.wrapAddingTrigger(sentBytesButton),
-		b.wrapAddingTrigger(sentDurationButton),
-		b.wrapAddingTrigger(burntButton),
-		b.wrapAddingTrigger(connectionsButton),
-		b.wrapAddingTrigger(tasksButton),
-		b.wrapAddingTrigger(socketsButton),
-	})
+	return metricsDir, i.addTriggers(ctx, metricsUUID, []addingTriggerFunc{
+		i.wrapAddingTrigger(closeDir),
+		i.wrapAddingTrigger(readButton),
+		i.wrapAddingTrigger(sentBytesButton),
+		i.wrapAddingTrigger(sentDurationButton),
+		i.wrapAddingTrigger(burntButton),
+		i.wrapAddingTrigger(connectionsButton),
+		i.wrapAddingTrigger(tasksButton),
+		i.wrapAddingTrigger(socketsButton),
+	}, nil)
 }
 
-func (b *initializingComponent) addTriggers(
+func (i *initializingComponent) addCleanViewSection(
+	ctx context.Context,
+	parentUUID trigger.UUID,
+	after trigger.Trigger,
+) (trigger.Trigger, error) {
+	cleanViewDir := trigger.NewHiddenDir(trigger.TitleCleanViewDir).AddOrderAfter(after)
+	cleanViewDirUUID, err := i.client.AddTrigger(ctx, cleanViewDir, parentUUID)
+	if err != nil {
+		return nil, fmt.Errorf("cannot add clean mode directory: %w", err)
+	}
+
+	return cleanViewDir, i.addAppTriggers(
+		ctx,
+		trigger.TitleCleanViewApp,
+		trigger.TitleCleanViewClipboard,
+		cleanViewDirUUID,
+		nil,
+	)
+}
+
+func (i *initializingComponent) addAppSection(
+	ctx context.Context,
+	parentUUID trigger.UUID,
+	after trigger.Trigger,
+) error {
+	// Create a named trigger to manage "open settings"
+	openDirAction := trigger.NewOpenDirAction(trigger.TitleSettingsDir)
+	openSettings := trigger.NewNamedTrigger(trigger.TitleOpenSettings, i.renderer.OpenSettings(openDirAction))
+	if _, err := i.client.AddTrigger(ctx, openSettings, ""); err != nil {
+		return fmt.Errorf("cannot add open settings named trigger: %w", err)
+	}
+
+	return i.addAppTriggers(ctx, trigger.TitleApp, trigger.TitleClipboard, parentUUID, after)
+}
+
+func (i *initializingComponent) addAppTriggers(
+	ctx context.Context,
+	appTitle trigger.Title,
+	clipboardTitle trigger.Title,
+	parentUUID trigger.UUID,
+	after trigger.Trigger,
+) error {
+	clipboard := trigger.NewTapIconButton(clipboardTitle, i.renderer.CopyText(), trigger.IconClipboard).AddDisabled()
+	app := trigger.NewInfoButton(appTitle, i.renderer.AppPlaceholder(), 0).
+		AddTapScript(i.renderer.Toggle()).
+		AddLongTapTrigger(trigger.TitleOpenSettings).
+		AddReadableFormat().
+		AddOrderAfter(after)
+
+	return i.addTriggers(ctx, parentUUID, []addingTriggerFunc{
+		i.wrapAddingTrigger(clipboard),
+		i.wrapAddingTrigger(app),
+	}, after)
+}
+
+func (i *initializingComponent) Clear(ctx context.Context) error {
+	action := trigger.NewCloseDirAction()
+	if err := i.client.TriggerAction(ctx, action); err != nil {
+		return fmt.Errorf("cannot close directory: %w", err)
+	}
+	triggers, err := i.client.GetTriggers(ctx, "")
+	if err != nil {
+		return fmt.Errorf("cannot get triggers: %w", err)
+	}
+
+	if err = i.client.DeleteTriggers(ctx, triggers); err != nil {
+		return fmt.Errorf("cannot delete triggers: %w", err)
+	}
+
+	return nil
+}
+
+func (i *initializingComponent) wrapAddingTrigger(t trigger.Trigger) addingTriggerFunc {
+	return func(ctx context.Context, parentUUID trigger.UUID, after trigger.Trigger) (trigger.Trigger, error) {
+		t.AddOrderAfter(after)
+		if _, err := i.client.AddTrigger(ctx, t, parentUUID); err != nil {
+			return nil, fmt.Errorf("cannot add %s: %w", t.ErrorContext(), err)
+		}
+		return t, nil
+	}
+}
+
+func (i *initializingComponent) addTriggers(
 	ctx context.Context,
 	parentUUID trigger.UUID,
 	fns []addingTriggerFunc,
+	after trigger.Trigger,
 ) error {
-	var after trigger.Trigger
 	var err error
 	for _, fn := range fns {
 		after, err = fn(ctx, parentUUID, after)
@@ -279,85 +399,5 @@ func (b *initializingComponent) addTriggers(
 			return err
 		}
 	}
-	return nil
-}
-
-func (b *initializingComponent) wrapAddingTrigger(t trigger.Trigger) addingTriggerFunc {
-	return func(ctx context.Context, parentUUID trigger.UUID, after trigger.Trigger) (trigger.Trigger, error) {
-		t.AddOrderAfter(after)
-		if _, err := b.client.AddTrigger(ctx, t, parentUUID); err != nil {
-			return nil, fmt.Errorf("cannot add %s: %w", t.ErrorContext(), err)
-		}
-		return t, nil
-	}
-}
-
-func (b *initializingComponent) addCleanViewSection(
-	ctx context.Context,
-	parentUUID trigger.UUID,
-	after trigger.Trigger,
-) (trigger.Trigger, error) {
-	cleanViewDir := trigger.NewHiddenDir(trigger.TitleCleanViewDir).AddOrderAfter(after)
-	cleanViewDirUUID, err := b.client.AddTrigger(ctx, cleanViewDir, parentUUID)
-	if err != nil {
-		return nil, fmt.Errorf("cannot add clean mode directory: %w", err)
-	}
-
-	_, err = b.addAppTrigger(ctx, trigger.TitleCleanViewApp, cleanViewDirUUID, nil)
-	if err != nil {
-		return nil, fmt.Errorf("cannot add app trigger: %w", err)
-	}
-
-	return cleanViewDir, nil
-}
-
-func (b *initializingComponent) addAppSection(
-	ctx context.Context,
-	parentUUID trigger.UUID,
-	after trigger.Trigger,
-) (trigger.Trigger, error) {
-	// Create a named trigger to manage "open settings"
-	openDirAction := trigger.NewOpenDirAction(trigger.TitleSettingsDir)
-	openSettings := trigger.NewNamedTrigger(trigger.TitleOpenSettings, b.renderer.OpenSettings(openDirAction))
-	if _, err := b.client.AddTrigger(ctx, openSettings, parentUUID); err != nil {
-		return nil, fmt.Errorf("cannot add open settings trigger: %w", err)
-	}
-
-	return b.addAppTrigger(ctx, trigger.TitleApp, parentUUID, after)
-}
-
-func (b *initializingComponent) addAppTrigger(
-	ctx context.Context,
-	title trigger.Title,
-	parentUUID trigger.UUID,
-	after trigger.Trigger,
-) (trigger.Trigger, error) {
-	app := trigger.NewInfoButton(title, b.renderer.AppPlaceholder(), 0).
-		AddTapScript(b.renderer.Toggle()).
-		AddLongTapTrigger(trigger.TitleOpenSettings).
-		AddReadableFormat().
-		AddOrderAfter(after)
-
-	if _, err := b.client.AddTrigger(ctx, app, parentUUID); err != nil {
-		return nil, fmt.Errorf("cannot add app trigger: %w", err)
-	}
-
-	return app, nil
-}
-
-func (b *initializingComponent) Clear(ctx context.Context) error {
-	action := trigger.NewCloseDirAction()
-	if err := b.client.TriggerAction(ctx, action); err != nil {
-		return fmt.Errorf("cannot close directory: %w", err)
-	}
-	triggers, err := b.client.GetTriggers(ctx, "")
-	if err != nil {
-		return fmt.Errorf("cannot get triggers: %w", err)
-	}
-
-	if err = b.client.DeleteTriggers(ctx, triggers); err != nil {
-		return fmt.Errorf("cannot delete triggers: %w", err)
-	}
-
 	return nil
 }

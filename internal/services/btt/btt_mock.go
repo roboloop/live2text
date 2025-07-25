@@ -44,6 +44,13 @@ type BttMock struct {
 	beforeFloatingPageCounter uint64
 	FloatingPageMock          mBttMockFloatingPage
 
+	funcHideClipboard          func(ctx context.Context) (err error)
+	funcHideClipboardOrigin    string
+	inspectFuncHideClipboard   func(ctx context.Context)
+	afterHideClipboardCounter  uint64
+	beforeHideClipboardCounter uint64
+	HideClipboardMock          mBttMockHideClipboard
+
 	funcHideFloating          func(ctx context.Context) (err error)
 	funcHideFloatingOrigin    string
 	inspectFuncHideFloating   func(ctx context.Context)
@@ -71,6 +78,13 @@ type BttMock struct {
 	afterLoadDevicesCounter  uint64
 	beforeLoadDevicesCounter uint64
 	LoadDevicesMock          mBttMockLoadDevices
+
+	funcSelectClipboard          func(ctx context.Context, clipboard Clipboard) (err error)
+	funcSelectClipboardOrigin    string
+	inspectFuncSelectClipboard   func(ctx context.Context, clipboard Clipboard)
+	afterSelectClipboardCounter  uint64
+	beforeSelectClipboardCounter uint64
+	SelectClipboardMock          mBttMockSelectClipboard
 
 	funcSelectDevice          func(ctx context.Context, device string) (err error)
 	funcSelectDeviceOrigin    string
@@ -100,6 +114,13 @@ type BttMock struct {
 	beforeSelectViewModeCounter uint64
 	SelectViewModeMock          mBttMockSelectViewMode
 
+	funcSelectedClipboard          func(ctx context.Context) (c2 Clipboard, err error)
+	funcSelectedClipboardOrigin    string
+	inspectFuncSelectedClipboard   func(ctx context.Context)
+	afterSelectedClipboardCounter  uint64
+	beforeSelectedClipboardCounter uint64
+	SelectedClipboardMock          mBttMockSelectedClipboard
+
 	funcSelectedDevice          func(ctx context.Context) (s1 string, err error)
 	funcSelectedDeviceOrigin    string
 	inspectFuncSelectedDevice   func(ctx context.Context)
@@ -127,6 +148,13 @@ type BttMock struct {
 	afterSelectedViewModeCounter  uint64
 	beforeSelectedViewModeCounter uint64
 	SelectedViewModeMock          mBttMockSelectedViewMode
+
+	funcShowClipboard          func(ctx context.Context) (err error)
+	funcShowClipboardOrigin    string
+	inspectFuncShowClipboard   func(ctx context.Context)
+	afterShowClipboardCounter  uint64
+	beforeShowClipboardCounter uint64
+	ShowClipboardMock          mBttMockShowClipboard
 
 	funcShowFloating          func(ctx context.Context) (err error)
 	funcShowFloatingOrigin    string
@@ -156,6 +184,13 @@ type BttMock struct {
 	beforeStreamTextCounter uint64
 	StreamTextMock          mBttMockStreamText
 
+	funcText          func(ctx context.Context) (s1 string, err error)
+	funcTextOrigin    string
+	inspectFuncText   func(ctx context.Context)
+	afterTextCounter  uint64
+	beforeTextCounter uint64
+	TextMock          mBttMockText
+
 	funcToggleListening          func(ctx context.Context) (err error)
 	funcToggleListeningOrigin    string
 	inspectFuncToggleListening   func(ctx context.Context)
@@ -183,6 +218,9 @@ func NewBttMock(t minimock.Tester) *BttMock {
 
 	m.FloatingPageMock = mBttMockFloatingPage{mock: m}
 
+	m.HideClipboardMock = mBttMockHideClipboard{mock: m}
+	m.HideClipboardMock.callArgs = []*BttMockHideClipboardParams{}
+
 	m.HideFloatingMock = mBttMockHideFloating{mock: m}
 	m.HideFloatingMock.callArgs = []*BttMockHideFloatingParams{}
 
@@ -194,6 +232,9 @@ func NewBttMock(t minimock.Tester) *BttMock {
 
 	m.LoadDevicesMock = mBttMockLoadDevices{mock: m}
 	m.LoadDevicesMock.callArgs = []*BttMockLoadDevicesParams{}
+
+	m.SelectClipboardMock = mBttMockSelectClipboard{mock: m}
+	m.SelectClipboardMock.callArgs = []*BttMockSelectClipboardParams{}
 
 	m.SelectDeviceMock = mBttMockSelectDevice{mock: m}
 	m.SelectDeviceMock.callArgs = []*BttMockSelectDeviceParams{}
@@ -207,6 +248,9 @@ func NewBttMock(t minimock.Tester) *BttMock {
 	m.SelectViewModeMock = mBttMockSelectViewMode{mock: m}
 	m.SelectViewModeMock.callArgs = []*BttMockSelectViewModeParams{}
 
+	m.SelectedClipboardMock = mBttMockSelectedClipboard{mock: m}
+	m.SelectedClipboardMock.callArgs = []*BttMockSelectedClipboardParams{}
+
 	m.SelectedDeviceMock = mBttMockSelectedDevice{mock: m}
 	m.SelectedDeviceMock.callArgs = []*BttMockSelectedDeviceParams{}
 
@@ -219,6 +263,9 @@ func NewBttMock(t minimock.Tester) *BttMock {
 	m.SelectedViewModeMock = mBttMockSelectedViewMode{mock: m}
 	m.SelectedViewModeMock.callArgs = []*BttMockSelectedViewModeParams{}
 
+	m.ShowClipboardMock = mBttMockShowClipboard{mock: m}
+	m.ShowClipboardMock.callArgs = []*BttMockShowClipboardParams{}
+
 	m.ShowFloatingMock = mBttMockShowFloating{mock: m}
 	m.ShowFloatingMock.callArgs = []*BttMockShowFloatingParams{}
 
@@ -230,6 +277,9 @@ func NewBttMock(t minimock.Tester) *BttMock {
 
 	m.StreamTextMock = mBttMockStreamText{mock: m}
 	m.StreamTextMock.callArgs = []*BttMockStreamTextParams{}
+
+	m.TextMock = mBttMockText{mock: m}
+	m.TextMock.callArgs = []*BttMockTextParams{}
 
 	m.ToggleListeningMock = mBttMockToggleListening{mock: m}
 	m.ToggleListeningMock.callArgs = []*BttMockToggleListeningParams{}
@@ -1355,6 +1405,317 @@ func (m *BttMock) MinimockFloatingPageInspect() {
 	if !m.FloatingPageMock.invocationsDone() && afterFloatingPageCounter > 0 {
 		m.t.Errorf("Expected %d calls to BttMock.FloatingPage at\n%s but found %d calls",
 			mm_atomic.LoadUint64(&m.FloatingPageMock.expectedInvocations), m.FloatingPageMock.expectedInvocationsOrigin, afterFloatingPageCounter)
+	}
+}
+
+type mBttMockHideClipboard struct {
+	optional           bool
+	mock               *BttMock
+	defaultExpectation *BttMockHideClipboardExpectation
+	expectations       []*BttMockHideClipboardExpectation
+
+	callArgs []*BttMockHideClipboardParams
+	mutex    sync.RWMutex
+
+	expectedInvocations       uint64
+	expectedInvocationsOrigin string
+}
+
+// BttMockHideClipboardExpectation specifies expectation struct of the Btt.HideClipboard
+type BttMockHideClipboardExpectation struct {
+	mock               *BttMock
+	params             *BttMockHideClipboardParams
+	paramPtrs          *BttMockHideClipboardParamPtrs
+	expectationOrigins BttMockHideClipboardExpectationOrigins
+	results            *BttMockHideClipboardResults
+	returnOrigin       string
+	Counter            uint64
+}
+
+// BttMockHideClipboardParams contains parameters of the Btt.HideClipboard
+type BttMockHideClipboardParams struct {
+	ctx context.Context
+}
+
+// BttMockHideClipboardParamPtrs contains pointers to parameters of the Btt.HideClipboard
+type BttMockHideClipboardParamPtrs struct {
+	ctx *context.Context
+}
+
+// BttMockHideClipboardResults contains results of the Btt.HideClipboard
+type BttMockHideClipboardResults struct {
+	err error
+}
+
+// BttMockHideClipboardOrigins contains origins of expectations of the Btt.HideClipboard
+type BttMockHideClipboardExpectationOrigins struct {
+	origin    string
+	originCtx string
+}
+
+// Marks this method to be optional. The default behavior of any method with Return() is '1 or more', meaning
+// the test will fail minimock's automatic final call check if the mocked method was not called at least once.
+// Optional() makes method check to work in '0 or more' mode.
+// It is NOT RECOMMENDED to use this option unless you really need it, as default behaviour helps to
+// catch the problems when the expected method call is totally skipped during test run.
+func (mmHideClipboard *mBttMockHideClipboard) Optional() *mBttMockHideClipboard {
+	mmHideClipboard.optional = true
+	return mmHideClipboard
+}
+
+// Expect sets up expected params for Btt.HideClipboard
+func (mmHideClipboard *mBttMockHideClipboard) Expect(ctx context.Context) *mBttMockHideClipboard {
+	if mmHideClipboard.mock.funcHideClipboard != nil {
+		mmHideClipboard.mock.t.Fatalf("BttMock.HideClipboard mock is already set by Set")
+	}
+
+	if mmHideClipboard.defaultExpectation == nil {
+		mmHideClipboard.defaultExpectation = &BttMockHideClipboardExpectation{}
+	}
+
+	if mmHideClipboard.defaultExpectation.paramPtrs != nil {
+		mmHideClipboard.mock.t.Fatalf("BttMock.HideClipboard mock is already set by ExpectParams functions")
+	}
+
+	mmHideClipboard.defaultExpectation.params = &BttMockHideClipboardParams{ctx}
+	mmHideClipboard.defaultExpectation.expectationOrigins.origin = minimock.CallerInfo(1)
+	for _, e := range mmHideClipboard.expectations {
+		if minimock.Equal(e.params, mmHideClipboard.defaultExpectation.params) {
+			mmHideClipboard.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmHideClipboard.defaultExpectation.params)
+		}
+	}
+
+	return mmHideClipboard
+}
+
+// ExpectCtxParam1 sets up expected param ctx for Btt.HideClipboard
+func (mmHideClipboard *mBttMockHideClipboard) ExpectCtxParam1(ctx context.Context) *mBttMockHideClipboard {
+	if mmHideClipboard.mock.funcHideClipboard != nil {
+		mmHideClipboard.mock.t.Fatalf("BttMock.HideClipboard mock is already set by Set")
+	}
+
+	if mmHideClipboard.defaultExpectation == nil {
+		mmHideClipboard.defaultExpectation = &BttMockHideClipboardExpectation{}
+	}
+
+	if mmHideClipboard.defaultExpectation.params != nil {
+		mmHideClipboard.mock.t.Fatalf("BttMock.HideClipboard mock is already set by Expect")
+	}
+
+	if mmHideClipboard.defaultExpectation.paramPtrs == nil {
+		mmHideClipboard.defaultExpectation.paramPtrs = &BttMockHideClipboardParamPtrs{}
+	}
+	mmHideClipboard.defaultExpectation.paramPtrs.ctx = &ctx
+	mmHideClipboard.defaultExpectation.expectationOrigins.originCtx = minimock.CallerInfo(1)
+
+	return mmHideClipboard
+}
+
+// Inspect accepts an inspector function that has same arguments as the Btt.HideClipboard
+func (mmHideClipboard *mBttMockHideClipboard) Inspect(f func(ctx context.Context)) *mBttMockHideClipboard {
+	if mmHideClipboard.mock.inspectFuncHideClipboard != nil {
+		mmHideClipboard.mock.t.Fatalf("Inspect function is already set for BttMock.HideClipboard")
+	}
+
+	mmHideClipboard.mock.inspectFuncHideClipboard = f
+
+	return mmHideClipboard
+}
+
+// Return sets up results that will be returned by Btt.HideClipboard
+func (mmHideClipboard *mBttMockHideClipboard) Return(err error) *BttMock {
+	if mmHideClipboard.mock.funcHideClipboard != nil {
+		mmHideClipboard.mock.t.Fatalf("BttMock.HideClipboard mock is already set by Set")
+	}
+
+	if mmHideClipboard.defaultExpectation == nil {
+		mmHideClipboard.defaultExpectation = &BttMockHideClipboardExpectation{mock: mmHideClipboard.mock}
+	}
+	mmHideClipboard.defaultExpectation.results = &BttMockHideClipboardResults{err}
+	mmHideClipboard.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
+	return mmHideClipboard.mock
+}
+
+// Set uses given function f to mock the Btt.HideClipboard method
+func (mmHideClipboard *mBttMockHideClipboard) Set(f func(ctx context.Context) (err error)) *BttMock {
+	if mmHideClipboard.defaultExpectation != nil {
+		mmHideClipboard.mock.t.Fatalf("Default expectation is already set for the Btt.HideClipboard method")
+	}
+
+	if len(mmHideClipboard.expectations) > 0 {
+		mmHideClipboard.mock.t.Fatalf("Some expectations are already set for the Btt.HideClipboard method")
+	}
+
+	mmHideClipboard.mock.funcHideClipboard = f
+	mmHideClipboard.mock.funcHideClipboardOrigin = minimock.CallerInfo(1)
+	return mmHideClipboard.mock
+}
+
+// When sets expectation for the Btt.HideClipboard which will trigger the result defined by the following
+// Then helper
+func (mmHideClipboard *mBttMockHideClipboard) When(ctx context.Context) *BttMockHideClipboardExpectation {
+	if mmHideClipboard.mock.funcHideClipboard != nil {
+		mmHideClipboard.mock.t.Fatalf("BttMock.HideClipboard mock is already set by Set")
+	}
+
+	expectation := &BttMockHideClipboardExpectation{
+		mock:               mmHideClipboard.mock,
+		params:             &BttMockHideClipboardParams{ctx},
+		expectationOrigins: BttMockHideClipboardExpectationOrigins{origin: minimock.CallerInfo(1)},
+	}
+	mmHideClipboard.expectations = append(mmHideClipboard.expectations, expectation)
+	return expectation
+}
+
+// Then sets up Btt.HideClipboard return parameters for the expectation previously defined by the When method
+func (e *BttMockHideClipboardExpectation) Then(err error) *BttMock {
+	e.results = &BttMockHideClipboardResults{err}
+	return e.mock
+}
+
+// Times sets number of times Btt.HideClipboard should be invoked
+func (mmHideClipboard *mBttMockHideClipboard) Times(n uint64) *mBttMockHideClipboard {
+	if n == 0 {
+		mmHideClipboard.mock.t.Fatalf("Times of BttMock.HideClipboard mock can not be zero")
+	}
+	mm_atomic.StoreUint64(&mmHideClipboard.expectedInvocations, n)
+	mmHideClipboard.expectedInvocationsOrigin = minimock.CallerInfo(1)
+	return mmHideClipboard
+}
+
+func (mmHideClipboard *mBttMockHideClipboard) invocationsDone() bool {
+	if len(mmHideClipboard.expectations) == 0 && mmHideClipboard.defaultExpectation == nil && mmHideClipboard.mock.funcHideClipboard == nil {
+		return true
+	}
+
+	totalInvocations := mm_atomic.LoadUint64(&mmHideClipboard.mock.afterHideClipboardCounter)
+	expectedInvocations := mm_atomic.LoadUint64(&mmHideClipboard.expectedInvocations)
+
+	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
+}
+
+// HideClipboard implements Btt
+func (mmHideClipboard *BttMock) HideClipboard(ctx context.Context) (err error) {
+	mm_atomic.AddUint64(&mmHideClipboard.beforeHideClipboardCounter, 1)
+	defer mm_atomic.AddUint64(&mmHideClipboard.afterHideClipboardCounter, 1)
+
+	mmHideClipboard.t.Helper()
+
+	if mmHideClipboard.inspectFuncHideClipboard != nil {
+		mmHideClipboard.inspectFuncHideClipboard(ctx)
+	}
+
+	mm_params := BttMockHideClipboardParams{ctx}
+
+	// Record call args
+	mmHideClipboard.HideClipboardMock.mutex.Lock()
+	mmHideClipboard.HideClipboardMock.callArgs = append(mmHideClipboard.HideClipboardMock.callArgs, &mm_params)
+	mmHideClipboard.HideClipboardMock.mutex.Unlock()
+
+	for _, e := range mmHideClipboard.HideClipboardMock.expectations {
+		if minimock.Equal(*e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.err
+		}
+	}
+
+	if mmHideClipboard.HideClipboardMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmHideClipboard.HideClipboardMock.defaultExpectation.Counter, 1)
+		mm_want := mmHideClipboard.HideClipboardMock.defaultExpectation.params
+		mm_want_ptrs := mmHideClipboard.HideClipboardMock.defaultExpectation.paramPtrs
+
+		mm_got := BttMockHideClipboardParams{ctx}
+
+		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
+				mmHideClipboard.t.Errorf("BttMock.HideClipboard got unexpected parameter ctx, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmHideClipboard.HideClipboardMock.defaultExpectation.expectationOrigins.originCtx, *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
+			}
+
+		} else if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmHideClipboard.t.Errorf("BttMock.HideClipboard got unexpected parameters, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+				mmHideClipboard.HideClipboardMock.defaultExpectation.expectationOrigins.origin, *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmHideClipboard.HideClipboardMock.defaultExpectation.results
+		if mm_results == nil {
+			mmHideClipboard.t.Fatal("No results are set for the BttMock.HideClipboard")
+		}
+		return (*mm_results).err
+	}
+	if mmHideClipboard.funcHideClipboard != nil {
+		return mmHideClipboard.funcHideClipboard(ctx)
+	}
+	mmHideClipboard.t.Fatalf("Unexpected call to BttMock.HideClipboard. %v", ctx)
+	return
+}
+
+// HideClipboardAfterCounter returns a count of finished BttMock.HideClipboard invocations
+func (mmHideClipboard *BttMock) HideClipboardAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmHideClipboard.afterHideClipboardCounter)
+}
+
+// HideClipboardBeforeCounter returns a count of BttMock.HideClipboard invocations
+func (mmHideClipboard *BttMock) HideClipboardBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmHideClipboard.beforeHideClipboardCounter)
+}
+
+// Calls returns a list of arguments used in each call to BttMock.HideClipboard.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmHideClipboard *mBttMockHideClipboard) Calls() []*BttMockHideClipboardParams {
+	mmHideClipboard.mutex.RLock()
+
+	argCopy := make([]*BttMockHideClipboardParams, len(mmHideClipboard.callArgs))
+	copy(argCopy, mmHideClipboard.callArgs)
+
+	mmHideClipboard.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockHideClipboardDone returns true if the count of the HideClipboard invocations corresponds
+// the number of defined expectations
+func (m *BttMock) MinimockHideClipboardDone() bool {
+	if m.HideClipboardMock.optional {
+		// Optional methods provide '0 or more' call count restriction.
+		return true
+	}
+
+	for _, e := range m.HideClipboardMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	return m.HideClipboardMock.invocationsDone()
+}
+
+// MinimockHideClipboardInspect logs each unmet expectation
+func (m *BttMock) MinimockHideClipboardInspect() {
+	for _, e := range m.HideClipboardMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to BttMock.HideClipboard at\n%s with params: %#v", e.expectationOrigins.origin, *e.params)
+		}
+	}
+
+	afterHideClipboardCounter := mm_atomic.LoadUint64(&m.afterHideClipboardCounter)
+	// if default expectation was set then invocations count should be greater than zero
+	if m.HideClipboardMock.defaultExpectation != nil && afterHideClipboardCounter < 1 {
+		if m.HideClipboardMock.defaultExpectation.params == nil {
+			m.t.Errorf("Expected call to BttMock.HideClipboard at\n%s", m.HideClipboardMock.defaultExpectation.returnOrigin)
+		} else {
+			m.t.Errorf("Expected call to BttMock.HideClipboard at\n%s with params: %#v", m.HideClipboardMock.defaultExpectation.expectationOrigins.origin, *m.HideClipboardMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcHideClipboard != nil && afterHideClipboardCounter < 1 {
+		m.t.Errorf("Expected call to BttMock.HideClipboard at\n%s", m.funcHideClipboardOrigin)
+	}
+
+	if !m.HideClipboardMock.invocationsDone() && afterHideClipboardCounter > 0 {
+		m.t.Errorf("Expected %d calls to BttMock.HideClipboard at\n%s but found %d calls",
+			mm_atomic.LoadUint64(&m.HideClipboardMock.expectedInvocations), m.HideClipboardMock.expectedInvocationsOrigin, afterHideClipboardCounter)
 	}
 }
 
@@ -2600,6 +2961,348 @@ func (m *BttMock) MinimockLoadDevicesInspect() {
 	if !m.LoadDevicesMock.invocationsDone() && afterLoadDevicesCounter > 0 {
 		m.t.Errorf("Expected %d calls to BttMock.LoadDevices at\n%s but found %d calls",
 			mm_atomic.LoadUint64(&m.LoadDevicesMock.expectedInvocations), m.LoadDevicesMock.expectedInvocationsOrigin, afterLoadDevicesCounter)
+	}
+}
+
+type mBttMockSelectClipboard struct {
+	optional           bool
+	mock               *BttMock
+	defaultExpectation *BttMockSelectClipboardExpectation
+	expectations       []*BttMockSelectClipboardExpectation
+
+	callArgs []*BttMockSelectClipboardParams
+	mutex    sync.RWMutex
+
+	expectedInvocations       uint64
+	expectedInvocationsOrigin string
+}
+
+// BttMockSelectClipboardExpectation specifies expectation struct of the Btt.SelectClipboard
+type BttMockSelectClipboardExpectation struct {
+	mock               *BttMock
+	params             *BttMockSelectClipboardParams
+	paramPtrs          *BttMockSelectClipboardParamPtrs
+	expectationOrigins BttMockSelectClipboardExpectationOrigins
+	results            *BttMockSelectClipboardResults
+	returnOrigin       string
+	Counter            uint64
+}
+
+// BttMockSelectClipboardParams contains parameters of the Btt.SelectClipboard
+type BttMockSelectClipboardParams struct {
+	ctx       context.Context
+	clipboard Clipboard
+}
+
+// BttMockSelectClipboardParamPtrs contains pointers to parameters of the Btt.SelectClipboard
+type BttMockSelectClipboardParamPtrs struct {
+	ctx       *context.Context
+	clipboard *Clipboard
+}
+
+// BttMockSelectClipboardResults contains results of the Btt.SelectClipboard
+type BttMockSelectClipboardResults struct {
+	err error
+}
+
+// BttMockSelectClipboardOrigins contains origins of expectations of the Btt.SelectClipboard
+type BttMockSelectClipboardExpectationOrigins struct {
+	origin          string
+	originCtx       string
+	originClipboard string
+}
+
+// Marks this method to be optional. The default behavior of any method with Return() is '1 or more', meaning
+// the test will fail minimock's automatic final call check if the mocked method was not called at least once.
+// Optional() makes method check to work in '0 or more' mode.
+// It is NOT RECOMMENDED to use this option unless you really need it, as default behaviour helps to
+// catch the problems when the expected method call is totally skipped during test run.
+func (mmSelectClipboard *mBttMockSelectClipboard) Optional() *mBttMockSelectClipboard {
+	mmSelectClipboard.optional = true
+	return mmSelectClipboard
+}
+
+// Expect sets up expected params for Btt.SelectClipboard
+func (mmSelectClipboard *mBttMockSelectClipboard) Expect(ctx context.Context, clipboard Clipboard) *mBttMockSelectClipboard {
+	if mmSelectClipboard.mock.funcSelectClipboard != nil {
+		mmSelectClipboard.mock.t.Fatalf("BttMock.SelectClipboard mock is already set by Set")
+	}
+
+	if mmSelectClipboard.defaultExpectation == nil {
+		mmSelectClipboard.defaultExpectation = &BttMockSelectClipboardExpectation{}
+	}
+
+	if mmSelectClipboard.defaultExpectation.paramPtrs != nil {
+		mmSelectClipboard.mock.t.Fatalf("BttMock.SelectClipboard mock is already set by ExpectParams functions")
+	}
+
+	mmSelectClipboard.defaultExpectation.params = &BttMockSelectClipboardParams{ctx, clipboard}
+	mmSelectClipboard.defaultExpectation.expectationOrigins.origin = minimock.CallerInfo(1)
+	for _, e := range mmSelectClipboard.expectations {
+		if minimock.Equal(e.params, mmSelectClipboard.defaultExpectation.params) {
+			mmSelectClipboard.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmSelectClipboard.defaultExpectation.params)
+		}
+	}
+
+	return mmSelectClipboard
+}
+
+// ExpectCtxParam1 sets up expected param ctx for Btt.SelectClipboard
+func (mmSelectClipboard *mBttMockSelectClipboard) ExpectCtxParam1(ctx context.Context) *mBttMockSelectClipboard {
+	if mmSelectClipboard.mock.funcSelectClipboard != nil {
+		mmSelectClipboard.mock.t.Fatalf("BttMock.SelectClipboard mock is already set by Set")
+	}
+
+	if mmSelectClipboard.defaultExpectation == nil {
+		mmSelectClipboard.defaultExpectation = &BttMockSelectClipboardExpectation{}
+	}
+
+	if mmSelectClipboard.defaultExpectation.params != nil {
+		mmSelectClipboard.mock.t.Fatalf("BttMock.SelectClipboard mock is already set by Expect")
+	}
+
+	if mmSelectClipboard.defaultExpectation.paramPtrs == nil {
+		mmSelectClipboard.defaultExpectation.paramPtrs = &BttMockSelectClipboardParamPtrs{}
+	}
+	mmSelectClipboard.defaultExpectation.paramPtrs.ctx = &ctx
+	mmSelectClipboard.defaultExpectation.expectationOrigins.originCtx = minimock.CallerInfo(1)
+
+	return mmSelectClipboard
+}
+
+// ExpectClipboardParam2 sets up expected param clipboard for Btt.SelectClipboard
+func (mmSelectClipboard *mBttMockSelectClipboard) ExpectClipboardParam2(clipboard Clipboard) *mBttMockSelectClipboard {
+	if mmSelectClipboard.mock.funcSelectClipboard != nil {
+		mmSelectClipboard.mock.t.Fatalf("BttMock.SelectClipboard mock is already set by Set")
+	}
+
+	if mmSelectClipboard.defaultExpectation == nil {
+		mmSelectClipboard.defaultExpectation = &BttMockSelectClipboardExpectation{}
+	}
+
+	if mmSelectClipboard.defaultExpectation.params != nil {
+		mmSelectClipboard.mock.t.Fatalf("BttMock.SelectClipboard mock is already set by Expect")
+	}
+
+	if mmSelectClipboard.defaultExpectation.paramPtrs == nil {
+		mmSelectClipboard.defaultExpectation.paramPtrs = &BttMockSelectClipboardParamPtrs{}
+	}
+	mmSelectClipboard.defaultExpectation.paramPtrs.clipboard = &clipboard
+	mmSelectClipboard.defaultExpectation.expectationOrigins.originClipboard = minimock.CallerInfo(1)
+
+	return mmSelectClipboard
+}
+
+// Inspect accepts an inspector function that has same arguments as the Btt.SelectClipboard
+func (mmSelectClipboard *mBttMockSelectClipboard) Inspect(f func(ctx context.Context, clipboard Clipboard)) *mBttMockSelectClipboard {
+	if mmSelectClipboard.mock.inspectFuncSelectClipboard != nil {
+		mmSelectClipboard.mock.t.Fatalf("Inspect function is already set for BttMock.SelectClipboard")
+	}
+
+	mmSelectClipboard.mock.inspectFuncSelectClipboard = f
+
+	return mmSelectClipboard
+}
+
+// Return sets up results that will be returned by Btt.SelectClipboard
+func (mmSelectClipboard *mBttMockSelectClipboard) Return(err error) *BttMock {
+	if mmSelectClipboard.mock.funcSelectClipboard != nil {
+		mmSelectClipboard.mock.t.Fatalf("BttMock.SelectClipboard mock is already set by Set")
+	}
+
+	if mmSelectClipboard.defaultExpectation == nil {
+		mmSelectClipboard.defaultExpectation = &BttMockSelectClipboardExpectation{mock: mmSelectClipboard.mock}
+	}
+	mmSelectClipboard.defaultExpectation.results = &BttMockSelectClipboardResults{err}
+	mmSelectClipboard.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
+	return mmSelectClipboard.mock
+}
+
+// Set uses given function f to mock the Btt.SelectClipboard method
+func (mmSelectClipboard *mBttMockSelectClipboard) Set(f func(ctx context.Context, clipboard Clipboard) (err error)) *BttMock {
+	if mmSelectClipboard.defaultExpectation != nil {
+		mmSelectClipboard.mock.t.Fatalf("Default expectation is already set for the Btt.SelectClipboard method")
+	}
+
+	if len(mmSelectClipboard.expectations) > 0 {
+		mmSelectClipboard.mock.t.Fatalf("Some expectations are already set for the Btt.SelectClipboard method")
+	}
+
+	mmSelectClipboard.mock.funcSelectClipboard = f
+	mmSelectClipboard.mock.funcSelectClipboardOrigin = minimock.CallerInfo(1)
+	return mmSelectClipboard.mock
+}
+
+// When sets expectation for the Btt.SelectClipboard which will trigger the result defined by the following
+// Then helper
+func (mmSelectClipboard *mBttMockSelectClipboard) When(ctx context.Context, clipboard Clipboard) *BttMockSelectClipboardExpectation {
+	if mmSelectClipboard.mock.funcSelectClipboard != nil {
+		mmSelectClipboard.mock.t.Fatalf("BttMock.SelectClipboard mock is already set by Set")
+	}
+
+	expectation := &BttMockSelectClipboardExpectation{
+		mock:               mmSelectClipboard.mock,
+		params:             &BttMockSelectClipboardParams{ctx, clipboard},
+		expectationOrigins: BttMockSelectClipboardExpectationOrigins{origin: minimock.CallerInfo(1)},
+	}
+	mmSelectClipboard.expectations = append(mmSelectClipboard.expectations, expectation)
+	return expectation
+}
+
+// Then sets up Btt.SelectClipboard return parameters for the expectation previously defined by the When method
+func (e *BttMockSelectClipboardExpectation) Then(err error) *BttMock {
+	e.results = &BttMockSelectClipboardResults{err}
+	return e.mock
+}
+
+// Times sets number of times Btt.SelectClipboard should be invoked
+func (mmSelectClipboard *mBttMockSelectClipboard) Times(n uint64) *mBttMockSelectClipboard {
+	if n == 0 {
+		mmSelectClipboard.mock.t.Fatalf("Times of BttMock.SelectClipboard mock can not be zero")
+	}
+	mm_atomic.StoreUint64(&mmSelectClipboard.expectedInvocations, n)
+	mmSelectClipboard.expectedInvocationsOrigin = minimock.CallerInfo(1)
+	return mmSelectClipboard
+}
+
+func (mmSelectClipboard *mBttMockSelectClipboard) invocationsDone() bool {
+	if len(mmSelectClipboard.expectations) == 0 && mmSelectClipboard.defaultExpectation == nil && mmSelectClipboard.mock.funcSelectClipboard == nil {
+		return true
+	}
+
+	totalInvocations := mm_atomic.LoadUint64(&mmSelectClipboard.mock.afterSelectClipboardCounter)
+	expectedInvocations := mm_atomic.LoadUint64(&mmSelectClipboard.expectedInvocations)
+
+	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
+}
+
+// SelectClipboard implements Btt
+func (mmSelectClipboard *BttMock) SelectClipboard(ctx context.Context, clipboard Clipboard) (err error) {
+	mm_atomic.AddUint64(&mmSelectClipboard.beforeSelectClipboardCounter, 1)
+	defer mm_atomic.AddUint64(&mmSelectClipboard.afterSelectClipboardCounter, 1)
+
+	mmSelectClipboard.t.Helper()
+
+	if mmSelectClipboard.inspectFuncSelectClipboard != nil {
+		mmSelectClipboard.inspectFuncSelectClipboard(ctx, clipboard)
+	}
+
+	mm_params := BttMockSelectClipboardParams{ctx, clipboard}
+
+	// Record call args
+	mmSelectClipboard.SelectClipboardMock.mutex.Lock()
+	mmSelectClipboard.SelectClipboardMock.callArgs = append(mmSelectClipboard.SelectClipboardMock.callArgs, &mm_params)
+	mmSelectClipboard.SelectClipboardMock.mutex.Unlock()
+
+	for _, e := range mmSelectClipboard.SelectClipboardMock.expectations {
+		if minimock.Equal(*e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.err
+		}
+	}
+
+	if mmSelectClipboard.SelectClipboardMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmSelectClipboard.SelectClipboardMock.defaultExpectation.Counter, 1)
+		mm_want := mmSelectClipboard.SelectClipboardMock.defaultExpectation.params
+		mm_want_ptrs := mmSelectClipboard.SelectClipboardMock.defaultExpectation.paramPtrs
+
+		mm_got := BttMockSelectClipboardParams{ctx, clipboard}
+
+		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
+				mmSelectClipboard.t.Errorf("BttMock.SelectClipboard got unexpected parameter ctx, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmSelectClipboard.SelectClipboardMock.defaultExpectation.expectationOrigins.originCtx, *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
+			}
+
+			if mm_want_ptrs.clipboard != nil && !minimock.Equal(*mm_want_ptrs.clipboard, mm_got.clipboard) {
+				mmSelectClipboard.t.Errorf("BttMock.SelectClipboard got unexpected parameter clipboard, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmSelectClipboard.SelectClipboardMock.defaultExpectation.expectationOrigins.originClipboard, *mm_want_ptrs.clipboard, mm_got.clipboard, minimock.Diff(*mm_want_ptrs.clipboard, mm_got.clipboard))
+			}
+
+		} else if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmSelectClipboard.t.Errorf("BttMock.SelectClipboard got unexpected parameters, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+				mmSelectClipboard.SelectClipboardMock.defaultExpectation.expectationOrigins.origin, *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmSelectClipboard.SelectClipboardMock.defaultExpectation.results
+		if mm_results == nil {
+			mmSelectClipboard.t.Fatal("No results are set for the BttMock.SelectClipboard")
+		}
+		return (*mm_results).err
+	}
+	if mmSelectClipboard.funcSelectClipboard != nil {
+		return mmSelectClipboard.funcSelectClipboard(ctx, clipboard)
+	}
+	mmSelectClipboard.t.Fatalf("Unexpected call to BttMock.SelectClipboard. %v %v", ctx, clipboard)
+	return
+}
+
+// SelectClipboardAfterCounter returns a count of finished BttMock.SelectClipboard invocations
+func (mmSelectClipboard *BttMock) SelectClipboardAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmSelectClipboard.afterSelectClipboardCounter)
+}
+
+// SelectClipboardBeforeCounter returns a count of BttMock.SelectClipboard invocations
+func (mmSelectClipboard *BttMock) SelectClipboardBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmSelectClipboard.beforeSelectClipboardCounter)
+}
+
+// Calls returns a list of arguments used in each call to BttMock.SelectClipboard.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmSelectClipboard *mBttMockSelectClipboard) Calls() []*BttMockSelectClipboardParams {
+	mmSelectClipboard.mutex.RLock()
+
+	argCopy := make([]*BttMockSelectClipboardParams, len(mmSelectClipboard.callArgs))
+	copy(argCopy, mmSelectClipboard.callArgs)
+
+	mmSelectClipboard.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockSelectClipboardDone returns true if the count of the SelectClipboard invocations corresponds
+// the number of defined expectations
+func (m *BttMock) MinimockSelectClipboardDone() bool {
+	if m.SelectClipboardMock.optional {
+		// Optional methods provide '0 or more' call count restriction.
+		return true
+	}
+
+	for _, e := range m.SelectClipboardMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	return m.SelectClipboardMock.invocationsDone()
+}
+
+// MinimockSelectClipboardInspect logs each unmet expectation
+func (m *BttMock) MinimockSelectClipboardInspect() {
+	for _, e := range m.SelectClipboardMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to BttMock.SelectClipboard at\n%s with params: %#v", e.expectationOrigins.origin, *e.params)
+		}
+	}
+
+	afterSelectClipboardCounter := mm_atomic.LoadUint64(&m.afterSelectClipboardCounter)
+	// if default expectation was set then invocations count should be greater than zero
+	if m.SelectClipboardMock.defaultExpectation != nil && afterSelectClipboardCounter < 1 {
+		if m.SelectClipboardMock.defaultExpectation.params == nil {
+			m.t.Errorf("Expected call to BttMock.SelectClipboard at\n%s", m.SelectClipboardMock.defaultExpectation.returnOrigin)
+		} else {
+			m.t.Errorf("Expected call to BttMock.SelectClipboard at\n%s with params: %#v", m.SelectClipboardMock.defaultExpectation.expectationOrigins.origin, *m.SelectClipboardMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcSelectClipboard != nil && afterSelectClipboardCounter < 1 {
+		m.t.Errorf("Expected call to BttMock.SelectClipboard at\n%s", m.funcSelectClipboardOrigin)
+	}
+
+	if !m.SelectClipboardMock.invocationsDone() && afterSelectClipboardCounter > 0 {
+		m.t.Errorf("Expected %d calls to BttMock.SelectClipboard at\n%s but found %d calls",
+			mm_atomic.LoadUint64(&m.SelectClipboardMock.expectedInvocations), m.SelectClipboardMock.expectedInvocationsOrigin, afterSelectClipboardCounter)
 	}
 }
 
@@ -3971,6 +4674,318 @@ func (m *BttMock) MinimockSelectViewModeInspect() {
 	}
 }
 
+type mBttMockSelectedClipboard struct {
+	optional           bool
+	mock               *BttMock
+	defaultExpectation *BttMockSelectedClipboardExpectation
+	expectations       []*BttMockSelectedClipboardExpectation
+
+	callArgs []*BttMockSelectedClipboardParams
+	mutex    sync.RWMutex
+
+	expectedInvocations       uint64
+	expectedInvocationsOrigin string
+}
+
+// BttMockSelectedClipboardExpectation specifies expectation struct of the Btt.SelectedClipboard
+type BttMockSelectedClipboardExpectation struct {
+	mock               *BttMock
+	params             *BttMockSelectedClipboardParams
+	paramPtrs          *BttMockSelectedClipboardParamPtrs
+	expectationOrigins BttMockSelectedClipboardExpectationOrigins
+	results            *BttMockSelectedClipboardResults
+	returnOrigin       string
+	Counter            uint64
+}
+
+// BttMockSelectedClipboardParams contains parameters of the Btt.SelectedClipboard
+type BttMockSelectedClipboardParams struct {
+	ctx context.Context
+}
+
+// BttMockSelectedClipboardParamPtrs contains pointers to parameters of the Btt.SelectedClipboard
+type BttMockSelectedClipboardParamPtrs struct {
+	ctx *context.Context
+}
+
+// BttMockSelectedClipboardResults contains results of the Btt.SelectedClipboard
+type BttMockSelectedClipboardResults struct {
+	c2  Clipboard
+	err error
+}
+
+// BttMockSelectedClipboardOrigins contains origins of expectations of the Btt.SelectedClipboard
+type BttMockSelectedClipboardExpectationOrigins struct {
+	origin    string
+	originCtx string
+}
+
+// Marks this method to be optional. The default behavior of any method with Return() is '1 or more', meaning
+// the test will fail minimock's automatic final call check if the mocked method was not called at least once.
+// Optional() makes method check to work in '0 or more' mode.
+// It is NOT RECOMMENDED to use this option unless you really need it, as default behaviour helps to
+// catch the problems when the expected method call is totally skipped during test run.
+func (mmSelectedClipboard *mBttMockSelectedClipboard) Optional() *mBttMockSelectedClipboard {
+	mmSelectedClipboard.optional = true
+	return mmSelectedClipboard
+}
+
+// Expect sets up expected params for Btt.SelectedClipboard
+func (mmSelectedClipboard *mBttMockSelectedClipboard) Expect(ctx context.Context) *mBttMockSelectedClipboard {
+	if mmSelectedClipboard.mock.funcSelectedClipboard != nil {
+		mmSelectedClipboard.mock.t.Fatalf("BttMock.SelectedClipboard mock is already set by Set")
+	}
+
+	if mmSelectedClipboard.defaultExpectation == nil {
+		mmSelectedClipboard.defaultExpectation = &BttMockSelectedClipboardExpectation{}
+	}
+
+	if mmSelectedClipboard.defaultExpectation.paramPtrs != nil {
+		mmSelectedClipboard.mock.t.Fatalf("BttMock.SelectedClipboard mock is already set by ExpectParams functions")
+	}
+
+	mmSelectedClipboard.defaultExpectation.params = &BttMockSelectedClipboardParams{ctx}
+	mmSelectedClipboard.defaultExpectation.expectationOrigins.origin = minimock.CallerInfo(1)
+	for _, e := range mmSelectedClipboard.expectations {
+		if minimock.Equal(e.params, mmSelectedClipboard.defaultExpectation.params) {
+			mmSelectedClipboard.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmSelectedClipboard.defaultExpectation.params)
+		}
+	}
+
+	return mmSelectedClipboard
+}
+
+// ExpectCtxParam1 sets up expected param ctx for Btt.SelectedClipboard
+func (mmSelectedClipboard *mBttMockSelectedClipboard) ExpectCtxParam1(ctx context.Context) *mBttMockSelectedClipboard {
+	if mmSelectedClipboard.mock.funcSelectedClipboard != nil {
+		mmSelectedClipboard.mock.t.Fatalf("BttMock.SelectedClipboard mock is already set by Set")
+	}
+
+	if mmSelectedClipboard.defaultExpectation == nil {
+		mmSelectedClipboard.defaultExpectation = &BttMockSelectedClipboardExpectation{}
+	}
+
+	if mmSelectedClipboard.defaultExpectation.params != nil {
+		mmSelectedClipboard.mock.t.Fatalf("BttMock.SelectedClipboard mock is already set by Expect")
+	}
+
+	if mmSelectedClipboard.defaultExpectation.paramPtrs == nil {
+		mmSelectedClipboard.defaultExpectation.paramPtrs = &BttMockSelectedClipboardParamPtrs{}
+	}
+	mmSelectedClipboard.defaultExpectation.paramPtrs.ctx = &ctx
+	mmSelectedClipboard.defaultExpectation.expectationOrigins.originCtx = minimock.CallerInfo(1)
+
+	return mmSelectedClipboard
+}
+
+// Inspect accepts an inspector function that has same arguments as the Btt.SelectedClipboard
+func (mmSelectedClipboard *mBttMockSelectedClipboard) Inspect(f func(ctx context.Context)) *mBttMockSelectedClipboard {
+	if mmSelectedClipboard.mock.inspectFuncSelectedClipboard != nil {
+		mmSelectedClipboard.mock.t.Fatalf("Inspect function is already set for BttMock.SelectedClipboard")
+	}
+
+	mmSelectedClipboard.mock.inspectFuncSelectedClipboard = f
+
+	return mmSelectedClipboard
+}
+
+// Return sets up results that will be returned by Btt.SelectedClipboard
+func (mmSelectedClipboard *mBttMockSelectedClipboard) Return(c2 Clipboard, err error) *BttMock {
+	if mmSelectedClipboard.mock.funcSelectedClipboard != nil {
+		mmSelectedClipboard.mock.t.Fatalf("BttMock.SelectedClipboard mock is already set by Set")
+	}
+
+	if mmSelectedClipboard.defaultExpectation == nil {
+		mmSelectedClipboard.defaultExpectation = &BttMockSelectedClipboardExpectation{mock: mmSelectedClipboard.mock}
+	}
+	mmSelectedClipboard.defaultExpectation.results = &BttMockSelectedClipboardResults{c2, err}
+	mmSelectedClipboard.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
+	return mmSelectedClipboard.mock
+}
+
+// Set uses given function f to mock the Btt.SelectedClipboard method
+func (mmSelectedClipboard *mBttMockSelectedClipboard) Set(f func(ctx context.Context) (c2 Clipboard, err error)) *BttMock {
+	if mmSelectedClipboard.defaultExpectation != nil {
+		mmSelectedClipboard.mock.t.Fatalf("Default expectation is already set for the Btt.SelectedClipboard method")
+	}
+
+	if len(mmSelectedClipboard.expectations) > 0 {
+		mmSelectedClipboard.mock.t.Fatalf("Some expectations are already set for the Btt.SelectedClipboard method")
+	}
+
+	mmSelectedClipboard.mock.funcSelectedClipboard = f
+	mmSelectedClipboard.mock.funcSelectedClipboardOrigin = minimock.CallerInfo(1)
+	return mmSelectedClipboard.mock
+}
+
+// When sets expectation for the Btt.SelectedClipboard which will trigger the result defined by the following
+// Then helper
+func (mmSelectedClipboard *mBttMockSelectedClipboard) When(ctx context.Context) *BttMockSelectedClipboardExpectation {
+	if mmSelectedClipboard.mock.funcSelectedClipboard != nil {
+		mmSelectedClipboard.mock.t.Fatalf("BttMock.SelectedClipboard mock is already set by Set")
+	}
+
+	expectation := &BttMockSelectedClipboardExpectation{
+		mock:               mmSelectedClipboard.mock,
+		params:             &BttMockSelectedClipboardParams{ctx},
+		expectationOrigins: BttMockSelectedClipboardExpectationOrigins{origin: minimock.CallerInfo(1)},
+	}
+	mmSelectedClipboard.expectations = append(mmSelectedClipboard.expectations, expectation)
+	return expectation
+}
+
+// Then sets up Btt.SelectedClipboard return parameters for the expectation previously defined by the When method
+func (e *BttMockSelectedClipboardExpectation) Then(c2 Clipboard, err error) *BttMock {
+	e.results = &BttMockSelectedClipboardResults{c2, err}
+	return e.mock
+}
+
+// Times sets number of times Btt.SelectedClipboard should be invoked
+func (mmSelectedClipboard *mBttMockSelectedClipboard) Times(n uint64) *mBttMockSelectedClipboard {
+	if n == 0 {
+		mmSelectedClipboard.mock.t.Fatalf("Times of BttMock.SelectedClipboard mock can not be zero")
+	}
+	mm_atomic.StoreUint64(&mmSelectedClipboard.expectedInvocations, n)
+	mmSelectedClipboard.expectedInvocationsOrigin = minimock.CallerInfo(1)
+	return mmSelectedClipboard
+}
+
+func (mmSelectedClipboard *mBttMockSelectedClipboard) invocationsDone() bool {
+	if len(mmSelectedClipboard.expectations) == 0 && mmSelectedClipboard.defaultExpectation == nil && mmSelectedClipboard.mock.funcSelectedClipboard == nil {
+		return true
+	}
+
+	totalInvocations := mm_atomic.LoadUint64(&mmSelectedClipboard.mock.afterSelectedClipboardCounter)
+	expectedInvocations := mm_atomic.LoadUint64(&mmSelectedClipboard.expectedInvocations)
+
+	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
+}
+
+// SelectedClipboard implements Btt
+func (mmSelectedClipboard *BttMock) SelectedClipboard(ctx context.Context) (c2 Clipboard, err error) {
+	mm_atomic.AddUint64(&mmSelectedClipboard.beforeSelectedClipboardCounter, 1)
+	defer mm_atomic.AddUint64(&mmSelectedClipboard.afterSelectedClipboardCounter, 1)
+
+	mmSelectedClipboard.t.Helper()
+
+	if mmSelectedClipboard.inspectFuncSelectedClipboard != nil {
+		mmSelectedClipboard.inspectFuncSelectedClipboard(ctx)
+	}
+
+	mm_params := BttMockSelectedClipboardParams{ctx}
+
+	// Record call args
+	mmSelectedClipboard.SelectedClipboardMock.mutex.Lock()
+	mmSelectedClipboard.SelectedClipboardMock.callArgs = append(mmSelectedClipboard.SelectedClipboardMock.callArgs, &mm_params)
+	mmSelectedClipboard.SelectedClipboardMock.mutex.Unlock()
+
+	for _, e := range mmSelectedClipboard.SelectedClipboardMock.expectations {
+		if minimock.Equal(*e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.c2, e.results.err
+		}
+	}
+
+	if mmSelectedClipboard.SelectedClipboardMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmSelectedClipboard.SelectedClipboardMock.defaultExpectation.Counter, 1)
+		mm_want := mmSelectedClipboard.SelectedClipboardMock.defaultExpectation.params
+		mm_want_ptrs := mmSelectedClipboard.SelectedClipboardMock.defaultExpectation.paramPtrs
+
+		mm_got := BttMockSelectedClipboardParams{ctx}
+
+		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
+				mmSelectedClipboard.t.Errorf("BttMock.SelectedClipboard got unexpected parameter ctx, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmSelectedClipboard.SelectedClipboardMock.defaultExpectation.expectationOrigins.originCtx, *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
+			}
+
+		} else if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmSelectedClipboard.t.Errorf("BttMock.SelectedClipboard got unexpected parameters, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+				mmSelectedClipboard.SelectedClipboardMock.defaultExpectation.expectationOrigins.origin, *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmSelectedClipboard.SelectedClipboardMock.defaultExpectation.results
+		if mm_results == nil {
+			mmSelectedClipboard.t.Fatal("No results are set for the BttMock.SelectedClipboard")
+		}
+		return (*mm_results).c2, (*mm_results).err
+	}
+	if mmSelectedClipboard.funcSelectedClipboard != nil {
+		return mmSelectedClipboard.funcSelectedClipboard(ctx)
+	}
+	mmSelectedClipboard.t.Fatalf("Unexpected call to BttMock.SelectedClipboard. %v", ctx)
+	return
+}
+
+// SelectedClipboardAfterCounter returns a count of finished BttMock.SelectedClipboard invocations
+func (mmSelectedClipboard *BttMock) SelectedClipboardAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmSelectedClipboard.afterSelectedClipboardCounter)
+}
+
+// SelectedClipboardBeforeCounter returns a count of BttMock.SelectedClipboard invocations
+func (mmSelectedClipboard *BttMock) SelectedClipboardBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmSelectedClipboard.beforeSelectedClipboardCounter)
+}
+
+// Calls returns a list of arguments used in each call to BttMock.SelectedClipboard.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmSelectedClipboard *mBttMockSelectedClipboard) Calls() []*BttMockSelectedClipboardParams {
+	mmSelectedClipboard.mutex.RLock()
+
+	argCopy := make([]*BttMockSelectedClipboardParams, len(mmSelectedClipboard.callArgs))
+	copy(argCopy, mmSelectedClipboard.callArgs)
+
+	mmSelectedClipboard.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockSelectedClipboardDone returns true if the count of the SelectedClipboard invocations corresponds
+// the number of defined expectations
+func (m *BttMock) MinimockSelectedClipboardDone() bool {
+	if m.SelectedClipboardMock.optional {
+		// Optional methods provide '0 or more' call count restriction.
+		return true
+	}
+
+	for _, e := range m.SelectedClipboardMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	return m.SelectedClipboardMock.invocationsDone()
+}
+
+// MinimockSelectedClipboardInspect logs each unmet expectation
+func (m *BttMock) MinimockSelectedClipboardInspect() {
+	for _, e := range m.SelectedClipboardMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to BttMock.SelectedClipboard at\n%s with params: %#v", e.expectationOrigins.origin, *e.params)
+		}
+	}
+
+	afterSelectedClipboardCounter := mm_atomic.LoadUint64(&m.afterSelectedClipboardCounter)
+	// if default expectation was set then invocations count should be greater than zero
+	if m.SelectedClipboardMock.defaultExpectation != nil && afterSelectedClipboardCounter < 1 {
+		if m.SelectedClipboardMock.defaultExpectation.params == nil {
+			m.t.Errorf("Expected call to BttMock.SelectedClipboard at\n%s", m.SelectedClipboardMock.defaultExpectation.returnOrigin)
+		} else {
+			m.t.Errorf("Expected call to BttMock.SelectedClipboard at\n%s with params: %#v", m.SelectedClipboardMock.defaultExpectation.expectationOrigins.origin, *m.SelectedClipboardMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcSelectedClipboard != nil && afterSelectedClipboardCounter < 1 {
+		m.t.Errorf("Expected call to BttMock.SelectedClipboard at\n%s", m.funcSelectedClipboardOrigin)
+	}
+
+	if !m.SelectedClipboardMock.invocationsDone() && afterSelectedClipboardCounter > 0 {
+		m.t.Errorf("Expected %d calls to BttMock.SelectedClipboard at\n%s but found %d calls",
+			mm_atomic.LoadUint64(&m.SelectedClipboardMock.expectedInvocations), m.SelectedClipboardMock.expectedInvocationsOrigin, afterSelectedClipboardCounter)
+	}
+}
+
 type mBttMockSelectedDevice struct {
 	optional           bool
 	mock               *BttMock
@@ -5216,6 +6231,317 @@ func (m *BttMock) MinimockSelectedViewModeInspect() {
 	if !m.SelectedViewModeMock.invocationsDone() && afterSelectedViewModeCounter > 0 {
 		m.t.Errorf("Expected %d calls to BttMock.SelectedViewMode at\n%s but found %d calls",
 			mm_atomic.LoadUint64(&m.SelectedViewModeMock.expectedInvocations), m.SelectedViewModeMock.expectedInvocationsOrigin, afterSelectedViewModeCounter)
+	}
+}
+
+type mBttMockShowClipboard struct {
+	optional           bool
+	mock               *BttMock
+	defaultExpectation *BttMockShowClipboardExpectation
+	expectations       []*BttMockShowClipboardExpectation
+
+	callArgs []*BttMockShowClipboardParams
+	mutex    sync.RWMutex
+
+	expectedInvocations       uint64
+	expectedInvocationsOrigin string
+}
+
+// BttMockShowClipboardExpectation specifies expectation struct of the Btt.ShowClipboard
+type BttMockShowClipboardExpectation struct {
+	mock               *BttMock
+	params             *BttMockShowClipboardParams
+	paramPtrs          *BttMockShowClipboardParamPtrs
+	expectationOrigins BttMockShowClipboardExpectationOrigins
+	results            *BttMockShowClipboardResults
+	returnOrigin       string
+	Counter            uint64
+}
+
+// BttMockShowClipboardParams contains parameters of the Btt.ShowClipboard
+type BttMockShowClipboardParams struct {
+	ctx context.Context
+}
+
+// BttMockShowClipboardParamPtrs contains pointers to parameters of the Btt.ShowClipboard
+type BttMockShowClipboardParamPtrs struct {
+	ctx *context.Context
+}
+
+// BttMockShowClipboardResults contains results of the Btt.ShowClipboard
+type BttMockShowClipboardResults struct {
+	err error
+}
+
+// BttMockShowClipboardOrigins contains origins of expectations of the Btt.ShowClipboard
+type BttMockShowClipboardExpectationOrigins struct {
+	origin    string
+	originCtx string
+}
+
+// Marks this method to be optional. The default behavior of any method with Return() is '1 or more', meaning
+// the test will fail minimock's automatic final call check if the mocked method was not called at least once.
+// Optional() makes method check to work in '0 or more' mode.
+// It is NOT RECOMMENDED to use this option unless you really need it, as default behaviour helps to
+// catch the problems when the expected method call is totally skipped during test run.
+func (mmShowClipboard *mBttMockShowClipboard) Optional() *mBttMockShowClipboard {
+	mmShowClipboard.optional = true
+	return mmShowClipboard
+}
+
+// Expect sets up expected params for Btt.ShowClipboard
+func (mmShowClipboard *mBttMockShowClipboard) Expect(ctx context.Context) *mBttMockShowClipboard {
+	if mmShowClipboard.mock.funcShowClipboard != nil {
+		mmShowClipboard.mock.t.Fatalf("BttMock.ShowClipboard mock is already set by Set")
+	}
+
+	if mmShowClipboard.defaultExpectation == nil {
+		mmShowClipboard.defaultExpectation = &BttMockShowClipboardExpectation{}
+	}
+
+	if mmShowClipboard.defaultExpectation.paramPtrs != nil {
+		mmShowClipboard.mock.t.Fatalf("BttMock.ShowClipboard mock is already set by ExpectParams functions")
+	}
+
+	mmShowClipboard.defaultExpectation.params = &BttMockShowClipboardParams{ctx}
+	mmShowClipboard.defaultExpectation.expectationOrigins.origin = minimock.CallerInfo(1)
+	for _, e := range mmShowClipboard.expectations {
+		if minimock.Equal(e.params, mmShowClipboard.defaultExpectation.params) {
+			mmShowClipboard.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmShowClipboard.defaultExpectation.params)
+		}
+	}
+
+	return mmShowClipboard
+}
+
+// ExpectCtxParam1 sets up expected param ctx for Btt.ShowClipboard
+func (mmShowClipboard *mBttMockShowClipboard) ExpectCtxParam1(ctx context.Context) *mBttMockShowClipboard {
+	if mmShowClipboard.mock.funcShowClipboard != nil {
+		mmShowClipboard.mock.t.Fatalf("BttMock.ShowClipboard mock is already set by Set")
+	}
+
+	if mmShowClipboard.defaultExpectation == nil {
+		mmShowClipboard.defaultExpectation = &BttMockShowClipboardExpectation{}
+	}
+
+	if mmShowClipboard.defaultExpectation.params != nil {
+		mmShowClipboard.mock.t.Fatalf("BttMock.ShowClipboard mock is already set by Expect")
+	}
+
+	if mmShowClipboard.defaultExpectation.paramPtrs == nil {
+		mmShowClipboard.defaultExpectation.paramPtrs = &BttMockShowClipboardParamPtrs{}
+	}
+	mmShowClipboard.defaultExpectation.paramPtrs.ctx = &ctx
+	mmShowClipboard.defaultExpectation.expectationOrigins.originCtx = minimock.CallerInfo(1)
+
+	return mmShowClipboard
+}
+
+// Inspect accepts an inspector function that has same arguments as the Btt.ShowClipboard
+func (mmShowClipboard *mBttMockShowClipboard) Inspect(f func(ctx context.Context)) *mBttMockShowClipboard {
+	if mmShowClipboard.mock.inspectFuncShowClipboard != nil {
+		mmShowClipboard.mock.t.Fatalf("Inspect function is already set for BttMock.ShowClipboard")
+	}
+
+	mmShowClipboard.mock.inspectFuncShowClipboard = f
+
+	return mmShowClipboard
+}
+
+// Return sets up results that will be returned by Btt.ShowClipboard
+func (mmShowClipboard *mBttMockShowClipboard) Return(err error) *BttMock {
+	if mmShowClipboard.mock.funcShowClipboard != nil {
+		mmShowClipboard.mock.t.Fatalf("BttMock.ShowClipboard mock is already set by Set")
+	}
+
+	if mmShowClipboard.defaultExpectation == nil {
+		mmShowClipboard.defaultExpectation = &BttMockShowClipboardExpectation{mock: mmShowClipboard.mock}
+	}
+	mmShowClipboard.defaultExpectation.results = &BttMockShowClipboardResults{err}
+	mmShowClipboard.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
+	return mmShowClipboard.mock
+}
+
+// Set uses given function f to mock the Btt.ShowClipboard method
+func (mmShowClipboard *mBttMockShowClipboard) Set(f func(ctx context.Context) (err error)) *BttMock {
+	if mmShowClipboard.defaultExpectation != nil {
+		mmShowClipboard.mock.t.Fatalf("Default expectation is already set for the Btt.ShowClipboard method")
+	}
+
+	if len(mmShowClipboard.expectations) > 0 {
+		mmShowClipboard.mock.t.Fatalf("Some expectations are already set for the Btt.ShowClipboard method")
+	}
+
+	mmShowClipboard.mock.funcShowClipboard = f
+	mmShowClipboard.mock.funcShowClipboardOrigin = minimock.CallerInfo(1)
+	return mmShowClipboard.mock
+}
+
+// When sets expectation for the Btt.ShowClipboard which will trigger the result defined by the following
+// Then helper
+func (mmShowClipboard *mBttMockShowClipboard) When(ctx context.Context) *BttMockShowClipboardExpectation {
+	if mmShowClipboard.mock.funcShowClipboard != nil {
+		mmShowClipboard.mock.t.Fatalf("BttMock.ShowClipboard mock is already set by Set")
+	}
+
+	expectation := &BttMockShowClipboardExpectation{
+		mock:               mmShowClipboard.mock,
+		params:             &BttMockShowClipboardParams{ctx},
+		expectationOrigins: BttMockShowClipboardExpectationOrigins{origin: minimock.CallerInfo(1)},
+	}
+	mmShowClipboard.expectations = append(mmShowClipboard.expectations, expectation)
+	return expectation
+}
+
+// Then sets up Btt.ShowClipboard return parameters for the expectation previously defined by the When method
+func (e *BttMockShowClipboardExpectation) Then(err error) *BttMock {
+	e.results = &BttMockShowClipboardResults{err}
+	return e.mock
+}
+
+// Times sets number of times Btt.ShowClipboard should be invoked
+func (mmShowClipboard *mBttMockShowClipboard) Times(n uint64) *mBttMockShowClipboard {
+	if n == 0 {
+		mmShowClipboard.mock.t.Fatalf("Times of BttMock.ShowClipboard mock can not be zero")
+	}
+	mm_atomic.StoreUint64(&mmShowClipboard.expectedInvocations, n)
+	mmShowClipboard.expectedInvocationsOrigin = minimock.CallerInfo(1)
+	return mmShowClipboard
+}
+
+func (mmShowClipboard *mBttMockShowClipboard) invocationsDone() bool {
+	if len(mmShowClipboard.expectations) == 0 && mmShowClipboard.defaultExpectation == nil && mmShowClipboard.mock.funcShowClipboard == nil {
+		return true
+	}
+
+	totalInvocations := mm_atomic.LoadUint64(&mmShowClipboard.mock.afterShowClipboardCounter)
+	expectedInvocations := mm_atomic.LoadUint64(&mmShowClipboard.expectedInvocations)
+
+	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
+}
+
+// ShowClipboard implements Btt
+func (mmShowClipboard *BttMock) ShowClipboard(ctx context.Context) (err error) {
+	mm_atomic.AddUint64(&mmShowClipboard.beforeShowClipboardCounter, 1)
+	defer mm_atomic.AddUint64(&mmShowClipboard.afterShowClipboardCounter, 1)
+
+	mmShowClipboard.t.Helper()
+
+	if mmShowClipboard.inspectFuncShowClipboard != nil {
+		mmShowClipboard.inspectFuncShowClipboard(ctx)
+	}
+
+	mm_params := BttMockShowClipboardParams{ctx}
+
+	// Record call args
+	mmShowClipboard.ShowClipboardMock.mutex.Lock()
+	mmShowClipboard.ShowClipboardMock.callArgs = append(mmShowClipboard.ShowClipboardMock.callArgs, &mm_params)
+	mmShowClipboard.ShowClipboardMock.mutex.Unlock()
+
+	for _, e := range mmShowClipboard.ShowClipboardMock.expectations {
+		if minimock.Equal(*e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.err
+		}
+	}
+
+	if mmShowClipboard.ShowClipboardMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmShowClipboard.ShowClipboardMock.defaultExpectation.Counter, 1)
+		mm_want := mmShowClipboard.ShowClipboardMock.defaultExpectation.params
+		mm_want_ptrs := mmShowClipboard.ShowClipboardMock.defaultExpectation.paramPtrs
+
+		mm_got := BttMockShowClipboardParams{ctx}
+
+		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
+				mmShowClipboard.t.Errorf("BttMock.ShowClipboard got unexpected parameter ctx, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmShowClipboard.ShowClipboardMock.defaultExpectation.expectationOrigins.originCtx, *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
+			}
+
+		} else if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmShowClipboard.t.Errorf("BttMock.ShowClipboard got unexpected parameters, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+				mmShowClipboard.ShowClipboardMock.defaultExpectation.expectationOrigins.origin, *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmShowClipboard.ShowClipboardMock.defaultExpectation.results
+		if mm_results == nil {
+			mmShowClipboard.t.Fatal("No results are set for the BttMock.ShowClipboard")
+		}
+		return (*mm_results).err
+	}
+	if mmShowClipboard.funcShowClipboard != nil {
+		return mmShowClipboard.funcShowClipboard(ctx)
+	}
+	mmShowClipboard.t.Fatalf("Unexpected call to BttMock.ShowClipboard. %v", ctx)
+	return
+}
+
+// ShowClipboardAfterCounter returns a count of finished BttMock.ShowClipboard invocations
+func (mmShowClipboard *BttMock) ShowClipboardAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmShowClipboard.afterShowClipboardCounter)
+}
+
+// ShowClipboardBeforeCounter returns a count of BttMock.ShowClipboard invocations
+func (mmShowClipboard *BttMock) ShowClipboardBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmShowClipboard.beforeShowClipboardCounter)
+}
+
+// Calls returns a list of arguments used in each call to BttMock.ShowClipboard.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmShowClipboard *mBttMockShowClipboard) Calls() []*BttMockShowClipboardParams {
+	mmShowClipboard.mutex.RLock()
+
+	argCopy := make([]*BttMockShowClipboardParams, len(mmShowClipboard.callArgs))
+	copy(argCopy, mmShowClipboard.callArgs)
+
+	mmShowClipboard.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockShowClipboardDone returns true if the count of the ShowClipboard invocations corresponds
+// the number of defined expectations
+func (m *BttMock) MinimockShowClipboardDone() bool {
+	if m.ShowClipboardMock.optional {
+		// Optional methods provide '0 or more' call count restriction.
+		return true
+	}
+
+	for _, e := range m.ShowClipboardMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	return m.ShowClipboardMock.invocationsDone()
+}
+
+// MinimockShowClipboardInspect logs each unmet expectation
+func (m *BttMock) MinimockShowClipboardInspect() {
+	for _, e := range m.ShowClipboardMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to BttMock.ShowClipboard at\n%s with params: %#v", e.expectationOrigins.origin, *e.params)
+		}
+	}
+
+	afterShowClipboardCounter := mm_atomic.LoadUint64(&m.afterShowClipboardCounter)
+	// if default expectation was set then invocations count should be greater than zero
+	if m.ShowClipboardMock.defaultExpectation != nil && afterShowClipboardCounter < 1 {
+		if m.ShowClipboardMock.defaultExpectation.params == nil {
+			m.t.Errorf("Expected call to BttMock.ShowClipboard at\n%s", m.ShowClipboardMock.defaultExpectation.returnOrigin)
+		} else {
+			m.t.Errorf("Expected call to BttMock.ShowClipboard at\n%s with params: %#v", m.ShowClipboardMock.defaultExpectation.expectationOrigins.origin, *m.ShowClipboardMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcShowClipboard != nil && afterShowClipboardCounter < 1 {
+		m.t.Errorf("Expected call to BttMock.ShowClipboard at\n%s", m.funcShowClipboardOrigin)
+	}
+
+	if !m.ShowClipboardMock.invocationsDone() && afterShowClipboardCounter > 0 {
+		m.t.Errorf("Expected %d calls to BttMock.ShowClipboard at\n%s but found %d calls",
+			mm_atomic.LoadUint64(&m.ShowClipboardMock.expectedInvocations), m.ShowClipboardMock.expectedInvocationsOrigin, afterShowClipboardCounter)
 	}
 }
 
@@ -6465,6 +7791,318 @@ func (m *BttMock) MinimockStreamTextInspect() {
 	}
 }
 
+type mBttMockText struct {
+	optional           bool
+	mock               *BttMock
+	defaultExpectation *BttMockTextExpectation
+	expectations       []*BttMockTextExpectation
+
+	callArgs []*BttMockTextParams
+	mutex    sync.RWMutex
+
+	expectedInvocations       uint64
+	expectedInvocationsOrigin string
+}
+
+// BttMockTextExpectation specifies expectation struct of the Btt.Text
+type BttMockTextExpectation struct {
+	mock               *BttMock
+	params             *BttMockTextParams
+	paramPtrs          *BttMockTextParamPtrs
+	expectationOrigins BttMockTextExpectationOrigins
+	results            *BttMockTextResults
+	returnOrigin       string
+	Counter            uint64
+}
+
+// BttMockTextParams contains parameters of the Btt.Text
+type BttMockTextParams struct {
+	ctx context.Context
+}
+
+// BttMockTextParamPtrs contains pointers to parameters of the Btt.Text
+type BttMockTextParamPtrs struct {
+	ctx *context.Context
+}
+
+// BttMockTextResults contains results of the Btt.Text
+type BttMockTextResults struct {
+	s1  string
+	err error
+}
+
+// BttMockTextOrigins contains origins of expectations of the Btt.Text
+type BttMockTextExpectationOrigins struct {
+	origin    string
+	originCtx string
+}
+
+// Marks this method to be optional. The default behavior of any method with Return() is '1 or more', meaning
+// the test will fail minimock's automatic final call check if the mocked method was not called at least once.
+// Optional() makes method check to work in '0 or more' mode.
+// It is NOT RECOMMENDED to use this option unless you really need it, as default behaviour helps to
+// catch the problems when the expected method call is totally skipped during test run.
+func (mmText *mBttMockText) Optional() *mBttMockText {
+	mmText.optional = true
+	return mmText
+}
+
+// Expect sets up expected params for Btt.Text
+func (mmText *mBttMockText) Expect(ctx context.Context) *mBttMockText {
+	if mmText.mock.funcText != nil {
+		mmText.mock.t.Fatalf("BttMock.Text mock is already set by Set")
+	}
+
+	if mmText.defaultExpectation == nil {
+		mmText.defaultExpectation = &BttMockTextExpectation{}
+	}
+
+	if mmText.defaultExpectation.paramPtrs != nil {
+		mmText.mock.t.Fatalf("BttMock.Text mock is already set by ExpectParams functions")
+	}
+
+	mmText.defaultExpectation.params = &BttMockTextParams{ctx}
+	mmText.defaultExpectation.expectationOrigins.origin = minimock.CallerInfo(1)
+	for _, e := range mmText.expectations {
+		if minimock.Equal(e.params, mmText.defaultExpectation.params) {
+			mmText.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmText.defaultExpectation.params)
+		}
+	}
+
+	return mmText
+}
+
+// ExpectCtxParam1 sets up expected param ctx for Btt.Text
+func (mmText *mBttMockText) ExpectCtxParam1(ctx context.Context) *mBttMockText {
+	if mmText.mock.funcText != nil {
+		mmText.mock.t.Fatalf("BttMock.Text mock is already set by Set")
+	}
+
+	if mmText.defaultExpectation == nil {
+		mmText.defaultExpectation = &BttMockTextExpectation{}
+	}
+
+	if mmText.defaultExpectation.params != nil {
+		mmText.mock.t.Fatalf("BttMock.Text mock is already set by Expect")
+	}
+
+	if mmText.defaultExpectation.paramPtrs == nil {
+		mmText.defaultExpectation.paramPtrs = &BttMockTextParamPtrs{}
+	}
+	mmText.defaultExpectation.paramPtrs.ctx = &ctx
+	mmText.defaultExpectation.expectationOrigins.originCtx = minimock.CallerInfo(1)
+
+	return mmText
+}
+
+// Inspect accepts an inspector function that has same arguments as the Btt.Text
+func (mmText *mBttMockText) Inspect(f func(ctx context.Context)) *mBttMockText {
+	if mmText.mock.inspectFuncText != nil {
+		mmText.mock.t.Fatalf("Inspect function is already set for BttMock.Text")
+	}
+
+	mmText.mock.inspectFuncText = f
+
+	return mmText
+}
+
+// Return sets up results that will be returned by Btt.Text
+func (mmText *mBttMockText) Return(s1 string, err error) *BttMock {
+	if mmText.mock.funcText != nil {
+		mmText.mock.t.Fatalf("BttMock.Text mock is already set by Set")
+	}
+
+	if mmText.defaultExpectation == nil {
+		mmText.defaultExpectation = &BttMockTextExpectation{mock: mmText.mock}
+	}
+	mmText.defaultExpectation.results = &BttMockTextResults{s1, err}
+	mmText.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
+	return mmText.mock
+}
+
+// Set uses given function f to mock the Btt.Text method
+func (mmText *mBttMockText) Set(f func(ctx context.Context) (s1 string, err error)) *BttMock {
+	if mmText.defaultExpectation != nil {
+		mmText.mock.t.Fatalf("Default expectation is already set for the Btt.Text method")
+	}
+
+	if len(mmText.expectations) > 0 {
+		mmText.mock.t.Fatalf("Some expectations are already set for the Btt.Text method")
+	}
+
+	mmText.mock.funcText = f
+	mmText.mock.funcTextOrigin = minimock.CallerInfo(1)
+	return mmText.mock
+}
+
+// When sets expectation for the Btt.Text which will trigger the result defined by the following
+// Then helper
+func (mmText *mBttMockText) When(ctx context.Context) *BttMockTextExpectation {
+	if mmText.mock.funcText != nil {
+		mmText.mock.t.Fatalf("BttMock.Text mock is already set by Set")
+	}
+
+	expectation := &BttMockTextExpectation{
+		mock:               mmText.mock,
+		params:             &BttMockTextParams{ctx},
+		expectationOrigins: BttMockTextExpectationOrigins{origin: minimock.CallerInfo(1)},
+	}
+	mmText.expectations = append(mmText.expectations, expectation)
+	return expectation
+}
+
+// Then sets up Btt.Text return parameters for the expectation previously defined by the When method
+func (e *BttMockTextExpectation) Then(s1 string, err error) *BttMock {
+	e.results = &BttMockTextResults{s1, err}
+	return e.mock
+}
+
+// Times sets number of times Btt.Text should be invoked
+func (mmText *mBttMockText) Times(n uint64) *mBttMockText {
+	if n == 0 {
+		mmText.mock.t.Fatalf("Times of BttMock.Text mock can not be zero")
+	}
+	mm_atomic.StoreUint64(&mmText.expectedInvocations, n)
+	mmText.expectedInvocationsOrigin = minimock.CallerInfo(1)
+	return mmText
+}
+
+func (mmText *mBttMockText) invocationsDone() bool {
+	if len(mmText.expectations) == 0 && mmText.defaultExpectation == nil && mmText.mock.funcText == nil {
+		return true
+	}
+
+	totalInvocations := mm_atomic.LoadUint64(&mmText.mock.afterTextCounter)
+	expectedInvocations := mm_atomic.LoadUint64(&mmText.expectedInvocations)
+
+	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
+}
+
+// Text implements Btt
+func (mmText *BttMock) Text(ctx context.Context) (s1 string, err error) {
+	mm_atomic.AddUint64(&mmText.beforeTextCounter, 1)
+	defer mm_atomic.AddUint64(&mmText.afterTextCounter, 1)
+
+	mmText.t.Helper()
+
+	if mmText.inspectFuncText != nil {
+		mmText.inspectFuncText(ctx)
+	}
+
+	mm_params := BttMockTextParams{ctx}
+
+	// Record call args
+	mmText.TextMock.mutex.Lock()
+	mmText.TextMock.callArgs = append(mmText.TextMock.callArgs, &mm_params)
+	mmText.TextMock.mutex.Unlock()
+
+	for _, e := range mmText.TextMock.expectations {
+		if minimock.Equal(*e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.s1, e.results.err
+		}
+	}
+
+	if mmText.TextMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmText.TextMock.defaultExpectation.Counter, 1)
+		mm_want := mmText.TextMock.defaultExpectation.params
+		mm_want_ptrs := mmText.TextMock.defaultExpectation.paramPtrs
+
+		mm_got := BttMockTextParams{ctx}
+
+		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
+				mmText.t.Errorf("BttMock.Text got unexpected parameter ctx, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmText.TextMock.defaultExpectation.expectationOrigins.originCtx, *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
+			}
+
+		} else if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmText.t.Errorf("BttMock.Text got unexpected parameters, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+				mmText.TextMock.defaultExpectation.expectationOrigins.origin, *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmText.TextMock.defaultExpectation.results
+		if mm_results == nil {
+			mmText.t.Fatal("No results are set for the BttMock.Text")
+		}
+		return (*mm_results).s1, (*mm_results).err
+	}
+	if mmText.funcText != nil {
+		return mmText.funcText(ctx)
+	}
+	mmText.t.Fatalf("Unexpected call to BttMock.Text. %v", ctx)
+	return
+}
+
+// TextAfterCounter returns a count of finished BttMock.Text invocations
+func (mmText *BttMock) TextAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmText.afterTextCounter)
+}
+
+// TextBeforeCounter returns a count of BttMock.Text invocations
+func (mmText *BttMock) TextBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmText.beforeTextCounter)
+}
+
+// Calls returns a list of arguments used in each call to BttMock.Text.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmText *mBttMockText) Calls() []*BttMockTextParams {
+	mmText.mutex.RLock()
+
+	argCopy := make([]*BttMockTextParams, len(mmText.callArgs))
+	copy(argCopy, mmText.callArgs)
+
+	mmText.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockTextDone returns true if the count of the Text invocations corresponds
+// the number of defined expectations
+func (m *BttMock) MinimockTextDone() bool {
+	if m.TextMock.optional {
+		// Optional methods provide '0 or more' call count restriction.
+		return true
+	}
+
+	for _, e := range m.TextMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	return m.TextMock.invocationsDone()
+}
+
+// MinimockTextInspect logs each unmet expectation
+func (m *BttMock) MinimockTextInspect() {
+	for _, e := range m.TextMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to BttMock.Text at\n%s with params: %#v", e.expectationOrigins.origin, *e.params)
+		}
+	}
+
+	afterTextCounter := mm_atomic.LoadUint64(&m.afterTextCounter)
+	// if default expectation was set then invocations count should be greater than zero
+	if m.TextMock.defaultExpectation != nil && afterTextCounter < 1 {
+		if m.TextMock.defaultExpectation.params == nil {
+			m.t.Errorf("Expected call to BttMock.Text at\n%s", m.TextMock.defaultExpectation.returnOrigin)
+		} else {
+			m.t.Errorf("Expected call to BttMock.Text at\n%s with params: %#v", m.TextMock.defaultExpectation.expectationOrigins.origin, *m.TextMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcText != nil && afterTextCounter < 1 {
+		m.t.Errorf("Expected call to BttMock.Text at\n%s", m.funcTextOrigin)
+	}
+
+	if !m.TextMock.invocationsDone() && afterTextCounter > 0 {
+		m.t.Errorf("Expected %d calls to BttMock.Text at\n%s but found %d calls",
+			mm_atomic.LoadUint64(&m.TextMock.expectedInvocations), m.TextMock.expectedInvocationsOrigin, afterTextCounter)
+	}
+}
+
 type mBttMockToggleListening struct {
 	optional           bool
 	mock               *BttMock
@@ -6788,6 +8426,8 @@ func (m *BttMock) MinimockFinish() {
 
 			m.MinimockFloatingPageInspect()
 
+			m.MinimockHideClipboardInspect()
+
 			m.MinimockHideFloatingInspect()
 
 			m.MinimockInitializeInspect()
@@ -6795,6 +8435,8 @@ func (m *BttMock) MinimockFinish() {
 			m.MinimockIsRunningInspect()
 
 			m.MinimockLoadDevicesInspect()
+
+			m.MinimockSelectClipboardInspect()
 
 			m.MinimockSelectDeviceInspect()
 
@@ -6804,6 +8446,8 @@ func (m *BttMock) MinimockFinish() {
 
 			m.MinimockSelectViewModeInspect()
 
+			m.MinimockSelectedClipboardInspect()
+
 			m.MinimockSelectedDeviceInspect()
 
 			m.MinimockSelectedFloatingInspect()
@@ -6812,6 +8456,8 @@ func (m *BttMock) MinimockFinish() {
 
 			m.MinimockSelectedViewModeInspect()
 
+			m.MinimockShowClipboardInspect()
+
 			m.MinimockShowFloatingInspect()
 
 			m.MinimockStartListeningInspect()
@@ -6819,6 +8465,8 @@ func (m *BttMock) MinimockFinish() {
 			m.MinimockStopListeningInspect()
 
 			m.MinimockStreamTextInspect()
+
+			m.MinimockTextInspect()
 
 			m.MinimockToggleListeningInspect()
 		}
@@ -6848,21 +8496,26 @@ func (m *BttMock) minimockDone() bool {
 		m.MinimockDisableCleanViewDone() &&
 		m.MinimockEnableCleanModeDone() &&
 		m.MinimockFloatingPageDone() &&
+		m.MinimockHideClipboardDone() &&
 		m.MinimockHideFloatingDone() &&
 		m.MinimockInitializeDone() &&
 		m.MinimockIsRunningDone() &&
 		m.MinimockLoadDevicesDone() &&
+		m.MinimockSelectClipboardDone() &&
 		m.MinimockSelectDeviceDone() &&
 		m.MinimockSelectFloatingDone() &&
 		m.MinimockSelectLanguageDone() &&
 		m.MinimockSelectViewModeDone() &&
+		m.MinimockSelectedClipboardDone() &&
 		m.MinimockSelectedDeviceDone() &&
 		m.MinimockSelectedFloatingDone() &&
 		m.MinimockSelectedLanguageDone() &&
 		m.MinimockSelectedViewModeDone() &&
+		m.MinimockShowClipboardDone() &&
 		m.MinimockShowFloatingDone() &&
 		m.MinimockStartListeningDone() &&
 		m.MinimockStopListeningDone() &&
 		m.MinimockStreamTextDone() &&
+		m.MinimockTextDone() &&
 		m.MinimockToggleListeningDone()
 }

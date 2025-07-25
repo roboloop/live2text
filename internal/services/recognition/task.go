@@ -87,7 +87,6 @@ func (t *Task) Run(ctx context.Context) error {
 
 	recognizedBroadcaster := utils.Broadcaster(ctx, t.logger, recognizedCh, []string{"console", "file", "subtitle"})
 	consoleCh, fileCh, subtitleCh := recognizedBroadcaster[0], recognizedBroadcaster[1], recognizedBroadcaster[2]
-	formatter := text.NewSubtitleFormatter(0, 0)
 	g.Go(func() error {
 		return t.output.ToConsole(ctx, consoleCh)
 	})
@@ -95,11 +94,11 @@ func (t *Task) Run(ctx context.Context) error {
 		return t.output.ToFile(ctx, fileCh)
 	})
 	g.Go(func() error {
-		return t.output.Print(ctx, text.NewSubtitleWriter(formatter), subtitleCh)
+		return t.output.Print(ctx, text.NewSubtitleWriter(t.formatter), subtitleCh)
 	})
 
 	g.Go(func() error {
-		return t.socket.Listen(ctx, t.socketPath, formatter)
+		return t.socket.Listen(ctx, t.socketPath, t.formatter)
 	})
 
 	if err = g.Wait(); err != nil && !errors.Is(err, context.Canceled) {

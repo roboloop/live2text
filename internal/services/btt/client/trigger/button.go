@@ -8,19 +8,18 @@ func NewTapButton(title Title, script string) Trigger {
 		addTapScript(script)
 }
 
+// NewTapIconButton create a new icon button with a shell script on tap.
+func NewTapIconButton(title Title, script string, icon Icon) Trigger {
+	return NewTapButton(title, script).
+		addIcon(icon, defaultHeight, true)
+}
+
 // NewInfoButton creates a new button with cycled execution of a shell script on view.
 func NewInfoButton(title Title, script string, interval float64) Trigger {
 	return newTrigger().
 		init(title, triggerShellScript, typeTouchBar).
 		addAction(actionTypeEmptyPlaceholder).
 		addCycledScript(script, interval)
-}
-
-// NewDirButton create a new button that opens a directory.
-func NewDirButton(title Title, icon Icon) Trigger {
-	return newTrigger().
-		init(title, triggerDirectory, typeTouchBar).
-		addIcon(icon, defaultHeight, false)
 }
 
 // NewStatusInfoButton creates a button with cycled execution of a shell script on view
@@ -38,6 +37,13 @@ func NewSettingsInfoButton(title Title, script string) Trigger {
 // NewMetricsInfoButton creates a new button with cycled execution of grabbing metrics.
 func NewMetricsInfoButton(title Title, script string, icon Icon) Trigger {
 	return NewInfoButton(title, script, metricsInterval).addIcon(icon, defaultHeight, false)
+}
+
+// NewDirButton create a new button that opens a directory.
+func NewDirButton(title Title, icon Icon) Trigger {
+	return newTrigger().
+		init(title, triggerDirectory, typeTouchBar).
+		addIcon(icon, defaultHeight, false)
 }
 
 // NewHiddenDir creates a new hidden directory.

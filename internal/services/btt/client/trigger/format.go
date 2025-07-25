@@ -9,3 +9,15 @@ func (t Trigger) AddReadableFormat() Trigger {
 		},
 	})
 }
+
+func (t Trigger) AddEnabled() Trigger {
+	return t.addExtra(map[string]any{
+		"BTTEnabled2": 1,
+	})
+}
+
+func (t Trigger) AddDisabled() Trigger {
+	return t.addExtra(map[string]any{
+		"BTTEnabled2": 0,
+	})
+}

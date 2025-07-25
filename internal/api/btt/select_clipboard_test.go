@@ -11,13 +11,13 @@ import (
 	"live2text/internal/services/btt"
 )
 
-func TestSelectFloatingState(t *testing.T) {
+func TestSelectClipboard(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name                    string
-		body                    string
-		mockSelectFloatingState func() error
+		name                string
+		body                string
+		mockSelectClipboard func() error
 
 		expectedCode int
 		expectedBody string
@@ -30,15 +30,15 @@ func TestSelectFloatingState(t *testing.T) {
 		},
 		{
 			name: "validation failed",
-			body: `{"floating_state":"invalid"}`,
+			body: `{"clipboard":"invalid"}`,
 
 			expectedCode: http.StatusBadRequest,
-			expectedBody: `{"floating_state":"floating_state is not valid"}`,
+			expectedBody: `{"clipboard":"clipboard is not valid"}`,
 		},
 		{
-			name: "select floating state failed",
-			body: `{"floating_state":"Shown"}`,
-			mockSelectFloatingState: func() error {
+			name: "select clipboard failed",
+			body: `{"clipboard":"Shown"}`,
+			mockSelectClipboard: func() error {
 				return errors.New("dummy error")
 			},
 			expectedCode: http.StatusInternalServerError,
@@ -46,8 +46,8 @@ func TestSelectFloatingState(t *testing.T) {
 		},
 		{
 			name: "ok",
-			body: `{"floating_state":"Shown"}`,
-			mockSelectFloatingState: func() error {
+			body: `{"clipboard":"Shown"}`,
+			mockSelectClipboard: func() error {
 				return nil
 			},
 			expectedCode: http.StatusOK,
@@ -60,14 +60,14 @@ func TestSelectFloatingState(t *testing.T) {
 			t.Parallel()
 
 			server := setupServer(t, func(mc *minimock.Controller, s *services.ServicesMock) {
-				if tt.mockSelectFloatingState != nil {
+				if tt.mockSelectClipboard != nil {
 					b := btt.NewBttMock(mc)
-					b.SelectFloatingMock.Return(tt.mockSelectFloatingState())
+					b.SelectClipboardMock.Return(tt.mockSelectClipboard())
 					s.BttMock.Return(b)
 				}
 			}, nil)
 
-			w := performRequest(t, server.SelectFloatingState, tt.body)
+			w := performRequest(t, server.SelectClipboard, tt.body)
 
 			assertResponse(t, w, tt.expectedCode, nil, tt.expectedBody)
 		})

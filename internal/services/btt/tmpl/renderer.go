@@ -6,16 +6,16 @@ import (
 	_ "embed"
 )
 
-//go:embed common.shell.gotmpl
+//go:embed templates/common.shell.gotmpl
 var common []byte
 
-//go:embed scripts.shell.gotmpl
+//go:embed templates/scripts.shell.gotmpl
 var scripts []byte
 
-//go:embed metrics.shell.gotmpl
+//go:embed templates/metrics.shell.gotmpl
 var metrics []byte
 
-//go:embed pages.html.gotmpl
+//go:embed templates/pages.html.gotmpl
 var pages []byte
 
 type renderer struct {

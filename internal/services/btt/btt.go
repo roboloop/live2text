@@ -11,6 +11,7 @@ type btt struct {
 	LanguageComponent
 	ViewModeComponent
 	FloatingComponent
+	ClipboardComponent
 }
 
 func NewBtt(
@@ -20,6 +21,7 @@ func NewBtt(
 	languageComponent LanguageComponent,
 	viewModeComponent ViewModeComponent,
 	floatingComponent FloatingComponent,
+	clipboardComponent ClipboardComponent,
 ) Btt {
 	return &btt{
 		InitializingComponent: initializingComponent,
@@ -28,5 +30,6 @@ func NewBtt(
 		LanguageComponent:     languageComponent,
 		ViewModeComponent:     viewModeComponent,
 		FloatingComponent:     floatingComponent,
+		ClipboardComponent:    clipboardComponent,
 	}
 }

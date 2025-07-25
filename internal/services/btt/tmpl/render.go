@@ -53,8 +53,12 @@ func (r *renderer) PrintSelectedViewMode() string {
 	return r.render("print_selected_view_mode", map[string]any{})
 }
 
-func (r *renderer) PrintSelectedFloatingState() string {
-	return r.render("print_selected_floating_state", map[string]any{})
+func (r *renderer) PrintSelectedFloating() string {
+	return r.render("print_selected_floating", map[string]any{})
+}
+
+func (r *renderer) PrintSelectedClipboard() string {
+	return r.render("print_selected_clipboard", map[string]any{})
 }
 
 func (r *renderer) SelectDevice(device string) string {
@@ -69,8 +73,12 @@ func (r *renderer) SelectViewMode(viewMode string) string {
 	return r.render("select_view_mode", map[string]any{"ViewMode": viewMode})
 }
 
-func (r *renderer) SelectFloatingState(floatingState string) string {
-	return r.render("select_floating_state", map[string]any{"FloatingState": floatingState})
+func (r *renderer) SelectFloating(floating string) string {
+	return r.render("select_floating", map[string]any{"Floating": floating})
+}
+
+func (r *renderer) SelectClipboard(clipboard string) string {
+	return r.render("select_clipboard", map[string]any{"Clipboard": clipboard})
 }
 
 func (r *renderer) FloatingPage() string {
@@ -119,6 +127,10 @@ func (r *renderer) ListenSocket(socketPath string) string {
 
 func (r *renderer) AppPlaceholder() string {
 	return r.render("app_placeholder", map[string]any{})
+}
+
+func (r *renderer) CopyText() string {
+	return r.render("copy_text", map[string]any{})
 }
 
 func encodeForShell(jsonPayload map[string]any) (string, error) {

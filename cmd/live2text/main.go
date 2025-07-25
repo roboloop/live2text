@@ -193,9 +193,10 @@ func newBtt(logger *slog.Logger, audio audio.Audio, recognition recognition.Reco
 	lc := btt.NewLanguageComponent(sc)
 	vmc := btt.NewViewModeComponent(client, sc)
 	fc := btt.NewFloatingComponent(logger, recognition, client, s, renderer, sc)
-	lic := btt.NewListeningComponent(logger, recognition, client, s, renderer, dc, lc, vmc, fc)
+	cc := btt.NewClipboardComponent(logger, client, sc)
+	lic := btt.NewListeningComponent(logger, recognition, client, s, renderer, dc, lc, vmc, fc, cc)
 
-	return btt.NewBtt(nil, lic, dc, lc, vmc, fc)
+	return btt.NewBtt(nil, lic, dc, lc, vmc, fc, cc)
 }
 
 func checkPortAvailable(address string) error {

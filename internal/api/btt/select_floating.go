@@ -9,22 +9,22 @@ import (
 	"live2text/internal/services/btt"
 )
 
-type selectFloatingStateRequest struct {
-	FloatingState string `json:"floating_state"`
+type selectFloatingRequest struct {
+	Floating string `json:"floating"`
 }
 
-func (r selectFloatingStateRequest) validate() map[string]string {
+func (r selectFloatingRequest) validate() map[string]string {
 	problems := make(map[string]string)
 
-	if r.FloatingState != btt.FloatingShown && r.FloatingState != btt.FloatingHidden {
-		problems["floating_state"] = "floating_state is not valid"
+	if r.Floating != string(btt.FloatingShown) && r.Floating != string(btt.FloatingHidden) {
+		problems["floating"] = "floating is not valid"
 	}
 
 	return problems
 }
 
-func (s *Server) SelectFloatingState(w http.ResponseWriter, r *http.Request) {
-	request, err := json.Decode[selectFloatingStateRequest](r)
+func (s *Server) SelectFloating(w http.ResponseWriter, r *http.Request) {
+	request, err := json.Decode[selectFloatingRequest](r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -35,7 +35,7 @@ func (s *Server) SelectFloatingState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = s.services.Btt().SelectFloating(r.Context(), btt.Floating(request.FloatingState))
+	err = s.services.Btt().SelectFloating(r.Context(), btt.Floating(request.Floating))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -36,12 +36,20 @@ view_mode=$(curl -sSLf 'http://{{ .AppAddress }}/api/btt/selected-view-mode')
 [[ -z "${view_mode}" ]] && echo "⚠️ No view mode selected" || echo "✅ ${view_mode}"
 {{- end }}
 
-{{- define "print_selected_floating_state" }}
+{{- define "print_selected_floating" }}
 {{- template "log" . }}
 {{- template "health-check" . }}
 
-state=$(curl -sSLf 'http://{{ .AppAddress }}/api/btt/selected-floating-state')
-[[ -z "${state}" ]] && echo "⚠️ No floating state selected" || echo "✅ ${state}"
+floating=$(curl -sSLf 'http://{{ .AppAddress }}/api/btt/selected-floating')
+[[ -z "${floating}" ]] && echo "⚠️ No floating state selected" || echo "✅ ${floating}"
+{{- end }}
+
+{{- define "print_selected_clipboard" }}
+{{- template "log" . }}
+{{- template "health-check" . }}
+
+clipboard=$(curl -sSLf 'http://{{ .AppAddress }}/api/btt/selected-clipboard')
+[[ -z "${clipboard}" ]] && echo "⚠️ No clipboard selected" || echo "✅ ${clipboard}"
 {{- end }}
 
 {{- define "select_device" }}
@@ -65,11 +73,18 @@ curl -X POST -H 'Content-Type: application/json' -sSLf --data-raw '{"view_mode":
   http://{{ .AppAddress }}/api/btt/select-view-mode
 {{- end }}
 
-{{- define "select_floating_state" }}
+{{- define "select_floating" }}
 {{- template "log" . }}
 
-curl -X POST -H 'Content-Type: application/json' -sSLf --data-raw '{"floating_state": "{{ .FloatingState }}"}' \
-  http://{{ .AppAddress }}/api/btt/select-floating-state
+curl -X POST -H 'Content-Type: application/json' -sSLf --data-raw '{"floating": "{{ .Floating }}"}' \
+  http://{{ .AppAddress }}/api/btt/select-floating
+{{- end }}
+
+{{- define "select_clipboard" }}
+{{- template "log" . }}
+
+curl -X POST -H 'Content-Type: application/json' -sSLf --data-raw '{"clipboard": "{{ .Clipboard }}"}' \
+  http://{{ .AppAddress }}/api/btt/select-clipboard
 {{- end }}
 
 
@@ -110,5 +125,12 @@ text="$(nc -U "{{ .SocketPath }}")"
 echo "{{ .AppName}} App"
 {{- end }}
 
+{{- define "copy_text" }}
+{{- template "log" . }}
+text=$(curl -sSLf http://{{ .AppAddress }}/api/btt/text)
+[[ -z "${text}" ]] && exit 0
+echo -n "${text}" | tr $'\n' ' ' | pbcopy
+osascript -e "display notification \"Text copied\" with title \"{{ .AppName}}\""
+{{- end }}
 
 

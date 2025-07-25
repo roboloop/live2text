@@ -18,6 +18,17 @@ func TestNewTapButton(t *testing.T) {
 	require.Equal(t, "bar", button["BTTAdditionalActions"].([]any)[0].(map[string]any)["BTTShellTaskActionScript"])
 }
 
+func TestNewTapIconButton(t *testing.T) {
+	t.Parallel()
+
+	button := NewTapIconButton("foo", "bar", "baz")
+	requireTitle(t, "foo", button)
+
+	require.Equal(t, "baz", button["BTTTriggerConfig"].(map[string]any)["BTTTouchBarItemSFSymbolDefaultIcon"])
+	require.Equal(t, float64(22), button["BTTTriggerConfig"].(map[string]any)["BTTTouchBarItemIconHeight"])
+	require.Equal(t, true, button["BTTTriggerConfig"].(map[string]any)["BTTTouchBarOnlyShowIcon"])
+}
+
 func TestNewInfoButton(t *testing.T) {
 	t.Parallel()
 
@@ -29,19 +40,6 @@ func TestNewInfoButton(t *testing.T) {
 	require.Equal(t, float64(366), button["BTTPredefinedActionType"])
 	require.Equal(t, "bar", button["BTTTriggerConfig"].(map[string]any)["BTTTouchBarShellScriptString"])
 	require.Equal(t, float64(42), button["BTTTriggerConfig"].(map[string]any)["BTTTouchBarScriptUpdateInterval"])
-}
-
-func TestNewDirButton(t *testing.T) {
-	t.Parallel()
-
-	button := NewDirButton("foo", "bar")
-
-	requireTitle(t, "foo", button)
-	require.Equal(t, float64(630), button["BTTTriggerType"])
-	require.Equal(t, "BTTTriggerTypeTouchBar", button["BTTTriggerClass"])
-	require.Equal(t, "bar", button["BTTTriggerConfig"].(map[string]any)["BTTTouchBarItemSFSymbolDefaultIcon"])
-	require.Equal(t, float64(22), button["BTTTriggerConfig"].(map[string]any)["BTTTouchBarItemIconHeight"])
-	require.NotContains(t, button["BTTTriggerConfig"], "BTTTouchBarOnlyShowIcon")
 }
 
 func TestNewStatusInfoButton(t *testing.T) {
@@ -90,6 +88,19 @@ func TestNewHiddenDir(t *testing.T) {
 	require.Equal(t, "BTTTriggerTypeTouchBar", button["BTTTriggerClass"])
 	require.Equal(t, 0, button["BTTTriggerConfig"].(map[string]any)["BTTTouchBarButtonWidth"])
 	require.Equal(t, 1, button["BTTTriggerConfig"].(map[string]any)["BTTTouchBarButtonUseFixedWidth"])
+}
+
+func TestNewDirButton(t *testing.T) {
+	t.Parallel()
+
+	button := NewDirButton("foo", "bar")
+
+	requireTitle(t, "foo", button)
+	require.Equal(t, float64(630), button["BTTTriggerType"])
+	require.Equal(t, "BTTTriggerTypeTouchBar", button["BTTTriggerClass"])
+	require.Equal(t, "bar", button["BTTTriggerConfig"].(map[string]any)["BTTTouchBarItemSFSymbolDefaultIcon"])
+	require.Equal(t, float64(22), button["BTTTriggerConfig"].(map[string]any)["BTTTouchBarItemIconHeight"])
+	require.NotContains(t, button["BTTTriggerConfig"], "BTTTouchBarOnlyShowIcon")
 }
 
 func TestNewCloseDirButton(t *testing.T) {

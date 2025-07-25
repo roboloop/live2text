@@ -19,3 +19,17 @@ func TestAddReadableFormat(t *testing.T) {
 	)
 	require.Equal(t, 0, trigger["BTTTriggerConfig"].(map[string]any)["BTTTouchBarButtonTextAlignment"])
 }
+
+func TestAddEnabled(t *testing.T) {
+	t.Parallel()
+
+	patch := newTrigger().AddEnabled()
+	require.Equal(t, 1, patch["BTTEnabled2"])
+}
+
+func TestAddDisabled(t *testing.T) {
+	t.Parallel()
+
+	patch := newTrigger().AddDisabled()
+	require.Equal(t, 0, patch["BTTEnabled2"])
+}

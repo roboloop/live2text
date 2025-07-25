@@ -12,6 +12,7 @@ const (
 	IconMicrophone Icon = "microphone"
 	IconCharacter  Icon = "character"
 	IconMacwindow  Icon = "macwindow"
+	IconClipboard  Icon = "list.clipboard"
 	IconChartBar   Icon = "chart.bar"
 
 	IconXmarkCircleFill            Icon = "xmark.circle.fill"

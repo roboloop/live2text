@@ -9,12 +9,14 @@ type Renderer interface {
 	PrintSelectedDevice() string
 	PrintSelectedLanguage() string
 	PrintSelectedViewMode() string
-	PrintSelectedFloatingState() string
+	PrintSelectedFloating() string
+	PrintSelectedClipboard() string
 
 	SelectDevice(device string) string
 	SelectLanguage(language string) string
 	SelectViewMode(viewMode string) string
-	SelectFloatingState(floatingState string) string
+	SelectFloating(floatingState string) string
+	SelectClipboard(clipboard string) string
 
 	FloatingPage() string
 	CloseSettings(cleanViewMode string, closeAction map[string]any, openCleanViewAction map[string]any) string
@@ -22,4 +24,5 @@ type Renderer interface {
 	Toggle() string
 	ListenSocket(socketPath string) string
 	AppPlaceholder() string
+	CopyText() string
 }

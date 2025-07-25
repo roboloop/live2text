@@ -37,6 +37,13 @@ type ListeningComponentMock struct {
 	beforeStopListeningCounter uint64
 	StopListeningMock          mListeningComponentMockStopListening
 
+	funcText          func(ctx context.Context) (s1 string, err error)
+	funcTextOrigin    string
+	inspectFuncText   func(ctx context.Context)
+	afterTextCounter  uint64
+	beforeTextCounter uint64
+	TextMock          mListeningComponentMockText
+
 	funcToggleListening          func(ctx context.Context) (err error)
 	funcToggleListeningOrigin    string
 	inspectFuncToggleListening   func(ctx context.Context)
@@ -61,6 +68,9 @@ func NewListeningComponentMock(t minimock.Tester) *ListeningComponentMock {
 
 	m.StopListeningMock = mListeningComponentMockStopListening{mock: m}
 	m.StopListeningMock.callArgs = []*ListeningComponentMockStopListeningParams{}
+
+	m.TextMock = mListeningComponentMockText{mock: m}
+	m.TextMock.callArgs = []*ListeningComponentMockTextParams{}
 
 	m.ToggleListeningMock = mListeningComponentMockToggleListening{mock: m}
 	m.ToggleListeningMock.callArgs = []*ListeningComponentMockToggleListeningParams{}
@@ -1004,6 +1014,318 @@ func (m *ListeningComponentMock) MinimockStopListeningInspect() {
 	}
 }
 
+type mListeningComponentMockText struct {
+	optional           bool
+	mock               *ListeningComponentMock
+	defaultExpectation *ListeningComponentMockTextExpectation
+	expectations       []*ListeningComponentMockTextExpectation
+
+	callArgs []*ListeningComponentMockTextParams
+	mutex    sync.RWMutex
+
+	expectedInvocations       uint64
+	expectedInvocationsOrigin string
+}
+
+// ListeningComponentMockTextExpectation specifies expectation struct of the ListeningComponent.Text
+type ListeningComponentMockTextExpectation struct {
+	mock               *ListeningComponentMock
+	params             *ListeningComponentMockTextParams
+	paramPtrs          *ListeningComponentMockTextParamPtrs
+	expectationOrigins ListeningComponentMockTextExpectationOrigins
+	results            *ListeningComponentMockTextResults
+	returnOrigin       string
+	Counter            uint64
+}
+
+// ListeningComponentMockTextParams contains parameters of the ListeningComponent.Text
+type ListeningComponentMockTextParams struct {
+	ctx context.Context
+}
+
+// ListeningComponentMockTextParamPtrs contains pointers to parameters of the ListeningComponent.Text
+type ListeningComponentMockTextParamPtrs struct {
+	ctx *context.Context
+}
+
+// ListeningComponentMockTextResults contains results of the ListeningComponent.Text
+type ListeningComponentMockTextResults struct {
+	s1  string
+	err error
+}
+
+// ListeningComponentMockTextOrigins contains origins of expectations of the ListeningComponent.Text
+type ListeningComponentMockTextExpectationOrigins struct {
+	origin    string
+	originCtx string
+}
+
+// Marks this method to be optional. The default behavior of any method with Return() is '1 or more', meaning
+// the test will fail minimock's automatic final call check if the mocked method was not called at least once.
+// Optional() makes method check to work in '0 or more' mode.
+// It is NOT RECOMMENDED to use this option unless you really need it, as default behaviour helps to
+// catch the problems when the expected method call is totally skipped during test run.
+func (mmText *mListeningComponentMockText) Optional() *mListeningComponentMockText {
+	mmText.optional = true
+	return mmText
+}
+
+// Expect sets up expected params for ListeningComponent.Text
+func (mmText *mListeningComponentMockText) Expect(ctx context.Context) *mListeningComponentMockText {
+	if mmText.mock.funcText != nil {
+		mmText.mock.t.Fatalf("ListeningComponentMock.Text mock is already set by Set")
+	}
+
+	if mmText.defaultExpectation == nil {
+		mmText.defaultExpectation = &ListeningComponentMockTextExpectation{}
+	}
+
+	if mmText.defaultExpectation.paramPtrs != nil {
+		mmText.mock.t.Fatalf("ListeningComponentMock.Text mock is already set by ExpectParams functions")
+	}
+
+	mmText.defaultExpectation.params = &ListeningComponentMockTextParams{ctx}
+	mmText.defaultExpectation.expectationOrigins.origin = minimock.CallerInfo(1)
+	for _, e := range mmText.expectations {
+		if minimock.Equal(e.params, mmText.defaultExpectation.params) {
+			mmText.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmText.defaultExpectation.params)
+		}
+	}
+
+	return mmText
+}
+
+// ExpectCtxParam1 sets up expected param ctx for ListeningComponent.Text
+func (mmText *mListeningComponentMockText) ExpectCtxParam1(ctx context.Context) *mListeningComponentMockText {
+	if mmText.mock.funcText != nil {
+		mmText.mock.t.Fatalf("ListeningComponentMock.Text mock is already set by Set")
+	}
+
+	if mmText.defaultExpectation == nil {
+		mmText.defaultExpectation = &ListeningComponentMockTextExpectation{}
+	}
+
+	if mmText.defaultExpectation.params != nil {
+		mmText.mock.t.Fatalf("ListeningComponentMock.Text mock is already set by Expect")
+	}
+
+	if mmText.defaultExpectation.paramPtrs == nil {
+		mmText.defaultExpectation.paramPtrs = &ListeningComponentMockTextParamPtrs{}
+	}
+	mmText.defaultExpectation.paramPtrs.ctx = &ctx
+	mmText.defaultExpectation.expectationOrigins.originCtx = minimock.CallerInfo(1)
+
+	return mmText
+}
+
+// Inspect accepts an inspector function that has same arguments as the ListeningComponent.Text
+func (mmText *mListeningComponentMockText) Inspect(f func(ctx context.Context)) *mListeningComponentMockText {
+	if mmText.mock.inspectFuncText != nil {
+		mmText.mock.t.Fatalf("Inspect function is already set for ListeningComponentMock.Text")
+	}
+
+	mmText.mock.inspectFuncText = f
+
+	return mmText
+}
+
+// Return sets up results that will be returned by ListeningComponent.Text
+func (mmText *mListeningComponentMockText) Return(s1 string, err error) *ListeningComponentMock {
+	if mmText.mock.funcText != nil {
+		mmText.mock.t.Fatalf("ListeningComponentMock.Text mock is already set by Set")
+	}
+
+	if mmText.defaultExpectation == nil {
+		mmText.defaultExpectation = &ListeningComponentMockTextExpectation{mock: mmText.mock}
+	}
+	mmText.defaultExpectation.results = &ListeningComponentMockTextResults{s1, err}
+	mmText.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
+	return mmText.mock
+}
+
+// Set uses given function f to mock the ListeningComponent.Text method
+func (mmText *mListeningComponentMockText) Set(f func(ctx context.Context) (s1 string, err error)) *ListeningComponentMock {
+	if mmText.defaultExpectation != nil {
+		mmText.mock.t.Fatalf("Default expectation is already set for the ListeningComponent.Text method")
+	}
+
+	if len(mmText.expectations) > 0 {
+		mmText.mock.t.Fatalf("Some expectations are already set for the ListeningComponent.Text method")
+	}
+
+	mmText.mock.funcText = f
+	mmText.mock.funcTextOrigin = minimock.CallerInfo(1)
+	return mmText.mock
+}
+
+// When sets expectation for the ListeningComponent.Text which will trigger the result defined by the following
+// Then helper
+func (mmText *mListeningComponentMockText) When(ctx context.Context) *ListeningComponentMockTextExpectation {
+	if mmText.mock.funcText != nil {
+		mmText.mock.t.Fatalf("ListeningComponentMock.Text mock is already set by Set")
+	}
+
+	expectation := &ListeningComponentMockTextExpectation{
+		mock:               mmText.mock,
+		params:             &ListeningComponentMockTextParams{ctx},
+		expectationOrigins: ListeningComponentMockTextExpectationOrigins{origin: minimock.CallerInfo(1)},
+	}
+	mmText.expectations = append(mmText.expectations, expectation)
+	return expectation
+}
+
+// Then sets up ListeningComponent.Text return parameters for the expectation previously defined by the When method
+func (e *ListeningComponentMockTextExpectation) Then(s1 string, err error) *ListeningComponentMock {
+	e.results = &ListeningComponentMockTextResults{s1, err}
+	return e.mock
+}
+
+// Times sets number of times ListeningComponent.Text should be invoked
+func (mmText *mListeningComponentMockText) Times(n uint64) *mListeningComponentMockText {
+	if n == 0 {
+		mmText.mock.t.Fatalf("Times of ListeningComponentMock.Text mock can not be zero")
+	}
+	mm_atomic.StoreUint64(&mmText.expectedInvocations, n)
+	mmText.expectedInvocationsOrigin = minimock.CallerInfo(1)
+	return mmText
+}
+
+func (mmText *mListeningComponentMockText) invocationsDone() bool {
+	if len(mmText.expectations) == 0 && mmText.defaultExpectation == nil && mmText.mock.funcText == nil {
+		return true
+	}
+
+	totalInvocations := mm_atomic.LoadUint64(&mmText.mock.afterTextCounter)
+	expectedInvocations := mm_atomic.LoadUint64(&mmText.expectedInvocations)
+
+	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
+}
+
+// Text implements ListeningComponent
+func (mmText *ListeningComponentMock) Text(ctx context.Context) (s1 string, err error) {
+	mm_atomic.AddUint64(&mmText.beforeTextCounter, 1)
+	defer mm_atomic.AddUint64(&mmText.afterTextCounter, 1)
+
+	mmText.t.Helper()
+
+	if mmText.inspectFuncText != nil {
+		mmText.inspectFuncText(ctx)
+	}
+
+	mm_params := ListeningComponentMockTextParams{ctx}
+
+	// Record call args
+	mmText.TextMock.mutex.Lock()
+	mmText.TextMock.callArgs = append(mmText.TextMock.callArgs, &mm_params)
+	mmText.TextMock.mutex.Unlock()
+
+	for _, e := range mmText.TextMock.expectations {
+		if minimock.Equal(*e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.s1, e.results.err
+		}
+	}
+
+	if mmText.TextMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmText.TextMock.defaultExpectation.Counter, 1)
+		mm_want := mmText.TextMock.defaultExpectation.params
+		mm_want_ptrs := mmText.TextMock.defaultExpectation.paramPtrs
+
+		mm_got := ListeningComponentMockTextParams{ctx}
+
+		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
+				mmText.t.Errorf("ListeningComponentMock.Text got unexpected parameter ctx, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmText.TextMock.defaultExpectation.expectationOrigins.originCtx, *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
+			}
+
+		} else if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmText.t.Errorf("ListeningComponentMock.Text got unexpected parameters, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+				mmText.TextMock.defaultExpectation.expectationOrigins.origin, *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmText.TextMock.defaultExpectation.results
+		if mm_results == nil {
+			mmText.t.Fatal("No results are set for the ListeningComponentMock.Text")
+		}
+		return (*mm_results).s1, (*mm_results).err
+	}
+	if mmText.funcText != nil {
+		return mmText.funcText(ctx)
+	}
+	mmText.t.Fatalf("Unexpected call to ListeningComponentMock.Text. %v", ctx)
+	return
+}
+
+// TextAfterCounter returns a count of finished ListeningComponentMock.Text invocations
+func (mmText *ListeningComponentMock) TextAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmText.afterTextCounter)
+}
+
+// TextBeforeCounter returns a count of ListeningComponentMock.Text invocations
+func (mmText *ListeningComponentMock) TextBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmText.beforeTextCounter)
+}
+
+// Calls returns a list of arguments used in each call to ListeningComponentMock.Text.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmText *mListeningComponentMockText) Calls() []*ListeningComponentMockTextParams {
+	mmText.mutex.RLock()
+
+	argCopy := make([]*ListeningComponentMockTextParams, len(mmText.callArgs))
+	copy(argCopy, mmText.callArgs)
+
+	mmText.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockTextDone returns true if the count of the Text invocations corresponds
+// the number of defined expectations
+func (m *ListeningComponentMock) MinimockTextDone() bool {
+	if m.TextMock.optional {
+		// Optional methods provide '0 or more' call count restriction.
+		return true
+	}
+
+	for _, e := range m.TextMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	return m.TextMock.invocationsDone()
+}
+
+// MinimockTextInspect logs each unmet expectation
+func (m *ListeningComponentMock) MinimockTextInspect() {
+	for _, e := range m.TextMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to ListeningComponentMock.Text at\n%s with params: %#v", e.expectationOrigins.origin, *e.params)
+		}
+	}
+
+	afterTextCounter := mm_atomic.LoadUint64(&m.afterTextCounter)
+	// if default expectation was set then invocations count should be greater than zero
+	if m.TextMock.defaultExpectation != nil && afterTextCounter < 1 {
+		if m.TextMock.defaultExpectation.params == nil {
+			m.t.Errorf("Expected call to ListeningComponentMock.Text at\n%s", m.TextMock.defaultExpectation.returnOrigin)
+		} else {
+			m.t.Errorf("Expected call to ListeningComponentMock.Text at\n%s with params: %#v", m.TextMock.defaultExpectation.expectationOrigins.origin, *m.TextMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcText != nil && afterTextCounter < 1 {
+		m.t.Errorf("Expected call to ListeningComponentMock.Text at\n%s", m.funcTextOrigin)
+	}
+
+	if !m.TextMock.invocationsDone() && afterTextCounter > 0 {
+		m.t.Errorf("Expected %d calls to ListeningComponentMock.Text at\n%s but found %d calls",
+			mm_atomic.LoadUint64(&m.TextMock.expectedInvocations), m.TextMock.expectedInvocationsOrigin, afterTextCounter)
+	}
+}
+
 type mListeningComponentMockToggleListening struct {
 	optional           bool
 	mock               *ListeningComponentMock
@@ -1325,6 +1647,8 @@ func (m *ListeningComponentMock) MinimockFinish() {
 
 			m.MinimockStopListeningInspect()
 
+			m.MinimockTextInspect()
+
 			m.MinimockToggleListeningInspect()
 		}
 	})
@@ -1352,5 +1676,6 @@ func (m *ListeningComponentMock) minimockDone() bool {
 		m.MinimockIsRunningDone() &&
 		m.MinimockStartListeningDone() &&
 		m.MinimockStopListeningDone() &&
+		m.MinimockTextDone() &&
 		m.MinimockToggleListeningDone()
 }

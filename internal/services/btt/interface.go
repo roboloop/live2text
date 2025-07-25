@@ -7,7 +7,7 @@ import (
 	"live2text/internal/services/btt/storage"
 )
 
-//go:generate minimock -g -i Btt,InitializingComponent,ListeningComponent,DeviceComponent,LanguageComponent,ViewModeComponent,FloatingComponent,SettingsComponent -s _mock.go -o .
+//go:generate minimock -g -i Btt,InitializingComponent,ListeningComponent,DeviceComponent,LanguageComponent,ViewModeComponent,FloatingComponent,ClipboardComponent,SettingsComponent -s _mock.go -o .
 
 type Btt interface {
 	InitializingComponent
@@ -16,6 +16,7 @@ type Btt interface {
 	LanguageComponent
 	ViewModeComponent
 	FloatingComponent
+	ClipboardComponent
 }
 
 type InitializingComponent interface {
@@ -28,6 +29,7 @@ type ListeningComponent interface {
 	StartListening(ctx context.Context) error
 	StopListening(ctx context.Context) error
 	IsRunning(ctx context.Context) (bool, error)
+	Text(ctx context.Context) (string, error)
 }
 
 type DeviceComponent interface {
@@ -55,6 +57,13 @@ type FloatingComponent interface {
 	HideFloating(ctx context.Context) error
 	FloatingPage() string
 	StreamText(ctx context.Context) (<-chan string, <-chan error, error)
+}
+
+type ClipboardComponent interface {
+	SelectClipboard(ctx context.Context, clipboard Clipboard) error
+	SelectedClipboard(ctx context.Context) (Clipboard, error)
+	ShowClipboard(ctx context.Context) error
+	HideClipboard(ctx context.Context) error
 }
 
 type SettingsComponent interface {

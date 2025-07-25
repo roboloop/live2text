@@ -29,6 +29,13 @@ type RendererMock struct {
 	beforeCloseSettingsCounter uint64
 	CloseSettingsMock          mRendererMockCloseSettings
 
+	funcCopyText          func() (s1 string)
+	funcCopyTextOrigin    string
+	inspectFuncCopyText   func()
+	afterCopyTextCounter  uint64
+	beforeCopyTextCounter uint64
+	CopyTextMock          mRendererMockCopyText
+
 	funcFloatingPage          func() (s1 string)
 	funcFloatingPageOrigin    string
 	inspectFuncFloatingPage   func()
@@ -57,6 +64,13 @@ type RendererMock struct {
 	beforePrintMetricCounter uint64
 	PrintMetricMock          mRendererMockPrintMetric
 
+	funcPrintSelectedClipboard          func() (s1 string)
+	funcPrintSelectedClipboardOrigin    string
+	inspectFuncPrintSelectedClipboard   func()
+	afterPrintSelectedClipboardCounter  uint64
+	beforePrintSelectedClipboardCounter uint64
+	PrintSelectedClipboardMock          mRendererMockPrintSelectedClipboard
+
 	funcPrintSelectedDevice          func() (s1 string)
 	funcPrintSelectedDeviceOrigin    string
 	inspectFuncPrintSelectedDevice   func()
@@ -64,12 +78,12 @@ type RendererMock struct {
 	beforePrintSelectedDeviceCounter uint64
 	PrintSelectedDeviceMock          mRendererMockPrintSelectedDevice
 
-	funcPrintSelectedFloatingState          func() (s1 string)
-	funcPrintSelectedFloatingStateOrigin    string
-	inspectFuncPrintSelectedFloatingState   func()
-	afterPrintSelectedFloatingStateCounter  uint64
-	beforePrintSelectedFloatingStateCounter uint64
-	PrintSelectedFloatingStateMock          mRendererMockPrintSelectedFloatingState
+	funcPrintSelectedFloating          func() (s1 string)
+	funcPrintSelectedFloatingOrigin    string
+	inspectFuncPrintSelectedFloating   func()
+	afterPrintSelectedFloatingCounter  uint64
+	beforePrintSelectedFloatingCounter uint64
+	PrintSelectedFloatingMock          mRendererMockPrintSelectedFloating
 
 	funcPrintSelectedLanguage          func() (s1 string)
 	funcPrintSelectedLanguageOrigin    string
@@ -92,6 +106,13 @@ type RendererMock struct {
 	beforePrintStatusCounter uint64
 	PrintStatusMock          mRendererMockPrintStatus
 
+	funcSelectClipboard          func(clipboard string) (s1 string)
+	funcSelectClipboardOrigin    string
+	inspectFuncSelectClipboard   func(clipboard string)
+	afterSelectClipboardCounter  uint64
+	beforeSelectClipboardCounter uint64
+	SelectClipboardMock          mRendererMockSelectClipboard
+
 	funcSelectDevice          func(device string) (s1 string)
 	funcSelectDeviceOrigin    string
 	inspectFuncSelectDevice   func(device string)
@@ -99,12 +120,12 @@ type RendererMock struct {
 	beforeSelectDeviceCounter uint64
 	SelectDeviceMock          mRendererMockSelectDevice
 
-	funcSelectFloatingState          func(floatingState string) (s1 string)
-	funcSelectFloatingStateOrigin    string
-	inspectFuncSelectFloatingState   func(floatingState string)
-	afterSelectFloatingStateCounter  uint64
-	beforeSelectFloatingStateCounter uint64
-	SelectFloatingStateMock          mRendererMockSelectFloatingState
+	funcSelectFloating          func(floatingState string) (s1 string)
+	funcSelectFloatingOrigin    string
+	inspectFuncSelectFloating   func(floatingState string)
+	afterSelectFloatingCounter  uint64
+	beforeSelectFloatingCounter uint64
+	SelectFloatingMock          mRendererMockSelectFloating
 
 	funcSelectLanguage          func(language string) (s1 string)
 	funcSelectLanguageOrigin    string
@@ -141,6 +162,8 @@ func NewRendererMock(t minimock.Tester) *RendererMock {
 	m.CloseSettingsMock = mRendererMockCloseSettings{mock: m}
 	m.CloseSettingsMock.callArgs = []*RendererMockCloseSettingsParams{}
 
+	m.CopyTextMock = mRendererMockCopyText{mock: m}
+
 	m.FloatingPageMock = mRendererMockFloatingPage{mock: m}
 
 	m.ListenSocketMock = mRendererMockListenSocket{mock: m}
@@ -152,9 +175,11 @@ func NewRendererMock(t minimock.Tester) *RendererMock {
 	m.PrintMetricMock = mRendererMockPrintMetric{mock: m}
 	m.PrintMetricMock.callArgs = []*RendererMockPrintMetricParams{}
 
+	m.PrintSelectedClipboardMock = mRendererMockPrintSelectedClipboard{mock: m}
+
 	m.PrintSelectedDeviceMock = mRendererMockPrintSelectedDevice{mock: m}
 
-	m.PrintSelectedFloatingStateMock = mRendererMockPrintSelectedFloatingState{mock: m}
+	m.PrintSelectedFloatingMock = mRendererMockPrintSelectedFloating{mock: m}
 
 	m.PrintSelectedLanguageMock = mRendererMockPrintSelectedLanguage{mock: m}
 
@@ -162,11 +187,14 @@ func NewRendererMock(t minimock.Tester) *RendererMock {
 
 	m.PrintStatusMock = mRendererMockPrintStatus{mock: m}
 
+	m.SelectClipboardMock = mRendererMockSelectClipboard{mock: m}
+	m.SelectClipboardMock.callArgs = []*RendererMockSelectClipboardParams{}
+
 	m.SelectDeviceMock = mRendererMockSelectDevice{mock: m}
 	m.SelectDeviceMock.callArgs = []*RendererMockSelectDeviceParams{}
 
-	m.SelectFloatingStateMock = mRendererMockSelectFloatingState{mock: m}
-	m.SelectFloatingStateMock.callArgs = []*RendererMockSelectFloatingStateParams{}
+	m.SelectFloatingMock = mRendererMockSelectFloating{mock: m}
+	m.SelectFloatingMock.callArgs = []*RendererMockSelectFloatingParams{}
 
 	m.SelectLanguageMock = mRendererMockSelectLanguage{mock: m}
 	m.SelectLanguageMock.callArgs = []*RendererMockSelectLanguageParams{}
@@ -737,6 +765,192 @@ func (m *RendererMock) MinimockCloseSettingsInspect() {
 	if !m.CloseSettingsMock.invocationsDone() && afterCloseSettingsCounter > 0 {
 		m.t.Errorf("Expected %d calls to RendererMock.CloseSettings at\n%s but found %d calls",
 			mm_atomic.LoadUint64(&m.CloseSettingsMock.expectedInvocations), m.CloseSettingsMock.expectedInvocationsOrigin, afterCloseSettingsCounter)
+	}
+}
+
+type mRendererMockCopyText struct {
+	optional           bool
+	mock               *RendererMock
+	defaultExpectation *RendererMockCopyTextExpectation
+	expectations       []*RendererMockCopyTextExpectation
+
+	expectedInvocations       uint64
+	expectedInvocationsOrigin string
+}
+
+// RendererMockCopyTextExpectation specifies expectation struct of the Renderer.CopyText
+type RendererMockCopyTextExpectation struct {
+	mock *RendererMock
+
+	results      *RendererMockCopyTextResults
+	returnOrigin string
+	Counter      uint64
+}
+
+// RendererMockCopyTextResults contains results of the Renderer.CopyText
+type RendererMockCopyTextResults struct {
+	s1 string
+}
+
+// Marks this method to be optional. The default behavior of any method with Return() is '1 or more', meaning
+// the test will fail minimock's automatic final call check if the mocked method was not called at least once.
+// Optional() makes method check to work in '0 or more' mode.
+// It is NOT RECOMMENDED to use this option unless you really need it, as default behaviour helps to
+// catch the problems when the expected method call is totally skipped during test run.
+func (mmCopyText *mRendererMockCopyText) Optional() *mRendererMockCopyText {
+	mmCopyText.optional = true
+	return mmCopyText
+}
+
+// Expect sets up expected params for Renderer.CopyText
+func (mmCopyText *mRendererMockCopyText) Expect() *mRendererMockCopyText {
+	if mmCopyText.mock.funcCopyText != nil {
+		mmCopyText.mock.t.Fatalf("RendererMock.CopyText mock is already set by Set")
+	}
+
+	if mmCopyText.defaultExpectation == nil {
+		mmCopyText.defaultExpectation = &RendererMockCopyTextExpectation{}
+	}
+
+	return mmCopyText
+}
+
+// Inspect accepts an inspector function that has same arguments as the Renderer.CopyText
+func (mmCopyText *mRendererMockCopyText) Inspect(f func()) *mRendererMockCopyText {
+	if mmCopyText.mock.inspectFuncCopyText != nil {
+		mmCopyText.mock.t.Fatalf("Inspect function is already set for RendererMock.CopyText")
+	}
+
+	mmCopyText.mock.inspectFuncCopyText = f
+
+	return mmCopyText
+}
+
+// Return sets up results that will be returned by Renderer.CopyText
+func (mmCopyText *mRendererMockCopyText) Return(s1 string) *RendererMock {
+	if mmCopyText.mock.funcCopyText != nil {
+		mmCopyText.mock.t.Fatalf("RendererMock.CopyText mock is already set by Set")
+	}
+
+	if mmCopyText.defaultExpectation == nil {
+		mmCopyText.defaultExpectation = &RendererMockCopyTextExpectation{mock: mmCopyText.mock}
+	}
+	mmCopyText.defaultExpectation.results = &RendererMockCopyTextResults{s1}
+	mmCopyText.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
+	return mmCopyText.mock
+}
+
+// Set uses given function f to mock the Renderer.CopyText method
+func (mmCopyText *mRendererMockCopyText) Set(f func() (s1 string)) *RendererMock {
+	if mmCopyText.defaultExpectation != nil {
+		mmCopyText.mock.t.Fatalf("Default expectation is already set for the Renderer.CopyText method")
+	}
+
+	if len(mmCopyText.expectations) > 0 {
+		mmCopyText.mock.t.Fatalf("Some expectations are already set for the Renderer.CopyText method")
+	}
+
+	mmCopyText.mock.funcCopyText = f
+	mmCopyText.mock.funcCopyTextOrigin = minimock.CallerInfo(1)
+	return mmCopyText.mock
+}
+
+// Times sets number of times Renderer.CopyText should be invoked
+func (mmCopyText *mRendererMockCopyText) Times(n uint64) *mRendererMockCopyText {
+	if n == 0 {
+		mmCopyText.mock.t.Fatalf("Times of RendererMock.CopyText mock can not be zero")
+	}
+	mm_atomic.StoreUint64(&mmCopyText.expectedInvocations, n)
+	mmCopyText.expectedInvocationsOrigin = minimock.CallerInfo(1)
+	return mmCopyText
+}
+
+func (mmCopyText *mRendererMockCopyText) invocationsDone() bool {
+	if len(mmCopyText.expectations) == 0 && mmCopyText.defaultExpectation == nil && mmCopyText.mock.funcCopyText == nil {
+		return true
+	}
+
+	totalInvocations := mm_atomic.LoadUint64(&mmCopyText.mock.afterCopyTextCounter)
+	expectedInvocations := mm_atomic.LoadUint64(&mmCopyText.expectedInvocations)
+
+	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
+}
+
+// CopyText implements Renderer
+func (mmCopyText *RendererMock) CopyText() (s1 string) {
+	mm_atomic.AddUint64(&mmCopyText.beforeCopyTextCounter, 1)
+	defer mm_atomic.AddUint64(&mmCopyText.afterCopyTextCounter, 1)
+
+	mmCopyText.t.Helper()
+
+	if mmCopyText.inspectFuncCopyText != nil {
+		mmCopyText.inspectFuncCopyText()
+	}
+
+	if mmCopyText.CopyTextMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmCopyText.CopyTextMock.defaultExpectation.Counter, 1)
+
+		mm_results := mmCopyText.CopyTextMock.defaultExpectation.results
+		if mm_results == nil {
+			mmCopyText.t.Fatal("No results are set for the RendererMock.CopyText")
+		}
+		return (*mm_results).s1
+	}
+	if mmCopyText.funcCopyText != nil {
+		return mmCopyText.funcCopyText()
+	}
+	mmCopyText.t.Fatalf("Unexpected call to RendererMock.CopyText.")
+	return
+}
+
+// CopyTextAfterCounter returns a count of finished RendererMock.CopyText invocations
+func (mmCopyText *RendererMock) CopyTextAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmCopyText.afterCopyTextCounter)
+}
+
+// CopyTextBeforeCounter returns a count of RendererMock.CopyText invocations
+func (mmCopyText *RendererMock) CopyTextBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmCopyText.beforeCopyTextCounter)
+}
+
+// MinimockCopyTextDone returns true if the count of the CopyText invocations corresponds
+// the number of defined expectations
+func (m *RendererMock) MinimockCopyTextDone() bool {
+	if m.CopyTextMock.optional {
+		// Optional methods provide '0 or more' call count restriction.
+		return true
+	}
+
+	for _, e := range m.CopyTextMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	return m.CopyTextMock.invocationsDone()
+}
+
+// MinimockCopyTextInspect logs each unmet expectation
+func (m *RendererMock) MinimockCopyTextInspect() {
+	for _, e := range m.CopyTextMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Error("Expected call to RendererMock.CopyText")
+		}
+	}
+
+	afterCopyTextCounter := mm_atomic.LoadUint64(&m.afterCopyTextCounter)
+	// if default expectation was set then invocations count should be greater than zero
+	if m.CopyTextMock.defaultExpectation != nil && afterCopyTextCounter < 1 {
+		m.t.Errorf("Expected call to RendererMock.CopyText at\n%s", m.CopyTextMock.defaultExpectation.returnOrigin)
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcCopyText != nil && afterCopyTextCounter < 1 {
+		m.t.Errorf("Expected call to RendererMock.CopyText at\n%s", m.funcCopyTextOrigin)
+	}
+
+	if !m.CopyTextMock.invocationsDone() && afterCopyTextCounter > 0 {
+		m.t.Errorf("Expected %d calls to RendererMock.CopyText at\n%s but found %d calls",
+			mm_atomic.LoadUint64(&m.CopyTextMock.expectedInvocations), m.CopyTextMock.expectedInvocationsOrigin, afterCopyTextCounter)
 	}
 }
 
@@ -1921,6 +2135,192 @@ func (m *RendererMock) MinimockPrintMetricInspect() {
 	}
 }
 
+type mRendererMockPrintSelectedClipboard struct {
+	optional           bool
+	mock               *RendererMock
+	defaultExpectation *RendererMockPrintSelectedClipboardExpectation
+	expectations       []*RendererMockPrintSelectedClipboardExpectation
+
+	expectedInvocations       uint64
+	expectedInvocationsOrigin string
+}
+
+// RendererMockPrintSelectedClipboardExpectation specifies expectation struct of the Renderer.PrintSelectedClipboard
+type RendererMockPrintSelectedClipboardExpectation struct {
+	mock *RendererMock
+
+	results      *RendererMockPrintSelectedClipboardResults
+	returnOrigin string
+	Counter      uint64
+}
+
+// RendererMockPrintSelectedClipboardResults contains results of the Renderer.PrintSelectedClipboard
+type RendererMockPrintSelectedClipboardResults struct {
+	s1 string
+}
+
+// Marks this method to be optional. The default behavior of any method with Return() is '1 or more', meaning
+// the test will fail minimock's automatic final call check if the mocked method was not called at least once.
+// Optional() makes method check to work in '0 or more' mode.
+// It is NOT RECOMMENDED to use this option unless you really need it, as default behaviour helps to
+// catch the problems when the expected method call is totally skipped during test run.
+func (mmPrintSelectedClipboard *mRendererMockPrintSelectedClipboard) Optional() *mRendererMockPrintSelectedClipboard {
+	mmPrintSelectedClipboard.optional = true
+	return mmPrintSelectedClipboard
+}
+
+// Expect sets up expected params for Renderer.PrintSelectedClipboard
+func (mmPrintSelectedClipboard *mRendererMockPrintSelectedClipboard) Expect() *mRendererMockPrintSelectedClipboard {
+	if mmPrintSelectedClipboard.mock.funcPrintSelectedClipboard != nil {
+		mmPrintSelectedClipboard.mock.t.Fatalf("RendererMock.PrintSelectedClipboard mock is already set by Set")
+	}
+
+	if mmPrintSelectedClipboard.defaultExpectation == nil {
+		mmPrintSelectedClipboard.defaultExpectation = &RendererMockPrintSelectedClipboardExpectation{}
+	}
+
+	return mmPrintSelectedClipboard
+}
+
+// Inspect accepts an inspector function that has same arguments as the Renderer.PrintSelectedClipboard
+func (mmPrintSelectedClipboard *mRendererMockPrintSelectedClipboard) Inspect(f func()) *mRendererMockPrintSelectedClipboard {
+	if mmPrintSelectedClipboard.mock.inspectFuncPrintSelectedClipboard != nil {
+		mmPrintSelectedClipboard.mock.t.Fatalf("Inspect function is already set for RendererMock.PrintSelectedClipboard")
+	}
+
+	mmPrintSelectedClipboard.mock.inspectFuncPrintSelectedClipboard = f
+
+	return mmPrintSelectedClipboard
+}
+
+// Return sets up results that will be returned by Renderer.PrintSelectedClipboard
+func (mmPrintSelectedClipboard *mRendererMockPrintSelectedClipboard) Return(s1 string) *RendererMock {
+	if mmPrintSelectedClipboard.mock.funcPrintSelectedClipboard != nil {
+		mmPrintSelectedClipboard.mock.t.Fatalf("RendererMock.PrintSelectedClipboard mock is already set by Set")
+	}
+
+	if mmPrintSelectedClipboard.defaultExpectation == nil {
+		mmPrintSelectedClipboard.defaultExpectation = &RendererMockPrintSelectedClipboardExpectation{mock: mmPrintSelectedClipboard.mock}
+	}
+	mmPrintSelectedClipboard.defaultExpectation.results = &RendererMockPrintSelectedClipboardResults{s1}
+	mmPrintSelectedClipboard.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
+	return mmPrintSelectedClipboard.mock
+}
+
+// Set uses given function f to mock the Renderer.PrintSelectedClipboard method
+func (mmPrintSelectedClipboard *mRendererMockPrintSelectedClipboard) Set(f func() (s1 string)) *RendererMock {
+	if mmPrintSelectedClipboard.defaultExpectation != nil {
+		mmPrintSelectedClipboard.mock.t.Fatalf("Default expectation is already set for the Renderer.PrintSelectedClipboard method")
+	}
+
+	if len(mmPrintSelectedClipboard.expectations) > 0 {
+		mmPrintSelectedClipboard.mock.t.Fatalf("Some expectations are already set for the Renderer.PrintSelectedClipboard method")
+	}
+
+	mmPrintSelectedClipboard.mock.funcPrintSelectedClipboard = f
+	mmPrintSelectedClipboard.mock.funcPrintSelectedClipboardOrigin = minimock.CallerInfo(1)
+	return mmPrintSelectedClipboard.mock
+}
+
+// Times sets number of times Renderer.PrintSelectedClipboard should be invoked
+func (mmPrintSelectedClipboard *mRendererMockPrintSelectedClipboard) Times(n uint64) *mRendererMockPrintSelectedClipboard {
+	if n == 0 {
+		mmPrintSelectedClipboard.mock.t.Fatalf("Times of RendererMock.PrintSelectedClipboard mock can not be zero")
+	}
+	mm_atomic.StoreUint64(&mmPrintSelectedClipboard.expectedInvocations, n)
+	mmPrintSelectedClipboard.expectedInvocationsOrigin = minimock.CallerInfo(1)
+	return mmPrintSelectedClipboard
+}
+
+func (mmPrintSelectedClipboard *mRendererMockPrintSelectedClipboard) invocationsDone() bool {
+	if len(mmPrintSelectedClipboard.expectations) == 0 && mmPrintSelectedClipboard.defaultExpectation == nil && mmPrintSelectedClipboard.mock.funcPrintSelectedClipboard == nil {
+		return true
+	}
+
+	totalInvocations := mm_atomic.LoadUint64(&mmPrintSelectedClipboard.mock.afterPrintSelectedClipboardCounter)
+	expectedInvocations := mm_atomic.LoadUint64(&mmPrintSelectedClipboard.expectedInvocations)
+
+	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
+}
+
+// PrintSelectedClipboard implements Renderer
+func (mmPrintSelectedClipboard *RendererMock) PrintSelectedClipboard() (s1 string) {
+	mm_atomic.AddUint64(&mmPrintSelectedClipboard.beforePrintSelectedClipboardCounter, 1)
+	defer mm_atomic.AddUint64(&mmPrintSelectedClipboard.afterPrintSelectedClipboardCounter, 1)
+
+	mmPrintSelectedClipboard.t.Helper()
+
+	if mmPrintSelectedClipboard.inspectFuncPrintSelectedClipboard != nil {
+		mmPrintSelectedClipboard.inspectFuncPrintSelectedClipboard()
+	}
+
+	if mmPrintSelectedClipboard.PrintSelectedClipboardMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmPrintSelectedClipboard.PrintSelectedClipboardMock.defaultExpectation.Counter, 1)
+
+		mm_results := mmPrintSelectedClipboard.PrintSelectedClipboardMock.defaultExpectation.results
+		if mm_results == nil {
+			mmPrintSelectedClipboard.t.Fatal("No results are set for the RendererMock.PrintSelectedClipboard")
+		}
+		return (*mm_results).s1
+	}
+	if mmPrintSelectedClipboard.funcPrintSelectedClipboard != nil {
+		return mmPrintSelectedClipboard.funcPrintSelectedClipboard()
+	}
+	mmPrintSelectedClipboard.t.Fatalf("Unexpected call to RendererMock.PrintSelectedClipboard.")
+	return
+}
+
+// PrintSelectedClipboardAfterCounter returns a count of finished RendererMock.PrintSelectedClipboard invocations
+func (mmPrintSelectedClipboard *RendererMock) PrintSelectedClipboardAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmPrintSelectedClipboard.afterPrintSelectedClipboardCounter)
+}
+
+// PrintSelectedClipboardBeforeCounter returns a count of RendererMock.PrintSelectedClipboard invocations
+func (mmPrintSelectedClipboard *RendererMock) PrintSelectedClipboardBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmPrintSelectedClipboard.beforePrintSelectedClipboardCounter)
+}
+
+// MinimockPrintSelectedClipboardDone returns true if the count of the PrintSelectedClipboard invocations corresponds
+// the number of defined expectations
+func (m *RendererMock) MinimockPrintSelectedClipboardDone() bool {
+	if m.PrintSelectedClipboardMock.optional {
+		// Optional methods provide '0 or more' call count restriction.
+		return true
+	}
+
+	for _, e := range m.PrintSelectedClipboardMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	return m.PrintSelectedClipboardMock.invocationsDone()
+}
+
+// MinimockPrintSelectedClipboardInspect logs each unmet expectation
+func (m *RendererMock) MinimockPrintSelectedClipboardInspect() {
+	for _, e := range m.PrintSelectedClipboardMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Error("Expected call to RendererMock.PrintSelectedClipboard")
+		}
+	}
+
+	afterPrintSelectedClipboardCounter := mm_atomic.LoadUint64(&m.afterPrintSelectedClipboardCounter)
+	// if default expectation was set then invocations count should be greater than zero
+	if m.PrintSelectedClipboardMock.defaultExpectation != nil && afterPrintSelectedClipboardCounter < 1 {
+		m.t.Errorf("Expected call to RendererMock.PrintSelectedClipboard at\n%s", m.PrintSelectedClipboardMock.defaultExpectation.returnOrigin)
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcPrintSelectedClipboard != nil && afterPrintSelectedClipboardCounter < 1 {
+		m.t.Errorf("Expected call to RendererMock.PrintSelectedClipboard at\n%s", m.funcPrintSelectedClipboardOrigin)
+	}
+
+	if !m.PrintSelectedClipboardMock.invocationsDone() && afterPrintSelectedClipboardCounter > 0 {
+		m.t.Errorf("Expected %d calls to RendererMock.PrintSelectedClipboard at\n%s but found %d calls",
+			mm_atomic.LoadUint64(&m.PrintSelectedClipboardMock.expectedInvocations), m.PrintSelectedClipboardMock.expectedInvocationsOrigin, afterPrintSelectedClipboardCounter)
+	}
+}
+
 type mRendererMockPrintSelectedDevice struct {
 	optional           bool
 	mock               *RendererMock
@@ -2107,27 +2507,27 @@ func (m *RendererMock) MinimockPrintSelectedDeviceInspect() {
 	}
 }
 
-type mRendererMockPrintSelectedFloatingState struct {
+type mRendererMockPrintSelectedFloating struct {
 	optional           bool
 	mock               *RendererMock
-	defaultExpectation *RendererMockPrintSelectedFloatingStateExpectation
-	expectations       []*RendererMockPrintSelectedFloatingStateExpectation
+	defaultExpectation *RendererMockPrintSelectedFloatingExpectation
+	expectations       []*RendererMockPrintSelectedFloatingExpectation
 
 	expectedInvocations       uint64
 	expectedInvocationsOrigin string
 }
 
-// RendererMockPrintSelectedFloatingStateExpectation specifies expectation struct of the Renderer.PrintSelectedFloatingState
-type RendererMockPrintSelectedFloatingStateExpectation struct {
+// RendererMockPrintSelectedFloatingExpectation specifies expectation struct of the Renderer.PrintSelectedFloating
+type RendererMockPrintSelectedFloatingExpectation struct {
 	mock *RendererMock
 
-	results      *RendererMockPrintSelectedFloatingStateResults
+	results      *RendererMockPrintSelectedFloatingResults
 	returnOrigin string
 	Counter      uint64
 }
 
-// RendererMockPrintSelectedFloatingStateResults contains results of the Renderer.PrintSelectedFloatingState
-type RendererMockPrintSelectedFloatingStateResults struct {
+// RendererMockPrintSelectedFloatingResults contains results of the Renderer.PrintSelectedFloating
+type RendererMockPrintSelectedFloatingResults struct {
 	s1 string
 }
 
@@ -2136,160 +2536,160 @@ type RendererMockPrintSelectedFloatingStateResults struct {
 // Optional() makes method check to work in '0 or more' mode.
 // It is NOT RECOMMENDED to use this option unless you really need it, as default behaviour helps to
 // catch the problems when the expected method call is totally skipped during test run.
-func (mmPrintSelectedFloatingState *mRendererMockPrintSelectedFloatingState) Optional() *mRendererMockPrintSelectedFloatingState {
-	mmPrintSelectedFloatingState.optional = true
-	return mmPrintSelectedFloatingState
+func (mmPrintSelectedFloating *mRendererMockPrintSelectedFloating) Optional() *mRendererMockPrintSelectedFloating {
+	mmPrintSelectedFloating.optional = true
+	return mmPrintSelectedFloating
 }
 
-// Expect sets up expected params for Renderer.PrintSelectedFloatingState
-func (mmPrintSelectedFloatingState *mRendererMockPrintSelectedFloatingState) Expect() *mRendererMockPrintSelectedFloatingState {
-	if mmPrintSelectedFloatingState.mock.funcPrintSelectedFloatingState != nil {
-		mmPrintSelectedFloatingState.mock.t.Fatalf("RendererMock.PrintSelectedFloatingState mock is already set by Set")
+// Expect sets up expected params for Renderer.PrintSelectedFloating
+func (mmPrintSelectedFloating *mRendererMockPrintSelectedFloating) Expect() *mRendererMockPrintSelectedFloating {
+	if mmPrintSelectedFloating.mock.funcPrintSelectedFloating != nil {
+		mmPrintSelectedFloating.mock.t.Fatalf("RendererMock.PrintSelectedFloating mock is already set by Set")
 	}
 
-	if mmPrintSelectedFloatingState.defaultExpectation == nil {
-		mmPrintSelectedFloatingState.defaultExpectation = &RendererMockPrintSelectedFloatingStateExpectation{}
+	if mmPrintSelectedFloating.defaultExpectation == nil {
+		mmPrintSelectedFloating.defaultExpectation = &RendererMockPrintSelectedFloatingExpectation{}
 	}
 
-	return mmPrintSelectedFloatingState
+	return mmPrintSelectedFloating
 }
 
-// Inspect accepts an inspector function that has same arguments as the Renderer.PrintSelectedFloatingState
-func (mmPrintSelectedFloatingState *mRendererMockPrintSelectedFloatingState) Inspect(f func()) *mRendererMockPrintSelectedFloatingState {
-	if mmPrintSelectedFloatingState.mock.inspectFuncPrintSelectedFloatingState != nil {
-		mmPrintSelectedFloatingState.mock.t.Fatalf("Inspect function is already set for RendererMock.PrintSelectedFloatingState")
+// Inspect accepts an inspector function that has same arguments as the Renderer.PrintSelectedFloating
+func (mmPrintSelectedFloating *mRendererMockPrintSelectedFloating) Inspect(f func()) *mRendererMockPrintSelectedFloating {
+	if mmPrintSelectedFloating.mock.inspectFuncPrintSelectedFloating != nil {
+		mmPrintSelectedFloating.mock.t.Fatalf("Inspect function is already set for RendererMock.PrintSelectedFloating")
 	}
 
-	mmPrintSelectedFloatingState.mock.inspectFuncPrintSelectedFloatingState = f
+	mmPrintSelectedFloating.mock.inspectFuncPrintSelectedFloating = f
 
-	return mmPrintSelectedFloatingState
+	return mmPrintSelectedFloating
 }
 
-// Return sets up results that will be returned by Renderer.PrintSelectedFloatingState
-func (mmPrintSelectedFloatingState *mRendererMockPrintSelectedFloatingState) Return(s1 string) *RendererMock {
-	if mmPrintSelectedFloatingState.mock.funcPrintSelectedFloatingState != nil {
-		mmPrintSelectedFloatingState.mock.t.Fatalf("RendererMock.PrintSelectedFloatingState mock is already set by Set")
+// Return sets up results that will be returned by Renderer.PrintSelectedFloating
+func (mmPrintSelectedFloating *mRendererMockPrintSelectedFloating) Return(s1 string) *RendererMock {
+	if mmPrintSelectedFloating.mock.funcPrintSelectedFloating != nil {
+		mmPrintSelectedFloating.mock.t.Fatalf("RendererMock.PrintSelectedFloating mock is already set by Set")
 	}
 
-	if mmPrintSelectedFloatingState.defaultExpectation == nil {
-		mmPrintSelectedFloatingState.defaultExpectation = &RendererMockPrintSelectedFloatingStateExpectation{mock: mmPrintSelectedFloatingState.mock}
+	if mmPrintSelectedFloating.defaultExpectation == nil {
+		mmPrintSelectedFloating.defaultExpectation = &RendererMockPrintSelectedFloatingExpectation{mock: mmPrintSelectedFloating.mock}
 	}
-	mmPrintSelectedFloatingState.defaultExpectation.results = &RendererMockPrintSelectedFloatingStateResults{s1}
-	mmPrintSelectedFloatingState.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
-	return mmPrintSelectedFloatingState.mock
+	mmPrintSelectedFloating.defaultExpectation.results = &RendererMockPrintSelectedFloatingResults{s1}
+	mmPrintSelectedFloating.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
+	return mmPrintSelectedFloating.mock
 }
 
-// Set uses given function f to mock the Renderer.PrintSelectedFloatingState method
-func (mmPrintSelectedFloatingState *mRendererMockPrintSelectedFloatingState) Set(f func() (s1 string)) *RendererMock {
-	if mmPrintSelectedFloatingState.defaultExpectation != nil {
-		mmPrintSelectedFloatingState.mock.t.Fatalf("Default expectation is already set for the Renderer.PrintSelectedFloatingState method")
+// Set uses given function f to mock the Renderer.PrintSelectedFloating method
+func (mmPrintSelectedFloating *mRendererMockPrintSelectedFloating) Set(f func() (s1 string)) *RendererMock {
+	if mmPrintSelectedFloating.defaultExpectation != nil {
+		mmPrintSelectedFloating.mock.t.Fatalf("Default expectation is already set for the Renderer.PrintSelectedFloating method")
 	}
 
-	if len(mmPrintSelectedFloatingState.expectations) > 0 {
-		mmPrintSelectedFloatingState.mock.t.Fatalf("Some expectations are already set for the Renderer.PrintSelectedFloatingState method")
+	if len(mmPrintSelectedFloating.expectations) > 0 {
+		mmPrintSelectedFloating.mock.t.Fatalf("Some expectations are already set for the Renderer.PrintSelectedFloating method")
 	}
 
-	mmPrintSelectedFloatingState.mock.funcPrintSelectedFloatingState = f
-	mmPrintSelectedFloatingState.mock.funcPrintSelectedFloatingStateOrigin = minimock.CallerInfo(1)
-	return mmPrintSelectedFloatingState.mock
+	mmPrintSelectedFloating.mock.funcPrintSelectedFloating = f
+	mmPrintSelectedFloating.mock.funcPrintSelectedFloatingOrigin = minimock.CallerInfo(1)
+	return mmPrintSelectedFloating.mock
 }
 
-// Times sets number of times Renderer.PrintSelectedFloatingState should be invoked
-func (mmPrintSelectedFloatingState *mRendererMockPrintSelectedFloatingState) Times(n uint64) *mRendererMockPrintSelectedFloatingState {
+// Times sets number of times Renderer.PrintSelectedFloating should be invoked
+func (mmPrintSelectedFloating *mRendererMockPrintSelectedFloating) Times(n uint64) *mRendererMockPrintSelectedFloating {
 	if n == 0 {
-		mmPrintSelectedFloatingState.mock.t.Fatalf("Times of RendererMock.PrintSelectedFloatingState mock can not be zero")
+		mmPrintSelectedFloating.mock.t.Fatalf("Times of RendererMock.PrintSelectedFloating mock can not be zero")
 	}
-	mm_atomic.StoreUint64(&mmPrintSelectedFloatingState.expectedInvocations, n)
-	mmPrintSelectedFloatingState.expectedInvocationsOrigin = minimock.CallerInfo(1)
-	return mmPrintSelectedFloatingState
+	mm_atomic.StoreUint64(&mmPrintSelectedFloating.expectedInvocations, n)
+	mmPrintSelectedFloating.expectedInvocationsOrigin = minimock.CallerInfo(1)
+	return mmPrintSelectedFloating
 }
 
-func (mmPrintSelectedFloatingState *mRendererMockPrintSelectedFloatingState) invocationsDone() bool {
-	if len(mmPrintSelectedFloatingState.expectations) == 0 && mmPrintSelectedFloatingState.defaultExpectation == nil && mmPrintSelectedFloatingState.mock.funcPrintSelectedFloatingState == nil {
+func (mmPrintSelectedFloating *mRendererMockPrintSelectedFloating) invocationsDone() bool {
+	if len(mmPrintSelectedFloating.expectations) == 0 && mmPrintSelectedFloating.defaultExpectation == nil && mmPrintSelectedFloating.mock.funcPrintSelectedFloating == nil {
 		return true
 	}
 
-	totalInvocations := mm_atomic.LoadUint64(&mmPrintSelectedFloatingState.mock.afterPrintSelectedFloatingStateCounter)
-	expectedInvocations := mm_atomic.LoadUint64(&mmPrintSelectedFloatingState.expectedInvocations)
+	totalInvocations := mm_atomic.LoadUint64(&mmPrintSelectedFloating.mock.afterPrintSelectedFloatingCounter)
+	expectedInvocations := mm_atomic.LoadUint64(&mmPrintSelectedFloating.expectedInvocations)
 
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// PrintSelectedFloatingState implements Renderer
-func (mmPrintSelectedFloatingState *RendererMock) PrintSelectedFloatingState() (s1 string) {
-	mm_atomic.AddUint64(&mmPrintSelectedFloatingState.beforePrintSelectedFloatingStateCounter, 1)
-	defer mm_atomic.AddUint64(&mmPrintSelectedFloatingState.afterPrintSelectedFloatingStateCounter, 1)
+// PrintSelectedFloating implements Renderer
+func (mmPrintSelectedFloating *RendererMock) PrintSelectedFloating() (s1 string) {
+	mm_atomic.AddUint64(&mmPrintSelectedFloating.beforePrintSelectedFloatingCounter, 1)
+	defer mm_atomic.AddUint64(&mmPrintSelectedFloating.afterPrintSelectedFloatingCounter, 1)
 
-	mmPrintSelectedFloatingState.t.Helper()
+	mmPrintSelectedFloating.t.Helper()
 
-	if mmPrintSelectedFloatingState.inspectFuncPrintSelectedFloatingState != nil {
-		mmPrintSelectedFloatingState.inspectFuncPrintSelectedFloatingState()
+	if mmPrintSelectedFloating.inspectFuncPrintSelectedFloating != nil {
+		mmPrintSelectedFloating.inspectFuncPrintSelectedFloating()
 	}
 
-	if mmPrintSelectedFloatingState.PrintSelectedFloatingStateMock.defaultExpectation != nil {
-		mm_atomic.AddUint64(&mmPrintSelectedFloatingState.PrintSelectedFloatingStateMock.defaultExpectation.Counter, 1)
+	if mmPrintSelectedFloating.PrintSelectedFloatingMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmPrintSelectedFloating.PrintSelectedFloatingMock.defaultExpectation.Counter, 1)
 
-		mm_results := mmPrintSelectedFloatingState.PrintSelectedFloatingStateMock.defaultExpectation.results
+		mm_results := mmPrintSelectedFloating.PrintSelectedFloatingMock.defaultExpectation.results
 		if mm_results == nil {
-			mmPrintSelectedFloatingState.t.Fatal("No results are set for the RendererMock.PrintSelectedFloatingState")
+			mmPrintSelectedFloating.t.Fatal("No results are set for the RendererMock.PrintSelectedFloating")
 		}
 		return (*mm_results).s1
 	}
-	if mmPrintSelectedFloatingState.funcPrintSelectedFloatingState != nil {
-		return mmPrintSelectedFloatingState.funcPrintSelectedFloatingState()
+	if mmPrintSelectedFloating.funcPrintSelectedFloating != nil {
+		return mmPrintSelectedFloating.funcPrintSelectedFloating()
 	}
-	mmPrintSelectedFloatingState.t.Fatalf("Unexpected call to RendererMock.PrintSelectedFloatingState.")
+	mmPrintSelectedFloating.t.Fatalf("Unexpected call to RendererMock.PrintSelectedFloating.")
 	return
 }
 
-// PrintSelectedFloatingStateAfterCounter returns a count of finished RendererMock.PrintSelectedFloatingState invocations
-func (mmPrintSelectedFloatingState *RendererMock) PrintSelectedFloatingStateAfterCounter() uint64 {
-	return mm_atomic.LoadUint64(&mmPrintSelectedFloatingState.afterPrintSelectedFloatingStateCounter)
+// PrintSelectedFloatingAfterCounter returns a count of finished RendererMock.PrintSelectedFloating invocations
+func (mmPrintSelectedFloating *RendererMock) PrintSelectedFloatingAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmPrintSelectedFloating.afterPrintSelectedFloatingCounter)
 }
 
-// PrintSelectedFloatingStateBeforeCounter returns a count of RendererMock.PrintSelectedFloatingState invocations
-func (mmPrintSelectedFloatingState *RendererMock) PrintSelectedFloatingStateBeforeCounter() uint64 {
-	return mm_atomic.LoadUint64(&mmPrintSelectedFloatingState.beforePrintSelectedFloatingStateCounter)
+// PrintSelectedFloatingBeforeCounter returns a count of RendererMock.PrintSelectedFloating invocations
+func (mmPrintSelectedFloating *RendererMock) PrintSelectedFloatingBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmPrintSelectedFloating.beforePrintSelectedFloatingCounter)
 }
 
-// MinimockPrintSelectedFloatingStateDone returns true if the count of the PrintSelectedFloatingState invocations corresponds
+// MinimockPrintSelectedFloatingDone returns true if the count of the PrintSelectedFloating invocations corresponds
 // the number of defined expectations
-func (m *RendererMock) MinimockPrintSelectedFloatingStateDone() bool {
-	if m.PrintSelectedFloatingStateMock.optional {
+func (m *RendererMock) MinimockPrintSelectedFloatingDone() bool {
+	if m.PrintSelectedFloatingMock.optional {
 		// Optional methods provide '0 or more' call count restriction.
 		return true
 	}
 
-	for _, e := range m.PrintSelectedFloatingStateMock.expectations {
+	for _, e := range m.PrintSelectedFloatingMock.expectations {
 		if mm_atomic.LoadUint64(&e.Counter) < 1 {
 			return false
 		}
 	}
 
-	return m.PrintSelectedFloatingStateMock.invocationsDone()
+	return m.PrintSelectedFloatingMock.invocationsDone()
 }
 
-// MinimockPrintSelectedFloatingStateInspect logs each unmet expectation
-func (m *RendererMock) MinimockPrintSelectedFloatingStateInspect() {
-	for _, e := range m.PrintSelectedFloatingStateMock.expectations {
+// MinimockPrintSelectedFloatingInspect logs each unmet expectation
+func (m *RendererMock) MinimockPrintSelectedFloatingInspect() {
+	for _, e := range m.PrintSelectedFloatingMock.expectations {
 		if mm_atomic.LoadUint64(&e.Counter) < 1 {
-			m.t.Error("Expected call to RendererMock.PrintSelectedFloatingState")
+			m.t.Error("Expected call to RendererMock.PrintSelectedFloating")
 		}
 	}
 
-	afterPrintSelectedFloatingStateCounter := mm_atomic.LoadUint64(&m.afterPrintSelectedFloatingStateCounter)
+	afterPrintSelectedFloatingCounter := mm_atomic.LoadUint64(&m.afterPrintSelectedFloatingCounter)
 	// if default expectation was set then invocations count should be greater than zero
-	if m.PrintSelectedFloatingStateMock.defaultExpectation != nil && afterPrintSelectedFloatingStateCounter < 1 {
-		m.t.Errorf("Expected call to RendererMock.PrintSelectedFloatingState at\n%s", m.PrintSelectedFloatingStateMock.defaultExpectation.returnOrigin)
+	if m.PrintSelectedFloatingMock.defaultExpectation != nil && afterPrintSelectedFloatingCounter < 1 {
+		m.t.Errorf("Expected call to RendererMock.PrintSelectedFloating at\n%s", m.PrintSelectedFloatingMock.defaultExpectation.returnOrigin)
 	}
 	// if func was set then invocations count should be greater than zero
-	if m.funcPrintSelectedFloatingState != nil && afterPrintSelectedFloatingStateCounter < 1 {
-		m.t.Errorf("Expected call to RendererMock.PrintSelectedFloatingState at\n%s", m.funcPrintSelectedFloatingStateOrigin)
+	if m.funcPrintSelectedFloating != nil && afterPrintSelectedFloatingCounter < 1 {
+		m.t.Errorf("Expected call to RendererMock.PrintSelectedFloating at\n%s", m.funcPrintSelectedFloatingOrigin)
 	}
 
-	if !m.PrintSelectedFloatingStateMock.invocationsDone() && afterPrintSelectedFloatingStateCounter > 0 {
-		m.t.Errorf("Expected %d calls to RendererMock.PrintSelectedFloatingState at\n%s but found %d calls",
-			mm_atomic.LoadUint64(&m.PrintSelectedFloatingStateMock.expectedInvocations), m.PrintSelectedFloatingStateMock.expectedInvocationsOrigin, afterPrintSelectedFloatingStateCounter)
+	if !m.PrintSelectedFloatingMock.invocationsDone() && afterPrintSelectedFloatingCounter > 0 {
+		m.t.Errorf("Expected %d calls to RendererMock.PrintSelectedFloating at\n%s but found %d calls",
+			mm_atomic.LoadUint64(&m.PrintSelectedFloatingMock.expectedInvocations), m.PrintSelectedFloatingMock.expectedInvocationsOrigin, afterPrintSelectedFloatingCounter)
 	}
 }
 
@@ -2851,6 +3251,317 @@ func (m *RendererMock) MinimockPrintStatusInspect() {
 	}
 }
 
+type mRendererMockSelectClipboard struct {
+	optional           bool
+	mock               *RendererMock
+	defaultExpectation *RendererMockSelectClipboardExpectation
+	expectations       []*RendererMockSelectClipboardExpectation
+
+	callArgs []*RendererMockSelectClipboardParams
+	mutex    sync.RWMutex
+
+	expectedInvocations       uint64
+	expectedInvocationsOrigin string
+}
+
+// RendererMockSelectClipboardExpectation specifies expectation struct of the Renderer.SelectClipboard
+type RendererMockSelectClipboardExpectation struct {
+	mock               *RendererMock
+	params             *RendererMockSelectClipboardParams
+	paramPtrs          *RendererMockSelectClipboardParamPtrs
+	expectationOrigins RendererMockSelectClipboardExpectationOrigins
+	results            *RendererMockSelectClipboardResults
+	returnOrigin       string
+	Counter            uint64
+}
+
+// RendererMockSelectClipboardParams contains parameters of the Renderer.SelectClipboard
+type RendererMockSelectClipboardParams struct {
+	clipboard string
+}
+
+// RendererMockSelectClipboardParamPtrs contains pointers to parameters of the Renderer.SelectClipboard
+type RendererMockSelectClipboardParamPtrs struct {
+	clipboard *string
+}
+
+// RendererMockSelectClipboardResults contains results of the Renderer.SelectClipboard
+type RendererMockSelectClipboardResults struct {
+	s1 string
+}
+
+// RendererMockSelectClipboardOrigins contains origins of expectations of the Renderer.SelectClipboard
+type RendererMockSelectClipboardExpectationOrigins struct {
+	origin          string
+	originClipboard string
+}
+
+// Marks this method to be optional. The default behavior of any method with Return() is '1 or more', meaning
+// the test will fail minimock's automatic final call check if the mocked method was not called at least once.
+// Optional() makes method check to work in '0 or more' mode.
+// It is NOT RECOMMENDED to use this option unless you really need it, as default behaviour helps to
+// catch the problems when the expected method call is totally skipped during test run.
+func (mmSelectClipboard *mRendererMockSelectClipboard) Optional() *mRendererMockSelectClipboard {
+	mmSelectClipboard.optional = true
+	return mmSelectClipboard
+}
+
+// Expect sets up expected params for Renderer.SelectClipboard
+func (mmSelectClipboard *mRendererMockSelectClipboard) Expect(clipboard string) *mRendererMockSelectClipboard {
+	if mmSelectClipboard.mock.funcSelectClipboard != nil {
+		mmSelectClipboard.mock.t.Fatalf("RendererMock.SelectClipboard mock is already set by Set")
+	}
+
+	if mmSelectClipboard.defaultExpectation == nil {
+		mmSelectClipboard.defaultExpectation = &RendererMockSelectClipboardExpectation{}
+	}
+
+	if mmSelectClipboard.defaultExpectation.paramPtrs != nil {
+		mmSelectClipboard.mock.t.Fatalf("RendererMock.SelectClipboard mock is already set by ExpectParams functions")
+	}
+
+	mmSelectClipboard.defaultExpectation.params = &RendererMockSelectClipboardParams{clipboard}
+	mmSelectClipboard.defaultExpectation.expectationOrigins.origin = minimock.CallerInfo(1)
+	for _, e := range mmSelectClipboard.expectations {
+		if minimock.Equal(e.params, mmSelectClipboard.defaultExpectation.params) {
+			mmSelectClipboard.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmSelectClipboard.defaultExpectation.params)
+		}
+	}
+
+	return mmSelectClipboard
+}
+
+// ExpectClipboardParam1 sets up expected param clipboard for Renderer.SelectClipboard
+func (mmSelectClipboard *mRendererMockSelectClipboard) ExpectClipboardParam1(clipboard string) *mRendererMockSelectClipboard {
+	if mmSelectClipboard.mock.funcSelectClipboard != nil {
+		mmSelectClipboard.mock.t.Fatalf("RendererMock.SelectClipboard mock is already set by Set")
+	}
+
+	if mmSelectClipboard.defaultExpectation == nil {
+		mmSelectClipboard.defaultExpectation = &RendererMockSelectClipboardExpectation{}
+	}
+
+	if mmSelectClipboard.defaultExpectation.params != nil {
+		mmSelectClipboard.mock.t.Fatalf("RendererMock.SelectClipboard mock is already set by Expect")
+	}
+
+	if mmSelectClipboard.defaultExpectation.paramPtrs == nil {
+		mmSelectClipboard.defaultExpectation.paramPtrs = &RendererMockSelectClipboardParamPtrs{}
+	}
+	mmSelectClipboard.defaultExpectation.paramPtrs.clipboard = &clipboard
+	mmSelectClipboard.defaultExpectation.expectationOrigins.originClipboard = minimock.CallerInfo(1)
+
+	return mmSelectClipboard
+}
+
+// Inspect accepts an inspector function that has same arguments as the Renderer.SelectClipboard
+func (mmSelectClipboard *mRendererMockSelectClipboard) Inspect(f func(clipboard string)) *mRendererMockSelectClipboard {
+	if mmSelectClipboard.mock.inspectFuncSelectClipboard != nil {
+		mmSelectClipboard.mock.t.Fatalf("Inspect function is already set for RendererMock.SelectClipboard")
+	}
+
+	mmSelectClipboard.mock.inspectFuncSelectClipboard = f
+
+	return mmSelectClipboard
+}
+
+// Return sets up results that will be returned by Renderer.SelectClipboard
+func (mmSelectClipboard *mRendererMockSelectClipboard) Return(s1 string) *RendererMock {
+	if mmSelectClipboard.mock.funcSelectClipboard != nil {
+		mmSelectClipboard.mock.t.Fatalf("RendererMock.SelectClipboard mock is already set by Set")
+	}
+
+	if mmSelectClipboard.defaultExpectation == nil {
+		mmSelectClipboard.defaultExpectation = &RendererMockSelectClipboardExpectation{mock: mmSelectClipboard.mock}
+	}
+	mmSelectClipboard.defaultExpectation.results = &RendererMockSelectClipboardResults{s1}
+	mmSelectClipboard.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
+	return mmSelectClipboard.mock
+}
+
+// Set uses given function f to mock the Renderer.SelectClipboard method
+func (mmSelectClipboard *mRendererMockSelectClipboard) Set(f func(clipboard string) (s1 string)) *RendererMock {
+	if mmSelectClipboard.defaultExpectation != nil {
+		mmSelectClipboard.mock.t.Fatalf("Default expectation is already set for the Renderer.SelectClipboard method")
+	}
+
+	if len(mmSelectClipboard.expectations) > 0 {
+		mmSelectClipboard.mock.t.Fatalf("Some expectations are already set for the Renderer.SelectClipboard method")
+	}
+
+	mmSelectClipboard.mock.funcSelectClipboard = f
+	mmSelectClipboard.mock.funcSelectClipboardOrigin = minimock.CallerInfo(1)
+	return mmSelectClipboard.mock
+}
+
+// When sets expectation for the Renderer.SelectClipboard which will trigger the result defined by the following
+// Then helper
+func (mmSelectClipboard *mRendererMockSelectClipboard) When(clipboard string) *RendererMockSelectClipboardExpectation {
+	if mmSelectClipboard.mock.funcSelectClipboard != nil {
+		mmSelectClipboard.mock.t.Fatalf("RendererMock.SelectClipboard mock is already set by Set")
+	}
+
+	expectation := &RendererMockSelectClipboardExpectation{
+		mock:               mmSelectClipboard.mock,
+		params:             &RendererMockSelectClipboardParams{clipboard},
+		expectationOrigins: RendererMockSelectClipboardExpectationOrigins{origin: minimock.CallerInfo(1)},
+	}
+	mmSelectClipboard.expectations = append(mmSelectClipboard.expectations, expectation)
+	return expectation
+}
+
+// Then sets up Renderer.SelectClipboard return parameters for the expectation previously defined by the When method
+func (e *RendererMockSelectClipboardExpectation) Then(s1 string) *RendererMock {
+	e.results = &RendererMockSelectClipboardResults{s1}
+	return e.mock
+}
+
+// Times sets number of times Renderer.SelectClipboard should be invoked
+func (mmSelectClipboard *mRendererMockSelectClipboard) Times(n uint64) *mRendererMockSelectClipboard {
+	if n == 0 {
+		mmSelectClipboard.mock.t.Fatalf("Times of RendererMock.SelectClipboard mock can not be zero")
+	}
+	mm_atomic.StoreUint64(&mmSelectClipboard.expectedInvocations, n)
+	mmSelectClipboard.expectedInvocationsOrigin = minimock.CallerInfo(1)
+	return mmSelectClipboard
+}
+
+func (mmSelectClipboard *mRendererMockSelectClipboard) invocationsDone() bool {
+	if len(mmSelectClipboard.expectations) == 0 && mmSelectClipboard.defaultExpectation == nil && mmSelectClipboard.mock.funcSelectClipboard == nil {
+		return true
+	}
+
+	totalInvocations := mm_atomic.LoadUint64(&mmSelectClipboard.mock.afterSelectClipboardCounter)
+	expectedInvocations := mm_atomic.LoadUint64(&mmSelectClipboard.expectedInvocations)
+
+	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
+}
+
+// SelectClipboard implements Renderer
+func (mmSelectClipboard *RendererMock) SelectClipboard(clipboard string) (s1 string) {
+	mm_atomic.AddUint64(&mmSelectClipboard.beforeSelectClipboardCounter, 1)
+	defer mm_atomic.AddUint64(&mmSelectClipboard.afterSelectClipboardCounter, 1)
+
+	mmSelectClipboard.t.Helper()
+
+	if mmSelectClipboard.inspectFuncSelectClipboard != nil {
+		mmSelectClipboard.inspectFuncSelectClipboard(clipboard)
+	}
+
+	mm_params := RendererMockSelectClipboardParams{clipboard}
+
+	// Record call args
+	mmSelectClipboard.SelectClipboardMock.mutex.Lock()
+	mmSelectClipboard.SelectClipboardMock.callArgs = append(mmSelectClipboard.SelectClipboardMock.callArgs, &mm_params)
+	mmSelectClipboard.SelectClipboardMock.mutex.Unlock()
+
+	for _, e := range mmSelectClipboard.SelectClipboardMock.expectations {
+		if minimock.Equal(*e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.s1
+		}
+	}
+
+	if mmSelectClipboard.SelectClipboardMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmSelectClipboard.SelectClipboardMock.defaultExpectation.Counter, 1)
+		mm_want := mmSelectClipboard.SelectClipboardMock.defaultExpectation.params
+		mm_want_ptrs := mmSelectClipboard.SelectClipboardMock.defaultExpectation.paramPtrs
+
+		mm_got := RendererMockSelectClipboardParams{clipboard}
+
+		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.clipboard != nil && !minimock.Equal(*mm_want_ptrs.clipboard, mm_got.clipboard) {
+				mmSelectClipboard.t.Errorf("RendererMock.SelectClipboard got unexpected parameter clipboard, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmSelectClipboard.SelectClipboardMock.defaultExpectation.expectationOrigins.originClipboard, *mm_want_ptrs.clipboard, mm_got.clipboard, minimock.Diff(*mm_want_ptrs.clipboard, mm_got.clipboard))
+			}
+
+		} else if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmSelectClipboard.t.Errorf("RendererMock.SelectClipboard got unexpected parameters, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+				mmSelectClipboard.SelectClipboardMock.defaultExpectation.expectationOrigins.origin, *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmSelectClipboard.SelectClipboardMock.defaultExpectation.results
+		if mm_results == nil {
+			mmSelectClipboard.t.Fatal("No results are set for the RendererMock.SelectClipboard")
+		}
+		return (*mm_results).s1
+	}
+	if mmSelectClipboard.funcSelectClipboard != nil {
+		return mmSelectClipboard.funcSelectClipboard(clipboard)
+	}
+	mmSelectClipboard.t.Fatalf("Unexpected call to RendererMock.SelectClipboard. %v", clipboard)
+	return
+}
+
+// SelectClipboardAfterCounter returns a count of finished RendererMock.SelectClipboard invocations
+func (mmSelectClipboard *RendererMock) SelectClipboardAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmSelectClipboard.afterSelectClipboardCounter)
+}
+
+// SelectClipboardBeforeCounter returns a count of RendererMock.SelectClipboard invocations
+func (mmSelectClipboard *RendererMock) SelectClipboardBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmSelectClipboard.beforeSelectClipboardCounter)
+}
+
+// Calls returns a list of arguments used in each call to RendererMock.SelectClipboard.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmSelectClipboard *mRendererMockSelectClipboard) Calls() []*RendererMockSelectClipboardParams {
+	mmSelectClipboard.mutex.RLock()
+
+	argCopy := make([]*RendererMockSelectClipboardParams, len(mmSelectClipboard.callArgs))
+	copy(argCopy, mmSelectClipboard.callArgs)
+
+	mmSelectClipboard.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockSelectClipboardDone returns true if the count of the SelectClipboard invocations corresponds
+// the number of defined expectations
+func (m *RendererMock) MinimockSelectClipboardDone() bool {
+	if m.SelectClipboardMock.optional {
+		// Optional methods provide '0 or more' call count restriction.
+		return true
+	}
+
+	for _, e := range m.SelectClipboardMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	return m.SelectClipboardMock.invocationsDone()
+}
+
+// MinimockSelectClipboardInspect logs each unmet expectation
+func (m *RendererMock) MinimockSelectClipboardInspect() {
+	for _, e := range m.SelectClipboardMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to RendererMock.SelectClipboard at\n%s with params: %#v", e.expectationOrigins.origin, *e.params)
+		}
+	}
+
+	afterSelectClipboardCounter := mm_atomic.LoadUint64(&m.afterSelectClipboardCounter)
+	// if default expectation was set then invocations count should be greater than zero
+	if m.SelectClipboardMock.defaultExpectation != nil && afterSelectClipboardCounter < 1 {
+		if m.SelectClipboardMock.defaultExpectation.params == nil {
+			m.t.Errorf("Expected call to RendererMock.SelectClipboard at\n%s", m.SelectClipboardMock.defaultExpectation.returnOrigin)
+		} else {
+			m.t.Errorf("Expected call to RendererMock.SelectClipboard at\n%s with params: %#v", m.SelectClipboardMock.defaultExpectation.expectationOrigins.origin, *m.SelectClipboardMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcSelectClipboard != nil && afterSelectClipboardCounter < 1 {
+		m.t.Errorf("Expected call to RendererMock.SelectClipboard at\n%s", m.funcSelectClipboardOrigin)
+	}
+
+	if !m.SelectClipboardMock.invocationsDone() && afterSelectClipboardCounter > 0 {
+		m.t.Errorf("Expected %d calls to RendererMock.SelectClipboard at\n%s but found %d calls",
+			mm_atomic.LoadUint64(&m.SelectClipboardMock.expectedInvocations), m.SelectClipboardMock.expectedInvocationsOrigin, afterSelectClipboardCounter)
+	}
+}
+
 type mRendererMockSelectDevice struct {
 	optional           bool
 	mock               *RendererMock
@@ -3162,47 +3873,47 @@ func (m *RendererMock) MinimockSelectDeviceInspect() {
 	}
 }
 
-type mRendererMockSelectFloatingState struct {
+type mRendererMockSelectFloating struct {
 	optional           bool
 	mock               *RendererMock
-	defaultExpectation *RendererMockSelectFloatingStateExpectation
-	expectations       []*RendererMockSelectFloatingStateExpectation
+	defaultExpectation *RendererMockSelectFloatingExpectation
+	expectations       []*RendererMockSelectFloatingExpectation
 
-	callArgs []*RendererMockSelectFloatingStateParams
+	callArgs []*RendererMockSelectFloatingParams
 	mutex    sync.RWMutex
 
 	expectedInvocations       uint64
 	expectedInvocationsOrigin string
 }
 
-// RendererMockSelectFloatingStateExpectation specifies expectation struct of the Renderer.SelectFloatingState
-type RendererMockSelectFloatingStateExpectation struct {
+// RendererMockSelectFloatingExpectation specifies expectation struct of the Renderer.SelectFloating
+type RendererMockSelectFloatingExpectation struct {
 	mock               *RendererMock
-	params             *RendererMockSelectFloatingStateParams
-	paramPtrs          *RendererMockSelectFloatingStateParamPtrs
-	expectationOrigins RendererMockSelectFloatingStateExpectationOrigins
-	results            *RendererMockSelectFloatingStateResults
+	params             *RendererMockSelectFloatingParams
+	paramPtrs          *RendererMockSelectFloatingParamPtrs
+	expectationOrigins RendererMockSelectFloatingExpectationOrigins
+	results            *RendererMockSelectFloatingResults
 	returnOrigin       string
 	Counter            uint64
 }
 
-// RendererMockSelectFloatingStateParams contains parameters of the Renderer.SelectFloatingState
-type RendererMockSelectFloatingStateParams struct {
+// RendererMockSelectFloatingParams contains parameters of the Renderer.SelectFloating
+type RendererMockSelectFloatingParams struct {
 	floatingState string
 }
 
-// RendererMockSelectFloatingStateParamPtrs contains pointers to parameters of the Renderer.SelectFloatingState
-type RendererMockSelectFloatingStateParamPtrs struct {
+// RendererMockSelectFloatingParamPtrs contains pointers to parameters of the Renderer.SelectFloating
+type RendererMockSelectFloatingParamPtrs struct {
 	floatingState *string
 }
 
-// RendererMockSelectFloatingStateResults contains results of the Renderer.SelectFloatingState
-type RendererMockSelectFloatingStateResults struct {
+// RendererMockSelectFloatingResults contains results of the Renderer.SelectFloating
+type RendererMockSelectFloatingResults struct {
 	s1 string
 }
 
-// RendererMockSelectFloatingStateOrigins contains origins of expectations of the Renderer.SelectFloatingState
-type RendererMockSelectFloatingStateExpectationOrigins struct {
+// RendererMockSelectFloatingOrigins contains origins of expectations of the Renderer.SelectFloating
+type RendererMockSelectFloatingExpectationOrigins struct {
 	origin              string
 	originFloatingState string
 }
@@ -3212,264 +3923,264 @@ type RendererMockSelectFloatingStateExpectationOrigins struct {
 // Optional() makes method check to work in '0 or more' mode.
 // It is NOT RECOMMENDED to use this option unless you really need it, as default behaviour helps to
 // catch the problems when the expected method call is totally skipped during test run.
-func (mmSelectFloatingState *mRendererMockSelectFloatingState) Optional() *mRendererMockSelectFloatingState {
-	mmSelectFloatingState.optional = true
-	return mmSelectFloatingState
+func (mmSelectFloating *mRendererMockSelectFloating) Optional() *mRendererMockSelectFloating {
+	mmSelectFloating.optional = true
+	return mmSelectFloating
 }
 
-// Expect sets up expected params for Renderer.SelectFloatingState
-func (mmSelectFloatingState *mRendererMockSelectFloatingState) Expect(floatingState string) *mRendererMockSelectFloatingState {
-	if mmSelectFloatingState.mock.funcSelectFloatingState != nil {
-		mmSelectFloatingState.mock.t.Fatalf("RendererMock.SelectFloatingState mock is already set by Set")
+// Expect sets up expected params for Renderer.SelectFloating
+func (mmSelectFloating *mRendererMockSelectFloating) Expect(floatingState string) *mRendererMockSelectFloating {
+	if mmSelectFloating.mock.funcSelectFloating != nil {
+		mmSelectFloating.mock.t.Fatalf("RendererMock.SelectFloating mock is already set by Set")
 	}
 
-	if mmSelectFloatingState.defaultExpectation == nil {
-		mmSelectFloatingState.defaultExpectation = &RendererMockSelectFloatingStateExpectation{}
+	if mmSelectFloating.defaultExpectation == nil {
+		mmSelectFloating.defaultExpectation = &RendererMockSelectFloatingExpectation{}
 	}
 
-	if mmSelectFloatingState.defaultExpectation.paramPtrs != nil {
-		mmSelectFloatingState.mock.t.Fatalf("RendererMock.SelectFloatingState mock is already set by ExpectParams functions")
+	if mmSelectFloating.defaultExpectation.paramPtrs != nil {
+		mmSelectFloating.mock.t.Fatalf("RendererMock.SelectFloating mock is already set by ExpectParams functions")
 	}
 
-	mmSelectFloatingState.defaultExpectation.params = &RendererMockSelectFloatingStateParams{floatingState}
-	mmSelectFloatingState.defaultExpectation.expectationOrigins.origin = minimock.CallerInfo(1)
-	for _, e := range mmSelectFloatingState.expectations {
-		if minimock.Equal(e.params, mmSelectFloatingState.defaultExpectation.params) {
-			mmSelectFloatingState.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmSelectFloatingState.defaultExpectation.params)
+	mmSelectFloating.defaultExpectation.params = &RendererMockSelectFloatingParams{floatingState}
+	mmSelectFloating.defaultExpectation.expectationOrigins.origin = minimock.CallerInfo(1)
+	for _, e := range mmSelectFloating.expectations {
+		if minimock.Equal(e.params, mmSelectFloating.defaultExpectation.params) {
+			mmSelectFloating.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmSelectFloating.defaultExpectation.params)
 		}
 	}
 
-	return mmSelectFloatingState
+	return mmSelectFloating
 }
 
-// ExpectFloatingStateParam1 sets up expected param floatingState for Renderer.SelectFloatingState
-func (mmSelectFloatingState *mRendererMockSelectFloatingState) ExpectFloatingStateParam1(floatingState string) *mRendererMockSelectFloatingState {
-	if mmSelectFloatingState.mock.funcSelectFloatingState != nil {
-		mmSelectFloatingState.mock.t.Fatalf("RendererMock.SelectFloatingState mock is already set by Set")
+// ExpectFloatingStateParam1 sets up expected param floatingState for Renderer.SelectFloating
+func (mmSelectFloating *mRendererMockSelectFloating) ExpectFloatingStateParam1(floatingState string) *mRendererMockSelectFloating {
+	if mmSelectFloating.mock.funcSelectFloating != nil {
+		mmSelectFloating.mock.t.Fatalf("RendererMock.SelectFloating mock is already set by Set")
 	}
 
-	if mmSelectFloatingState.defaultExpectation == nil {
-		mmSelectFloatingState.defaultExpectation = &RendererMockSelectFloatingStateExpectation{}
+	if mmSelectFloating.defaultExpectation == nil {
+		mmSelectFloating.defaultExpectation = &RendererMockSelectFloatingExpectation{}
 	}
 
-	if mmSelectFloatingState.defaultExpectation.params != nil {
-		mmSelectFloatingState.mock.t.Fatalf("RendererMock.SelectFloatingState mock is already set by Expect")
+	if mmSelectFloating.defaultExpectation.params != nil {
+		mmSelectFloating.mock.t.Fatalf("RendererMock.SelectFloating mock is already set by Expect")
 	}
 
-	if mmSelectFloatingState.defaultExpectation.paramPtrs == nil {
-		mmSelectFloatingState.defaultExpectation.paramPtrs = &RendererMockSelectFloatingStateParamPtrs{}
+	if mmSelectFloating.defaultExpectation.paramPtrs == nil {
+		mmSelectFloating.defaultExpectation.paramPtrs = &RendererMockSelectFloatingParamPtrs{}
 	}
-	mmSelectFloatingState.defaultExpectation.paramPtrs.floatingState = &floatingState
-	mmSelectFloatingState.defaultExpectation.expectationOrigins.originFloatingState = minimock.CallerInfo(1)
+	mmSelectFloating.defaultExpectation.paramPtrs.floatingState = &floatingState
+	mmSelectFloating.defaultExpectation.expectationOrigins.originFloatingState = minimock.CallerInfo(1)
 
-	return mmSelectFloatingState
+	return mmSelectFloating
 }
 
-// Inspect accepts an inspector function that has same arguments as the Renderer.SelectFloatingState
-func (mmSelectFloatingState *mRendererMockSelectFloatingState) Inspect(f func(floatingState string)) *mRendererMockSelectFloatingState {
-	if mmSelectFloatingState.mock.inspectFuncSelectFloatingState != nil {
-		mmSelectFloatingState.mock.t.Fatalf("Inspect function is already set for RendererMock.SelectFloatingState")
+// Inspect accepts an inspector function that has same arguments as the Renderer.SelectFloating
+func (mmSelectFloating *mRendererMockSelectFloating) Inspect(f func(floatingState string)) *mRendererMockSelectFloating {
+	if mmSelectFloating.mock.inspectFuncSelectFloating != nil {
+		mmSelectFloating.mock.t.Fatalf("Inspect function is already set for RendererMock.SelectFloating")
 	}
 
-	mmSelectFloatingState.mock.inspectFuncSelectFloatingState = f
+	mmSelectFloating.mock.inspectFuncSelectFloating = f
 
-	return mmSelectFloatingState
+	return mmSelectFloating
 }
 
-// Return sets up results that will be returned by Renderer.SelectFloatingState
-func (mmSelectFloatingState *mRendererMockSelectFloatingState) Return(s1 string) *RendererMock {
-	if mmSelectFloatingState.mock.funcSelectFloatingState != nil {
-		mmSelectFloatingState.mock.t.Fatalf("RendererMock.SelectFloatingState mock is already set by Set")
+// Return sets up results that will be returned by Renderer.SelectFloating
+func (mmSelectFloating *mRendererMockSelectFloating) Return(s1 string) *RendererMock {
+	if mmSelectFloating.mock.funcSelectFloating != nil {
+		mmSelectFloating.mock.t.Fatalf("RendererMock.SelectFloating mock is already set by Set")
 	}
 
-	if mmSelectFloatingState.defaultExpectation == nil {
-		mmSelectFloatingState.defaultExpectation = &RendererMockSelectFloatingStateExpectation{mock: mmSelectFloatingState.mock}
+	if mmSelectFloating.defaultExpectation == nil {
+		mmSelectFloating.defaultExpectation = &RendererMockSelectFloatingExpectation{mock: mmSelectFloating.mock}
 	}
-	mmSelectFloatingState.defaultExpectation.results = &RendererMockSelectFloatingStateResults{s1}
-	mmSelectFloatingState.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
-	return mmSelectFloatingState.mock
+	mmSelectFloating.defaultExpectation.results = &RendererMockSelectFloatingResults{s1}
+	mmSelectFloating.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
+	return mmSelectFloating.mock
 }
 
-// Set uses given function f to mock the Renderer.SelectFloatingState method
-func (mmSelectFloatingState *mRendererMockSelectFloatingState) Set(f func(floatingState string) (s1 string)) *RendererMock {
-	if mmSelectFloatingState.defaultExpectation != nil {
-		mmSelectFloatingState.mock.t.Fatalf("Default expectation is already set for the Renderer.SelectFloatingState method")
+// Set uses given function f to mock the Renderer.SelectFloating method
+func (mmSelectFloating *mRendererMockSelectFloating) Set(f func(floatingState string) (s1 string)) *RendererMock {
+	if mmSelectFloating.defaultExpectation != nil {
+		mmSelectFloating.mock.t.Fatalf("Default expectation is already set for the Renderer.SelectFloating method")
 	}
 
-	if len(mmSelectFloatingState.expectations) > 0 {
-		mmSelectFloatingState.mock.t.Fatalf("Some expectations are already set for the Renderer.SelectFloatingState method")
+	if len(mmSelectFloating.expectations) > 0 {
+		mmSelectFloating.mock.t.Fatalf("Some expectations are already set for the Renderer.SelectFloating method")
 	}
 
-	mmSelectFloatingState.mock.funcSelectFloatingState = f
-	mmSelectFloatingState.mock.funcSelectFloatingStateOrigin = minimock.CallerInfo(1)
-	return mmSelectFloatingState.mock
+	mmSelectFloating.mock.funcSelectFloating = f
+	mmSelectFloating.mock.funcSelectFloatingOrigin = minimock.CallerInfo(1)
+	return mmSelectFloating.mock
 }
 
-// When sets expectation for the Renderer.SelectFloatingState which will trigger the result defined by the following
+// When sets expectation for the Renderer.SelectFloating which will trigger the result defined by the following
 // Then helper
-func (mmSelectFloatingState *mRendererMockSelectFloatingState) When(floatingState string) *RendererMockSelectFloatingStateExpectation {
-	if mmSelectFloatingState.mock.funcSelectFloatingState != nil {
-		mmSelectFloatingState.mock.t.Fatalf("RendererMock.SelectFloatingState mock is already set by Set")
+func (mmSelectFloating *mRendererMockSelectFloating) When(floatingState string) *RendererMockSelectFloatingExpectation {
+	if mmSelectFloating.mock.funcSelectFloating != nil {
+		mmSelectFloating.mock.t.Fatalf("RendererMock.SelectFloating mock is already set by Set")
 	}
 
-	expectation := &RendererMockSelectFloatingStateExpectation{
-		mock:               mmSelectFloatingState.mock,
-		params:             &RendererMockSelectFloatingStateParams{floatingState},
-		expectationOrigins: RendererMockSelectFloatingStateExpectationOrigins{origin: minimock.CallerInfo(1)},
+	expectation := &RendererMockSelectFloatingExpectation{
+		mock:               mmSelectFloating.mock,
+		params:             &RendererMockSelectFloatingParams{floatingState},
+		expectationOrigins: RendererMockSelectFloatingExpectationOrigins{origin: minimock.CallerInfo(1)},
 	}
-	mmSelectFloatingState.expectations = append(mmSelectFloatingState.expectations, expectation)
+	mmSelectFloating.expectations = append(mmSelectFloating.expectations, expectation)
 	return expectation
 }
 
-// Then sets up Renderer.SelectFloatingState return parameters for the expectation previously defined by the When method
-func (e *RendererMockSelectFloatingStateExpectation) Then(s1 string) *RendererMock {
-	e.results = &RendererMockSelectFloatingStateResults{s1}
+// Then sets up Renderer.SelectFloating return parameters for the expectation previously defined by the When method
+func (e *RendererMockSelectFloatingExpectation) Then(s1 string) *RendererMock {
+	e.results = &RendererMockSelectFloatingResults{s1}
 	return e.mock
 }
 
-// Times sets number of times Renderer.SelectFloatingState should be invoked
-func (mmSelectFloatingState *mRendererMockSelectFloatingState) Times(n uint64) *mRendererMockSelectFloatingState {
+// Times sets number of times Renderer.SelectFloating should be invoked
+func (mmSelectFloating *mRendererMockSelectFloating) Times(n uint64) *mRendererMockSelectFloating {
 	if n == 0 {
-		mmSelectFloatingState.mock.t.Fatalf("Times of RendererMock.SelectFloatingState mock can not be zero")
+		mmSelectFloating.mock.t.Fatalf("Times of RendererMock.SelectFloating mock can not be zero")
 	}
-	mm_atomic.StoreUint64(&mmSelectFloatingState.expectedInvocations, n)
-	mmSelectFloatingState.expectedInvocationsOrigin = minimock.CallerInfo(1)
-	return mmSelectFloatingState
+	mm_atomic.StoreUint64(&mmSelectFloating.expectedInvocations, n)
+	mmSelectFloating.expectedInvocationsOrigin = minimock.CallerInfo(1)
+	return mmSelectFloating
 }
 
-func (mmSelectFloatingState *mRendererMockSelectFloatingState) invocationsDone() bool {
-	if len(mmSelectFloatingState.expectations) == 0 && mmSelectFloatingState.defaultExpectation == nil && mmSelectFloatingState.mock.funcSelectFloatingState == nil {
+func (mmSelectFloating *mRendererMockSelectFloating) invocationsDone() bool {
+	if len(mmSelectFloating.expectations) == 0 && mmSelectFloating.defaultExpectation == nil && mmSelectFloating.mock.funcSelectFloating == nil {
 		return true
 	}
 
-	totalInvocations := mm_atomic.LoadUint64(&mmSelectFloatingState.mock.afterSelectFloatingStateCounter)
-	expectedInvocations := mm_atomic.LoadUint64(&mmSelectFloatingState.expectedInvocations)
+	totalInvocations := mm_atomic.LoadUint64(&mmSelectFloating.mock.afterSelectFloatingCounter)
+	expectedInvocations := mm_atomic.LoadUint64(&mmSelectFloating.expectedInvocations)
 
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// SelectFloatingState implements Renderer
-func (mmSelectFloatingState *RendererMock) SelectFloatingState(floatingState string) (s1 string) {
-	mm_atomic.AddUint64(&mmSelectFloatingState.beforeSelectFloatingStateCounter, 1)
-	defer mm_atomic.AddUint64(&mmSelectFloatingState.afterSelectFloatingStateCounter, 1)
+// SelectFloating implements Renderer
+func (mmSelectFloating *RendererMock) SelectFloating(floatingState string) (s1 string) {
+	mm_atomic.AddUint64(&mmSelectFloating.beforeSelectFloatingCounter, 1)
+	defer mm_atomic.AddUint64(&mmSelectFloating.afterSelectFloatingCounter, 1)
 
-	mmSelectFloatingState.t.Helper()
+	mmSelectFloating.t.Helper()
 
-	if mmSelectFloatingState.inspectFuncSelectFloatingState != nil {
-		mmSelectFloatingState.inspectFuncSelectFloatingState(floatingState)
+	if mmSelectFloating.inspectFuncSelectFloating != nil {
+		mmSelectFloating.inspectFuncSelectFloating(floatingState)
 	}
 
-	mm_params := RendererMockSelectFloatingStateParams{floatingState}
+	mm_params := RendererMockSelectFloatingParams{floatingState}
 
 	// Record call args
-	mmSelectFloatingState.SelectFloatingStateMock.mutex.Lock()
-	mmSelectFloatingState.SelectFloatingStateMock.callArgs = append(mmSelectFloatingState.SelectFloatingStateMock.callArgs, &mm_params)
-	mmSelectFloatingState.SelectFloatingStateMock.mutex.Unlock()
+	mmSelectFloating.SelectFloatingMock.mutex.Lock()
+	mmSelectFloating.SelectFloatingMock.callArgs = append(mmSelectFloating.SelectFloatingMock.callArgs, &mm_params)
+	mmSelectFloating.SelectFloatingMock.mutex.Unlock()
 
-	for _, e := range mmSelectFloatingState.SelectFloatingStateMock.expectations {
+	for _, e := range mmSelectFloating.SelectFloatingMock.expectations {
 		if minimock.Equal(*e.params, mm_params) {
 			mm_atomic.AddUint64(&e.Counter, 1)
 			return e.results.s1
 		}
 	}
 
-	if mmSelectFloatingState.SelectFloatingStateMock.defaultExpectation != nil {
-		mm_atomic.AddUint64(&mmSelectFloatingState.SelectFloatingStateMock.defaultExpectation.Counter, 1)
-		mm_want := mmSelectFloatingState.SelectFloatingStateMock.defaultExpectation.params
-		mm_want_ptrs := mmSelectFloatingState.SelectFloatingStateMock.defaultExpectation.paramPtrs
+	if mmSelectFloating.SelectFloatingMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmSelectFloating.SelectFloatingMock.defaultExpectation.Counter, 1)
+		mm_want := mmSelectFloating.SelectFloatingMock.defaultExpectation.params
+		mm_want_ptrs := mmSelectFloating.SelectFloatingMock.defaultExpectation.paramPtrs
 
-		mm_got := RendererMockSelectFloatingStateParams{floatingState}
+		mm_got := RendererMockSelectFloatingParams{floatingState}
 
 		if mm_want_ptrs != nil {
 
 			if mm_want_ptrs.floatingState != nil && !minimock.Equal(*mm_want_ptrs.floatingState, mm_got.floatingState) {
-				mmSelectFloatingState.t.Errorf("RendererMock.SelectFloatingState got unexpected parameter floatingState, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
-					mmSelectFloatingState.SelectFloatingStateMock.defaultExpectation.expectationOrigins.originFloatingState, *mm_want_ptrs.floatingState, mm_got.floatingState, minimock.Diff(*mm_want_ptrs.floatingState, mm_got.floatingState))
+				mmSelectFloating.t.Errorf("RendererMock.SelectFloating got unexpected parameter floatingState, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmSelectFloating.SelectFloatingMock.defaultExpectation.expectationOrigins.originFloatingState, *mm_want_ptrs.floatingState, mm_got.floatingState, minimock.Diff(*mm_want_ptrs.floatingState, mm_got.floatingState))
 			}
 
 		} else if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
-			mmSelectFloatingState.t.Errorf("RendererMock.SelectFloatingState got unexpected parameters, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
-				mmSelectFloatingState.SelectFloatingStateMock.defaultExpectation.expectationOrigins.origin, *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+			mmSelectFloating.t.Errorf("RendererMock.SelectFloating got unexpected parameters, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+				mmSelectFloating.SelectFloatingMock.defaultExpectation.expectationOrigins.origin, *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
 		}
 
-		mm_results := mmSelectFloatingState.SelectFloatingStateMock.defaultExpectation.results
+		mm_results := mmSelectFloating.SelectFloatingMock.defaultExpectation.results
 		if mm_results == nil {
-			mmSelectFloatingState.t.Fatal("No results are set for the RendererMock.SelectFloatingState")
+			mmSelectFloating.t.Fatal("No results are set for the RendererMock.SelectFloating")
 		}
 		return (*mm_results).s1
 	}
-	if mmSelectFloatingState.funcSelectFloatingState != nil {
-		return mmSelectFloatingState.funcSelectFloatingState(floatingState)
+	if mmSelectFloating.funcSelectFloating != nil {
+		return mmSelectFloating.funcSelectFloating(floatingState)
 	}
-	mmSelectFloatingState.t.Fatalf("Unexpected call to RendererMock.SelectFloatingState. %v", floatingState)
+	mmSelectFloating.t.Fatalf("Unexpected call to RendererMock.SelectFloating. %v", floatingState)
 	return
 }
 
-// SelectFloatingStateAfterCounter returns a count of finished RendererMock.SelectFloatingState invocations
-func (mmSelectFloatingState *RendererMock) SelectFloatingStateAfterCounter() uint64 {
-	return mm_atomic.LoadUint64(&mmSelectFloatingState.afterSelectFloatingStateCounter)
+// SelectFloatingAfterCounter returns a count of finished RendererMock.SelectFloating invocations
+func (mmSelectFloating *RendererMock) SelectFloatingAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmSelectFloating.afterSelectFloatingCounter)
 }
 
-// SelectFloatingStateBeforeCounter returns a count of RendererMock.SelectFloatingState invocations
-func (mmSelectFloatingState *RendererMock) SelectFloatingStateBeforeCounter() uint64 {
-	return mm_atomic.LoadUint64(&mmSelectFloatingState.beforeSelectFloatingStateCounter)
+// SelectFloatingBeforeCounter returns a count of RendererMock.SelectFloating invocations
+func (mmSelectFloating *RendererMock) SelectFloatingBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmSelectFloating.beforeSelectFloatingCounter)
 }
 
-// Calls returns a list of arguments used in each call to RendererMock.SelectFloatingState.
+// Calls returns a list of arguments used in each call to RendererMock.SelectFloating.
 // The list is in the same order as the calls were made (i.e. recent calls have a higher index)
-func (mmSelectFloatingState *mRendererMockSelectFloatingState) Calls() []*RendererMockSelectFloatingStateParams {
-	mmSelectFloatingState.mutex.RLock()
+func (mmSelectFloating *mRendererMockSelectFloating) Calls() []*RendererMockSelectFloatingParams {
+	mmSelectFloating.mutex.RLock()
 
-	argCopy := make([]*RendererMockSelectFloatingStateParams, len(mmSelectFloatingState.callArgs))
-	copy(argCopy, mmSelectFloatingState.callArgs)
+	argCopy := make([]*RendererMockSelectFloatingParams, len(mmSelectFloating.callArgs))
+	copy(argCopy, mmSelectFloating.callArgs)
 
-	mmSelectFloatingState.mutex.RUnlock()
+	mmSelectFloating.mutex.RUnlock()
 
 	return argCopy
 }
 
-// MinimockSelectFloatingStateDone returns true if the count of the SelectFloatingState invocations corresponds
+// MinimockSelectFloatingDone returns true if the count of the SelectFloating invocations corresponds
 // the number of defined expectations
-func (m *RendererMock) MinimockSelectFloatingStateDone() bool {
-	if m.SelectFloatingStateMock.optional {
+func (m *RendererMock) MinimockSelectFloatingDone() bool {
+	if m.SelectFloatingMock.optional {
 		// Optional methods provide '0 or more' call count restriction.
 		return true
 	}
 
-	for _, e := range m.SelectFloatingStateMock.expectations {
+	for _, e := range m.SelectFloatingMock.expectations {
 		if mm_atomic.LoadUint64(&e.Counter) < 1 {
 			return false
 		}
 	}
 
-	return m.SelectFloatingStateMock.invocationsDone()
+	return m.SelectFloatingMock.invocationsDone()
 }
 
-// MinimockSelectFloatingStateInspect logs each unmet expectation
-func (m *RendererMock) MinimockSelectFloatingStateInspect() {
-	for _, e := range m.SelectFloatingStateMock.expectations {
+// MinimockSelectFloatingInspect logs each unmet expectation
+func (m *RendererMock) MinimockSelectFloatingInspect() {
+	for _, e := range m.SelectFloatingMock.expectations {
 		if mm_atomic.LoadUint64(&e.Counter) < 1 {
-			m.t.Errorf("Expected call to RendererMock.SelectFloatingState at\n%s with params: %#v", e.expectationOrigins.origin, *e.params)
+			m.t.Errorf("Expected call to RendererMock.SelectFloating at\n%s with params: %#v", e.expectationOrigins.origin, *e.params)
 		}
 	}
 
-	afterSelectFloatingStateCounter := mm_atomic.LoadUint64(&m.afterSelectFloatingStateCounter)
+	afterSelectFloatingCounter := mm_atomic.LoadUint64(&m.afterSelectFloatingCounter)
 	// if default expectation was set then invocations count should be greater than zero
-	if m.SelectFloatingStateMock.defaultExpectation != nil && afterSelectFloatingStateCounter < 1 {
-		if m.SelectFloatingStateMock.defaultExpectation.params == nil {
-			m.t.Errorf("Expected call to RendererMock.SelectFloatingState at\n%s", m.SelectFloatingStateMock.defaultExpectation.returnOrigin)
+	if m.SelectFloatingMock.defaultExpectation != nil && afterSelectFloatingCounter < 1 {
+		if m.SelectFloatingMock.defaultExpectation.params == nil {
+			m.t.Errorf("Expected call to RendererMock.SelectFloating at\n%s", m.SelectFloatingMock.defaultExpectation.returnOrigin)
 		} else {
-			m.t.Errorf("Expected call to RendererMock.SelectFloatingState at\n%s with params: %#v", m.SelectFloatingStateMock.defaultExpectation.expectationOrigins.origin, *m.SelectFloatingStateMock.defaultExpectation.params)
+			m.t.Errorf("Expected call to RendererMock.SelectFloating at\n%s with params: %#v", m.SelectFloatingMock.defaultExpectation.expectationOrigins.origin, *m.SelectFloatingMock.defaultExpectation.params)
 		}
 	}
 	// if func was set then invocations count should be greater than zero
-	if m.funcSelectFloatingState != nil && afterSelectFloatingStateCounter < 1 {
-		m.t.Errorf("Expected call to RendererMock.SelectFloatingState at\n%s", m.funcSelectFloatingStateOrigin)
+	if m.funcSelectFloating != nil && afterSelectFloatingCounter < 1 {
+		m.t.Errorf("Expected call to RendererMock.SelectFloating at\n%s", m.funcSelectFloatingOrigin)
 	}
 
-	if !m.SelectFloatingStateMock.invocationsDone() && afterSelectFloatingStateCounter > 0 {
-		m.t.Errorf("Expected %d calls to RendererMock.SelectFloatingState at\n%s but found %d calls",
-			mm_atomic.LoadUint64(&m.SelectFloatingStateMock.expectedInvocations), m.SelectFloatingStateMock.expectedInvocationsOrigin, afterSelectFloatingStateCounter)
+	if !m.SelectFloatingMock.invocationsDone() && afterSelectFloatingCounter > 0 {
+		m.t.Errorf("Expected %d calls to RendererMock.SelectFloating at\n%s but found %d calls",
+			mm_atomic.LoadUint64(&m.SelectFloatingMock.expectedInvocations), m.SelectFloatingMock.expectedInvocationsOrigin, afterSelectFloatingCounter)
 	}
 }
 
@@ -4289,6 +5000,8 @@ func (m *RendererMock) MinimockFinish() {
 
 			m.MinimockCloseSettingsInspect()
 
+			m.MinimockCopyTextInspect()
+
 			m.MinimockFloatingPageInspect()
 
 			m.MinimockListenSocketInspect()
@@ -4297,9 +5010,11 @@ func (m *RendererMock) MinimockFinish() {
 
 			m.MinimockPrintMetricInspect()
 
+			m.MinimockPrintSelectedClipboardInspect()
+
 			m.MinimockPrintSelectedDeviceInspect()
 
-			m.MinimockPrintSelectedFloatingStateInspect()
+			m.MinimockPrintSelectedFloatingInspect()
 
 			m.MinimockPrintSelectedLanguageInspect()
 
@@ -4307,9 +5022,11 @@ func (m *RendererMock) MinimockFinish() {
 
 			m.MinimockPrintStatusInspect()
 
+			m.MinimockSelectClipboardInspect()
+
 			m.MinimockSelectDeviceInspect()
 
-			m.MinimockSelectFloatingStateInspect()
+			m.MinimockSelectFloatingInspect()
 
 			m.MinimockSelectLanguageInspect()
 
@@ -4341,17 +5058,20 @@ func (m *RendererMock) minimockDone() bool {
 	return done &&
 		m.MinimockAppPlaceholderDone() &&
 		m.MinimockCloseSettingsDone() &&
+		m.MinimockCopyTextDone() &&
 		m.MinimockFloatingPageDone() &&
 		m.MinimockListenSocketDone() &&
 		m.MinimockOpenSettingsDone() &&
 		m.MinimockPrintMetricDone() &&
+		m.MinimockPrintSelectedClipboardDone() &&
 		m.MinimockPrintSelectedDeviceDone() &&
-		m.MinimockPrintSelectedFloatingStateDone() &&
+		m.MinimockPrintSelectedFloatingDone() &&
 		m.MinimockPrintSelectedLanguageDone() &&
 		m.MinimockPrintSelectedViewModeDone() &&
 		m.MinimockPrintStatusDone() &&
+		m.MinimockSelectClipboardDone() &&
 		m.MinimockSelectDeviceDone() &&
-		m.MinimockSelectFloatingStateDone() &&
+		m.MinimockSelectFloatingDone() &&
 		m.MinimockSelectLanguageDone() &&
 		m.MinimockSelectViewModeDone() &&
 		m.MinimockToggleDone()
