@@ -20,7 +20,7 @@ type failingWriter struct {
 }
 
 func (fw *failingWriter) Write([]byte) (int, error) {
-	return 0, errors.New("written failed")
+	return 0, errors.New("written error")
 }
 
 func TestBurn(t *testing.T) {
@@ -54,7 +54,7 @@ func TestBurn(t *testing.T) {
 			&failingWriter{},
 			2,
 			[]int16{},
-			"written failed",
+			"written error",
 		},
 	}
 

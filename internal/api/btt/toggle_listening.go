@@ -1,13 +1,22 @@
 package btt
 
 import (
+	"errors"
 	"net/http"
 
 	"live2text/internal/api/json"
+	"live2text/internal/services/btt"
 )
 
 func (s *Server) ToggleListening(w http.ResponseWriter, r *http.Request) {
 	if err := s.services.Btt().ToggleListening(r.Context()); err != nil {
+		if errors.Is(err, btt.ErrDeviceNotSelected) ||
+			errors.Is(err, btt.ErrDeviceIsUnavailable) ||
+			errors.Is(err, btt.ErrLanguageNotSelected) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

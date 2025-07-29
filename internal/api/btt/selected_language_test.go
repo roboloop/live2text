@@ -23,7 +23,7 @@ func TestSelectedLanguage(t *testing.T) {
 		expectedBody    string
 	}{
 		{
-			name: "getting selected language failed",
+			name: "getting selected language error",
 			mockSelectedLanguage: func() (string, error) {
 				return "", errors.New("dummy error")
 			},

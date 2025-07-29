@@ -132,7 +132,7 @@ func TestCloseSettings(t *testing.T) {
 	t.Parallel()
 
 	renderer := setupRenderer(t)
-	result := renderer.CloseSettings("Clean", map[string]any{"foo": "bar"}, map[string]any{"key": "value"})
+	result := renderer.CloseSettings("Clean", map[string]any{"foo": "bar"}, map[string]any{"key": "value"}, "", nil)
 	require.NotEmpty(t, strings.TrimSpace(result))
 }
 

@@ -70,14 +70,15 @@ func (t Title) String() string {
 }
 
 const (
-	TitleApp                Title = "App"
+	TitleApp                Title = "Live2Text App"
 	TitleClipboard          Title = "Copy Text"
 	TitleCleanViewApp       Title = "Clean View App"
 	TitleCleanViewClipboard Title = "Clean View Copy Text"
 
-	TitleSettingsDir  Title = "Settings"
-	TitleCleanViewDir Title = "Clean View"
-	TitleCloseDir     Title = "Close Directory"
+	TitleSettingsDir      Title = "Settings"
+	TitleCleanViewDir     Title = "Clean View"
+	TitleCloseSettingsDir Title = "Close Settings"
+	TitleCloseDir         Title = "Close Directory"
 
 	TitleDeviceDir    Title = "Device"
 	TitleLanguageDir  Title = "Language"

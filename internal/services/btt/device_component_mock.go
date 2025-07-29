@@ -16,6 +16,13 @@ type DeviceComponentMock struct {
 	t          minimock.Tester
 	finishOnce sync.Once
 
+	funcIsAvailable          func(ctx context.Context, device string) (b1 bool, err error)
+	funcIsAvailableOrigin    string
+	inspectFuncIsAvailable   func(ctx context.Context, device string)
+	afterIsAvailableCounter  uint64
+	beforeIsAvailableCounter uint64
+	IsAvailableMock          mDeviceComponentMockIsAvailable
+
 	funcLoadDevices          func(ctx context.Context) (err error)
 	funcLoadDevicesOrigin    string
 	inspectFuncLoadDevices   func(ctx context.Context)
@@ -46,6 +53,9 @@ func NewDeviceComponentMock(t minimock.Tester) *DeviceComponentMock {
 		controller.RegisterMocker(m)
 	}
 
+	m.IsAvailableMock = mDeviceComponentMockIsAvailable{mock: m}
+	m.IsAvailableMock.callArgs = []*DeviceComponentMockIsAvailableParams{}
+
 	m.LoadDevicesMock = mDeviceComponentMockLoadDevices{mock: m}
 	m.LoadDevicesMock.callArgs = []*DeviceComponentMockLoadDevicesParams{}
 
@@ -58,6 +68,349 @@ func NewDeviceComponentMock(t minimock.Tester) *DeviceComponentMock {
 	t.Cleanup(m.MinimockFinish)
 
 	return m
+}
+
+type mDeviceComponentMockIsAvailable struct {
+	optional           bool
+	mock               *DeviceComponentMock
+	defaultExpectation *DeviceComponentMockIsAvailableExpectation
+	expectations       []*DeviceComponentMockIsAvailableExpectation
+
+	callArgs []*DeviceComponentMockIsAvailableParams
+	mutex    sync.RWMutex
+
+	expectedInvocations       uint64
+	expectedInvocationsOrigin string
+}
+
+// DeviceComponentMockIsAvailableExpectation specifies expectation struct of the DeviceComponent.IsAvailable
+type DeviceComponentMockIsAvailableExpectation struct {
+	mock               *DeviceComponentMock
+	params             *DeviceComponentMockIsAvailableParams
+	paramPtrs          *DeviceComponentMockIsAvailableParamPtrs
+	expectationOrigins DeviceComponentMockIsAvailableExpectationOrigins
+	results            *DeviceComponentMockIsAvailableResults
+	returnOrigin       string
+	Counter            uint64
+}
+
+// DeviceComponentMockIsAvailableParams contains parameters of the DeviceComponent.IsAvailable
+type DeviceComponentMockIsAvailableParams struct {
+	ctx    context.Context
+	device string
+}
+
+// DeviceComponentMockIsAvailableParamPtrs contains pointers to parameters of the DeviceComponent.IsAvailable
+type DeviceComponentMockIsAvailableParamPtrs struct {
+	ctx    *context.Context
+	device *string
+}
+
+// DeviceComponentMockIsAvailableResults contains results of the DeviceComponent.IsAvailable
+type DeviceComponentMockIsAvailableResults struct {
+	b1  bool
+	err error
+}
+
+// DeviceComponentMockIsAvailableOrigins contains origins of expectations of the DeviceComponent.IsAvailable
+type DeviceComponentMockIsAvailableExpectationOrigins struct {
+	origin       string
+	originCtx    string
+	originDevice string
+}
+
+// Marks this method to be optional. The default behavior of any method with Return() is '1 or more', meaning
+// the test will fail minimock's automatic final call check if the mocked method was not called at least once.
+// Optional() makes method check to work in '0 or more' mode.
+// It is NOT RECOMMENDED to use this option unless you really need it, as default behaviour helps to
+// catch the problems when the expected method call is totally skipped during test run.
+func (mmIsAvailable *mDeviceComponentMockIsAvailable) Optional() *mDeviceComponentMockIsAvailable {
+	mmIsAvailable.optional = true
+	return mmIsAvailable
+}
+
+// Expect sets up expected params for DeviceComponent.IsAvailable
+func (mmIsAvailable *mDeviceComponentMockIsAvailable) Expect(ctx context.Context, device string) *mDeviceComponentMockIsAvailable {
+	if mmIsAvailable.mock.funcIsAvailable != nil {
+		mmIsAvailable.mock.t.Fatalf("DeviceComponentMock.IsAvailable mock is already set by Set")
+	}
+
+	if mmIsAvailable.defaultExpectation == nil {
+		mmIsAvailable.defaultExpectation = &DeviceComponentMockIsAvailableExpectation{}
+	}
+
+	if mmIsAvailable.defaultExpectation.paramPtrs != nil {
+		mmIsAvailable.mock.t.Fatalf("DeviceComponentMock.IsAvailable mock is already set by ExpectParams functions")
+	}
+
+	mmIsAvailable.defaultExpectation.params = &DeviceComponentMockIsAvailableParams{ctx, device}
+	mmIsAvailable.defaultExpectation.expectationOrigins.origin = minimock.CallerInfo(1)
+	for _, e := range mmIsAvailable.expectations {
+		if minimock.Equal(e.params, mmIsAvailable.defaultExpectation.params) {
+			mmIsAvailable.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmIsAvailable.defaultExpectation.params)
+		}
+	}
+
+	return mmIsAvailable
+}
+
+// ExpectCtxParam1 sets up expected param ctx for DeviceComponent.IsAvailable
+func (mmIsAvailable *mDeviceComponentMockIsAvailable) ExpectCtxParam1(ctx context.Context) *mDeviceComponentMockIsAvailable {
+	if mmIsAvailable.mock.funcIsAvailable != nil {
+		mmIsAvailable.mock.t.Fatalf("DeviceComponentMock.IsAvailable mock is already set by Set")
+	}
+
+	if mmIsAvailable.defaultExpectation == nil {
+		mmIsAvailable.defaultExpectation = &DeviceComponentMockIsAvailableExpectation{}
+	}
+
+	if mmIsAvailable.defaultExpectation.params != nil {
+		mmIsAvailable.mock.t.Fatalf("DeviceComponentMock.IsAvailable mock is already set by Expect")
+	}
+
+	if mmIsAvailable.defaultExpectation.paramPtrs == nil {
+		mmIsAvailable.defaultExpectation.paramPtrs = &DeviceComponentMockIsAvailableParamPtrs{}
+	}
+	mmIsAvailable.defaultExpectation.paramPtrs.ctx = &ctx
+	mmIsAvailable.defaultExpectation.expectationOrigins.originCtx = minimock.CallerInfo(1)
+
+	return mmIsAvailable
+}
+
+// ExpectDeviceParam2 sets up expected param device for DeviceComponent.IsAvailable
+func (mmIsAvailable *mDeviceComponentMockIsAvailable) ExpectDeviceParam2(device string) *mDeviceComponentMockIsAvailable {
+	if mmIsAvailable.mock.funcIsAvailable != nil {
+		mmIsAvailable.mock.t.Fatalf("DeviceComponentMock.IsAvailable mock is already set by Set")
+	}
+
+	if mmIsAvailable.defaultExpectation == nil {
+		mmIsAvailable.defaultExpectation = &DeviceComponentMockIsAvailableExpectation{}
+	}
+
+	if mmIsAvailable.defaultExpectation.params != nil {
+		mmIsAvailable.mock.t.Fatalf("DeviceComponentMock.IsAvailable mock is already set by Expect")
+	}
+
+	if mmIsAvailable.defaultExpectation.paramPtrs == nil {
+		mmIsAvailable.defaultExpectation.paramPtrs = &DeviceComponentMockIsAvailableParamPtrs{}
+	}
+	mmIsAvailable.defaultExpectation.paramPtrs.device = &device
+	mmIsAvailable.defaultExpectation.expectationOrigins.originDevice = minimock.CallerInfo(1)
+
+	return mmIsAvailable
+}
+
+// Inspect accepts an inspector function that has same arguments as the DeviceComponent.IsAvailable
+func (mmIsAvailable *mDeviceComponentMockIsAvailable) Inspect(f func(ctx context.Context, device string)) *mDeviceComponentMockIsAvailable {
+	if mmIsAvailable.mock.inspectFuncIsAvailable != nil {
+		mmIsAvailable.mock.t.Fatalf("Inspect function is already set for DeviceComponentMock.IsAvailable")
+	}
+
+	mmIsAvailable.mock.inspectFuncIsAvailable = f
+
+	return mmIsAvailable
+}
+
+// Return sets up results that will be returned by DeviceComponent.IsAvailable
+func (mmIsAvailable *mDeviceComponentMockIsAvailable) Return(b1 bool, err error) *DeviceComponentMock {
+	if mmIsAvailable.mock.funcIsAvailable != nil {
+		mmIsAvailable.mock.t.Fatalf("DeviceComponentMock.IsAvailable mock is already set by Set")
+	}
+
+	if mmIsAvailable.defaultExpectation == nil {
+		mmIsAvailable.defaultExpectation = &DeviceComponentMockIsAvailableExpectation{mock: mmIsAvailable.mock}
+	}
+	mmIsAvailable.defaultExpectation.results = &DeviceComponentMockIsAvailableResults{b1, err}
+	mmIsAvailable.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
+	return mmIsAvailable.mock
+}
+
+// Set uses given function f to mock the DeviceComponent.IsAvailable method
+func (mmIsAvailable *mDeviceComponentMockIsAvailable) Set(f func(ctx context.Context, device string) (b1 bool, err error)) *DeviceComponentMock {
+	if mmIsAvailable.defaultExpectation != nil {
+		mmIsAvailable.mock.t.Fatalf("Default expectation is already set for the DeviceComponent.IsAvailable method")
+	}
+
+	if len(mmIsAvailable.expectations) > 0 {
+		mmIsAvailable.mock.t.Fatalf("Some expectations are already set for the DeviceComponent.IsAvailable method")
+	}
+
+	mmIsAvailable.mock.funcIsAvailable = f
+	mmIsAvailable.mock.funcIsAvailableOrigin = minimock.CallerInfo(1)
+	return mmIsAvailable.mock
+}
+
+// When sets expectation for the DeviceComponent.IsAvailable which will trigger the result defined by the following
+// Then helper
+func (mmIsAvailable *mDeviceComponentMockIsAvailable) When(ctx context.Context, device string) *DeviceComponentMockIsAvailableExpectation {
+	if mmIsAvailable.mock.funcIsAvailable != nil {
+		mmIsAvailable.mock.t.Fatalf("DeviceComponentMock.IsAvailable mock is already set by Set")
+	}
+
+	expectation := &DeviceComponentMockIsAvailableExpectation{
+		mock:               mmIsAvailable.mock,
+		params:             &DeviceComponentMockIsAvailableParams{ctx, device},
+		expectationOrigins: DeviceComponentMockIsAvailableExpectationOrigins{origin: minimock.CallerInfo(1)},
+	}
+	mmIsAvailable.expectations = append(mmIsAvailable.expectations, expectation)
+	return expectation
+}
+
+// Then sets up DeviceComponent.IsAvailable return parameters for the expectation previously defined by the When method
+func (e *DeviceComponentMockIsAvailableExpectation) Then(b1 bool, err error) *DeviceComponentMock {
+	e.results = &DeviceComponentMockIsAvailableResults{b1, err}
+	return e.mock
+}
+
+// Times sets number of times DeviceComponent.IsAvailable should be invoked
+func (mmIsAvailable *mDeviceComponentMockIsAvailable) Times(n uint64) *mDeviceComponentMockIsAvailable {
+	if n == 0 {
+		mmIsAvailable.mock.t.Fatalf("Times of DeviceComponentMock.IsAvailable mock can not be zero")
+	}
+	mm_atomic.StoreUint64(&mmIsAvailable.expectedInvocations, n)
+	mmIsAvailable.expectedInvocationsOrigin = minimock.CallerInfo(1)
+	return mmIsAvailable
+}
+
+func (mmIsAvailable *mDeviceComponentMockIsAvailable) invocationsDone() bool {
+	if len(mmIsAvailable.expectations) == 0 && mmIsAvailable.defaultExpectation == nil && mmIsAvailable.mock.funcIsAvailable == nil {
+		return true
+	}
+
+	totalInvocations := mm_atomic.LoadUint64(&mmIsAvailable.mock.afterIsAvailableCounter)
+	expectedInvocations := mm_atomic.LoadUint64(&mmIsAvailable.expectedInvocations)
+
+	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
+}
+
+// IsAvailable implements DeviceComponent
+func (mmIsAvailable *DeviceComponentMock) IsAvailable(ctx context.Context, device string) (b1 bool, err error) {
+	mm_atomic.AddUint64(&mmIsAvailable.beforeIsAvailableCounter, 1)
+	defer mm_atomic.AddUint64(&mmIsAvailable.afterIsAvailableCounter, 1)
+
+	mmIsAvailable.t.Helper()
+
+	if mmIsAvailable.inspectFuncIsAvailable != nil {
+		mmIsAvailable.inspectFuncIsAvailable(ctx, device)
+	}
+
+	mm_params := DeviceComponentMockIsAvailableParams{ctx, device}
+
+	// Record call args
+	mmIsAvailable.IsAvailableMock.mutex.Lock()
+	mmIsAvailable.IsAvailableMock.callArgs = append(mmIsAvailable.IsAvailableMock.callArgs, &mm_params)
+	mmIsAvailable.IsAvailableMock.mutex.Unlock()
+
+	for _, e := range mmIsAvailable.IsAvailableMock.expectations {
+		if minimock.Equal(*e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.b1, e.results.err
+		}
+	}
+
+	if mmIsAvailable.IsAvailableMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmIsAvailable.IsAvailableMock.defaultExpectation.Counter, 1)
+		mm_want := mmIsAvailable.IsAvailableMock.defaultExpectation.params
+		mm_want_ptrs := mmIsAvailable.IsAvailableMock.defaultExpectation.paramPtrs
+
+		mm_got := DeviceComponentMockIsAvailableParams{ctx, device}
+
+		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
+				mmIsAvailable.t.Errorf("DeviceComponentMock.IsAvailable got unexpected parameter ctx, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmIsAvailable.IsAvailableMock.defaultExpectation.expectationOrigins.originCtx, *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
+			}
+
+			if mm_want_ptrs.device != nil && !minimock.Equal(*mm_want_ptrs.device, mm_got.device) {
+				mmIsAvailable.t.Errorf("DeviceComponentMock.IsAvailable got unexpected parameter device, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmIsAvailable.IsAvailableMock.defaultExpectation.expectationOrigins.originDevice, *mm_want_ptrs.device, mm_got.device, minimock.Diff(*mm_want_ptrs.device, mm_got.device))
+			}
+
+		} else if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmIsAvailable.t.Errorf("DeviceComponentMock.IsAvailable got unexpected parameters, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+				mmIsAvailable.IsAvailableMock.defaultExpectation.expectationOrigins.origin, *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmIsAvailable.IsAvailableMock.defaultExpectation.results
+		if mm_results == nil {
+			mmIsAvailable.t.Fatal("No results are set for the DeviceComponentMock.IsAvailable")
+		}
+		return (*mm_results).b1, (*mm_results).err
+	}
+	if mmIsAvailable.funcIsAvailable != nil {
+		return mmIsAvailable.funcIsAvailable(ctx, device)
+	}
+	mmIsAvailable.t.Fatalf("Unexpected call to DeviceComponentMock.IsAvailable. %v %v", ctx, device)
+	return
+}
+
+// IsAvailableAfterCounter returns a count of finished DeviceComponentMock.IsAvailable invocations
+func (mmIsAvailable *DeviceComponentMock) IsAvailableAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmIsAvailable.afterIsAvailableCounter)
+}
+
+// IsAvailableBeforeCounter returns a count of DeviceComponentMock.IsAvailable invocations
+func (mmIsAvailable *DeviceComponentMock) IsAvailableBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmIsAvailable.beforeIsAvailableCounter)
+}
+
+// Calls returns a list of arguments used in each call to DeviceComponentMock.IsAvailable.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmIsAvailable *mDeviceComponentMockIsAvailable) Calls() []*DeviceComponentMockIsAvailableParams {
+	mmIsAvailable.mutex.RLock()
+
+	argCopy := make([]*DeviceComponentMockIsAvailableParams, len(mmIsAvailable.callArgs))
+	copy(argCopy, mmIsAvailable.callArgs)
+
+	mmIsAvailable.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockIsAvailableDone returns true if the count of the IsAvailable invocations corresponds
+// the number of defined expectations
+func (m *DeviceComponentMock) MinimockIsAvailableDone() bool {
+	if m.IsAvailableMock.optional {
+		// Optional methods provide '0 or more' call count restriction.
+		return true
+	}
+
+	for _, e := range m.IsAvailableMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	return m.IsAvailableMock.invocationsDone()
+}
+
+// MinimockIsAvailableInspect logs each unmet expectation
+func (m *DeviceComponentMock) MinimockIsAvailableInspect() {
+	for _, e := range m.IsAvailableMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to DeviceComponentMock.IsAvailable at\n%s with params: %#v", e.expectationOrigins.origin, *e.params)
+		}
+	}
+
+	afterIsAvailableCounter := mm_atomic.LoadUint64(&m.afterIsAvailableCounter)
+	// if default expectation was set then invocations count should be greater than zero
+	if m.IsAvailableMock.defaultExpectation != nil && afterIsAvailableCounter < 1 {
+		if m.IsAvailableMock.defaultExpectation.params == nil {
+			m.t.Errorf("Expected call to DeviceComponentMock.IsAvailable at\n%s", m.IsAvailableMock.defaultExpectation.returnOrigin)
+		} else {
+			m.t.Errorf("Expected call to DeviceComponentMock.IsAvailable at\n%s with params: %#v", m.IsAvailableMock.defaultExpectation.expectationOrigins.origin, *m.IsAvailableMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcIsAvailable != nil && afterIsAvailableCounter < 1 {
+		m.t.Errorf("Expected call to DeviceComponentMock.IsAvailable at\n%s", m.funcIsAvailableOrigin)
+	}
+
+	if !m.IsAvailableMock.invocationsDone() && afterIsAvailableCounter > 0 {
+		m.t.Errorf("Expected %d calls to DeviceComponentMock.IsAvailable at\n%s but found %d calls",
+			mm_atomic.LoadUint64(&m.IsAvailableMock.expectedInvocations), m.IsAvailableMock.expectedInvocationsOrigin, afterIsAvailableCounter)
+	}
 }
 
 type mDeviceComponentMockLoadDevices struct {
@@ -1029,6 +1382,8 @@ func (m *DeviceComponentMock) MinimockSelectedDeviceInspect() {
 func (m *DeviceComponentMock) MinimockFinish() {
 	m.finishOnce.Do(func() {
 		if !m.minimockDone() {
+			m.MinimockIsAvailableInspect()
+
 			m.MinimockLoadDevicesInspect()
 
 			m.MinimockSelectDeviceInspect()
@@ -1057,6 +1412,7 @@ func (m *DeviceComponentMock) MinimockWait(timeout mm_time.Duration) {
 func (m *DeviceComponentMock) minimockDone() bool {
 	done := true
 	return done &&
+		m.MinimockIsAvailableDone() &&
 		m.MinimockLoadDevicesDone() &&
 		m.MinimockSelectDeviceDone() &&
 		m.MinimockSelectedDeviceDone()

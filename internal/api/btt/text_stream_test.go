@@ -49,7 +49,7 @@ func TestTextStream(t *testing.T) {
 		require.Contains(t, "event: failed\ndata: Streaming unsupported\n\n", w.w.Body.String())
 	})
 
-	t.Run("stream text failed", func(t *testing.T) {
+	t.Run("stream text error", func(t *testing.T) {
 		t.Parallel()
 
 		server := setupServer(t, func(mc *minimock.Controller, s *services.ServicesMock) {

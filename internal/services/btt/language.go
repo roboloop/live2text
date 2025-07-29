@@ -20,6 +20,7 @@ func (b *languageComponent) SelectLanguage(ctx context.Context, language string)
 	return b.settings.SelectSettings(ctx, trigger.TitleSelectedLanguage, storage.SelectedLanguageVariable, language)
 }
 
+// SelectedLanguage returns the current selected language. Empty value means missing value.
 func (b *languageComponent) SelectedLanguage(ctx context.Context) (string, error) {
 	return b.settings.SelectedSetting(ctx, storage.SelectedLanguageVariable)
 }

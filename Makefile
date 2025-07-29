@@ -8,14 +8,13 @@ MINIMOCK := $(BIN_DIR)/minimock
 GO_COVER_TREEMAP := $(BIN_DIR)/go-cover-treemap
 
 LIVE2TEXT_APP := ./cmd/live2text/main.go
-BTT_APP := ./cmd/btt/main.go
 
 GOLANGCI_LINT_VERSION := v2.1.6
 MINIMOCK_VERSION := v3.4.5
 GO_COVER_TREEMAP_VERSION := v1.5.0
 
 .PHONY: all
-all: install generate build
+all: install build
 
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
@@ -26,9 +25,6 @@ $(GOLANGCI_LINT): | $(BIN_DIR)
 $(MINIMOCK): | $(BIN_DIR)
 	go install github.com/gojuno/minimock/v3/cmd/minimock@$(MINIMOCK_VERSION)
 
-$(STRINGER): | $(BIN_DIR)
-	go install golang.org/x/tools/cmd/stringer@$(STRINGER_VERSION)
-
 $(GO_COVER_TREEMAP): | $(BIN_DIR)
 	go install github.com/nikolaydubina/go-cover-treemap@$(GO_COVER_TREEMAP_VERSION)
 
@@ -37,8 +33,7 @@ install: check-portaudio $(GOLANGCI_LINT) $(MINIMOCK)
 
 .PHONY: build
 build:
-	go build -o $(BIN_DIR)/live2text $(LIVE2TEXT_APP)
-	go build -o $(BIN_DIR)/btt $(BTT_APP)
+	go build -trimpath -ldflags "-s -w" -o $(BIN_DIR)/live2text $(LIVE2TEXT_APP)
 
 .PHONY: generate
 generate: generate-mocks

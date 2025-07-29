@@ -3,6 +3,7 @@ package btt
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sync"
 
 	"live2text/internal/services/audio"
@@ -96,6 +97,16 @@ func (d *deviceComponent) SelectDevice(ctx context.Context, device string) error
 	return d.settings.SelectSettings(ctx, trigger.TitleSelectedDevice, storage.SelectedDeviceVariable, device)
 }
 
+// SelectedDevice return the current selected device. Empty value means missing value.
 func (d *deviceComponent) SelectedDevice(ctx context.Context) (string, error) {
 	return d.settings.SelectedSetting(ctx, storage.SelectedDeviceVariable)
+}
+
+func (d *deviceComponent) IsAvailable(_ context.Context, device string) (bool, error) {
+	devices, err := d.audio.ListOfNames()
+	if err != nil {
+		return false, fmt.Errorf("cannot get a list of devices: %w", err)
+	}
+
+	return slices.Contains(devices, device), nil
 }

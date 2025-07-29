@@ -31,7 +31,7 @@ func TestSelectDevice(t *testing.T) {
 			expectedBody: "cannot decode request",
 		},
 		{
-			name: "audio list failed",
+			name: "audio list error",
 			body: "{}",
 			mockList: func() ([]string, error) {
 				return nil, errors.New("dummy error")
@@ -40,7 +40,7 @@ func TestSelectDevice(t *testing.T) {
 			expectedBody: "dummy error",
 		},
 		{
-			name: "validation failed",
+			name: "validation error",
 			body: `{"device":"foo"}`,
 			mockList: func() ([]string, error) {
 				return []string{"baz"}, nil
@@ -49,7 +49,7 @@ func TestSelectDevice(t *testing.T) {
 			expectedBody: `{"device":"device not found"}`,
 		},
 		{
-			name: "select device failed",
+			name: "select device error",
 			body: `{"device":"foo"}`,
 			mockList: func() ([]string, error) {
 				return []string{"foo"}, nil

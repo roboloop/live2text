@@ -48,6 +48,7 @@ func NewHandler(logger *slog.Logger, services services.Services) http.Handler {
 	mux.HandleFunc("GET /btt/floating-page", server.btt.FloatingPage)
 	mux.HandleFunc("GET /api/btt/text-stream", server.btt.TextStream)
 	mux.HandleFunc("GET /api/btt/text", server.btt.Text)
+	mux.HandleFunc("GET /api/btt/health", server.btt.Health)
 
 	var handler http.Handler = mux
 	handler = middleware.LoggerMiddleware(handler, logger)

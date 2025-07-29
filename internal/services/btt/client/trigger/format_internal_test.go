@@ -18,6 +18,7 @@ func TestAddReadableFormat(t *testing.T) {
 		trigger["BTTTriggerConfig"].(map[string]any)["BTTTouchBarButtonColor"],
 	)
 	require.Equal(t, 0, trigger["BTTTriggerConfig"].(map[string]any)["BTTTouchBarButtonTextAlignment"])
+	require.Equal(t, 1, trigger["BTTTriggerConfig"].(map[string]any)["BTTShellScriptDontTrimWhitepsace"])
 }
 
 func TestAddEnabled(t *testing.T) {

@@ -48,7 +48,7 @@ func LoggerMiddleware(next http.Handler, logger *slog.Logger) http.HandlerFunc {
 		if ww.status >= http.StatusInternalServerError {
 			level = slog.LevelError
 		} else if ww.status >= http.StatusBadRequest {
-			level = slog.LevelInfo
+			level = slog.LevelWarn
 		}
 
 		host, _, err := net.SplitHostPort(r.RemoteAddr)

@@ -47,15 +47,80 @@ func main() {
 }
 
 func run(ctx context.Context, args []string) error {
+	if len(args) == 0 {
+		return errors.New("no command specified")
+	}
+
+	switch args[0] {
+	case "install":
+		return runInstall(ctx, args[1:])
+	case "uninstall":
+		return runUninstall(ctx, args[1:])
+	case "serve":
+		return runServe(ctx, args[1:])
+	default:
+		return fmt.Errorf("unknown command: %s. known commands: install, uninstall, serve", args[0])
+	}
+}
+
+func runInstall(ctx context.Context, args []string) error {
+	cfg, err := config.ParseInstall(os.Stderr, args)
+	if err != nil {
+		if errors.Is(err, config.ErrHelp) {
+			return nil
+		}
+
+		return fmt.Errorf("cannot parse inistall command: %w", err)
+	}
+
+	sl, _ := newLoggers(cfg.LogLevel)
+	sl.InfoContext(ctx, "Config parsed", "config", cfg)
+
+	ic := newInitializingComponent(sl, cfg.AppAddress, cfg.BttAddress, cfg.Languages)
+	if err = ic.Uninstall(ctx); err != nil {
+		return fmt.Errorf("cannot uninstall: %w", err)
+	}
+	if err = ic.Install(ctx); err != nil {
+		return fmt.Errorf("cannot install: %w", err)
+	}
+
+	return nil
+}
+
+func runUninstall(ctx context.Context, args []string) error {
+	cfg, err := config.ParseUninstall(os.Stderr, args)
+	if err != nil {
+		if errors.Is(err, config.ErrHelp) {
+			return nil
+		}
+
+		return fmt.Errorf("cannot parse uninstall command: %w", err)
+	}
+	sl, _ := newLoggers(cfg.LogLevel)
+	sl.InfoContext(ctx, "Config parsed", "config", cfg)
+
+	ic := newInitializingComponent(sl, "", cfg.BttAddress, nil)
+	if err = ic.Uninstall(ctx); err != nil {
+		return fmt.Errorf("cannot uninstall: %w", err)
+	}
+
+	return nil
+}
+
+func runServe(ctx context.Context, args []string) error {
 	ctx, cancel := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
-	cfg, err := config.Initialize(os.Stderr, args)
+	cfg, err := config.ParseServe(os.Stderr, args)
 	if err != nil {
-		return fmt.Errorf("cannot initialize config: %w", err)
-	}
+		if errors.Is(err, config.ErrHelp) {
+			return nil
+		}
 
+		return fmt.Errorf("cannot parse serve command: %w", err)
+	}
 	sl, l := newLoggers(cfg.LogLevel)
+	sl.InfoContext(ctx, "Config parsed", "config", cfg)
 
 	s, sc, aw, tm, sm, err := newServices(ctx, sl, cfg)
 	if err != nil {
@@ -128,7 +193,7 @@ func run(ctx context.Context, args []string) error {
 func newServices(
 	ctx context.Context,
 	sl *slog.Logger,
-	cfg *config.Config,
+	cfg *config.Serve,
 ) (services.Services, speechwrapper.SpeechClient, audiowrapper.Audio, *background.TaskManager, *background.SocketManager, error) {
 	sc, err := speechwrapper.NewSpeechClient(ctx)
 	if err != nil {
@@ -163,7 +228,7 @@ func newServices(
 	r := recognition.NewRecognition(rl, tm, tf)
 
 	btl := serviceLogger(sl, "btt")
-	bt := newBtt(btl, a, r, cfg)
+	bt := newBtt(ctx, btl, a, r, cfg)
 
 	s := services.NewServices(a, aw, b, r, m, bt)
 
@@ -181,13 +246,21 @@ func newLoggers(level slog.Level) (*slog.Logger, *log.Logger) {
 	return slog.New(handler), slog.NewLogLogger(handler, level)
 }
 
-func newBtt(logger *slog.Logger, audio audio.Audio, recognition recognition.Recognition, cfg *config.Config) btt.Btt {
+func newBtt(
+	ctx context.Context,
+	logger *slog.Logger,
+	audio audio.Audio,
+	recognition recognition.Recognition,
+	cfg *config.Serve,
+) btt.Btt {
 	httpClient := httpclient.NewClient(logger, cfg.BttAddress, nil)
-	client := bttclient.NewClient(httpClient, cfg.AppName)
+	client := bttclient.NewClient(httpClient, env.AppName)
 	s := storage.NewStorage(httpClient)
 
-	renderer := tmpl.NewRenderer(cfg.AppName, cfg.AppAddress, cfg.BttAddress, env.IsDebugMode())
+	renderer := tmpl.NewRenderer(env.AppName, cfg.AppAddress, cfg.BttAddress, env.IsDebugMode())
 
+	hc := btt.NewHealthComponent(client)
+	ic := btt.NewInstallingComponent(client, renderer, nil) // `language` isn't used
 	sc := btt.NewSettingsComponent(client, s)
 	dc := btt.NewDeviceComponent(audio, client, renderer, sc)
 	lc := btt.NewLanguageComponent(sc)
@@ -196,7 +269,11 @@ func newBtt(logger *slog.Logger, audio audio.Audio, recognition recognition.Reco
 	cc := btt.NewClipboardComponent(logger, client, sc)
 	lic := btt.NewListeningComponent(logger, recognition, client, s, renderer, dc, lc, vmc, fc, cc)
 
-	return btt.NewBtt(nil, lic, dc, lc, vmc, fc, cc)
+	if !hc.Health(ctx) {
+		logger.WarnContext(ctx, "Cannot connect to the BTT server. Check the BTT server address.")
+	}
+
+	return btt.NewBtt(hc, ic, lic, dc, lc, vmc, fc, cc)
 }
 
 func checkPortAvailable(address string) error {
@@ -231,7 +308,7 @@ func newServer(ctx context.Context, address string, handler http.Handler, logger
 		Handler:           handler,
 		ErrorLog:          logger,
 		ReadTimeout:       15 * time.Second,
-		WriteTimeout:      0,
+		WriteTimeout:      0, // Timeout would be applied via middleware
 		IdleTimeout:       60 * time.Second,
 		ReadHeaderTimeout: 15 * time.Second,
 		BaseContext:       func(_ net.Listener) context.Context { return ctx },
@@ -254,4 +331,17 @@ func serviceLogger(base *slog.Logger, service string) *slog.Logger {
 
 func componentLogger(base *slog.Logger, component string) *slog.Logger {
 	return base.With("component", component)
+}
+
+func newInitializingComponent(
+	logger *slog.Logger,
+	appAddress, bttAddress string,
+	languages []string,
+) btt.InstallingComponent {
+	httpClient := httpclient.NewClient(logger, bttAddress, nil)
+	client := bttclient.NewClient(httpClient, env.AppName)
+
+	renderer := tmpl.NewRenderer(env.AppName, appAddress, bttAddress, env.IsDebugMode())
+
+	return btt.NewInstallingComponent(client, renderer, languages)
 }

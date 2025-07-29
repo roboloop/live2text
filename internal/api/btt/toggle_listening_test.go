@@ -22,12 +22,36 @@ func TestToggleListening(t *testing.T) {
 		expectedBody string
 	}{
 		{
-			name: "toggle listening failed",
+			name: "toggle listening error",
 			mockToggleListening: func() error {
 				return errors.New("dummy error")
 			},
 			expectedCode: http.StatusInternalServerError,
 			expectedBody: "dummy error",
+		},
+		{
+			name: "device is not selected",
+			mockToggleListening: func() error {
+				return btt.ErrDeviceNotSelected
+			},
+			expectedCode: http.StatusBadRequest,
+			expectedBody: "device is not selected",
+		},
+		{
+			name: "device is unavailable",
+			mockToggleListening: func() error {
+				return btt.ErrDeviceIsUnavailable
+			},
+			expectedCode: http.StatusBadRequest,
+			expectedBody: "device is unavailable",
+		},
+		{
+			name: "language is not selected",
+			mockToggleListening: func() error {
+				return btt.ErrLanguageNotSelected
+			},
+			expectedCode: http.StatusBadRequest,
+			expectedBody: "language is not selected",
 		},
 		{
 			name: "ok",

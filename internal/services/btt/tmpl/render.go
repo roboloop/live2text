@@ -100,6 +100,8 @@ func (r *renderer) CloseSettings(
 	cleanViewMode string,
 	closeAction map[string]any,
 	openCleanViewAction map[string]any,
+	appUUID string,
+	refreshAppPayload map[string]any,
 ) string {
 	closeQuery, err := encodeForShell(closeAction)
 	if err != nil {
@@ -109,11 +111,18 @@ func (r *renderer) CloseSettings(
 	if err != nil {
 		return ""
 	}
+	refreshAppQuery, err := encodeForShell(refreshAppPayload)
+	if err != nil {
+		return ""
+	}
 
 	return r.render("close_settings", map[string]any{
 		"CloseGroupQuery":    closeQuery,
 		"OpenCleanViewQuery": openCleanViewQuery,
 		"CleanViewMode":      cleanViewMode,
+
+		"AppUUID":         appUUID,
+		"RefreshAppQuery": refreshAppQuery,
 	})
 }
 

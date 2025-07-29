@@ -23,7 +23,7 @@ func TestSelectedFloating(t *testing.T) {
 		expectedBody    string
 	}{
 		{
-			name: "getting selected floating failed",
+			name: "getting selected floating error",
 			mockSelectedFloating: func() (btt.Floating, error) {
 				return "", errors.New("dummy error")
 			},

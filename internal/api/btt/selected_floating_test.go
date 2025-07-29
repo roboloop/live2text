@@ -23,7 +23,7 @@ func TestSelectedClipboard(t *testing.T) {
 		expectedBody    string
 	}{
 		{
-			name: "getting selected clipboard failed",
+			name: "getting selected clipboard error",
 			mockSelectedClipboard: func() (btt.Clipboard, error) {
 				return "", errors.New("dummy error")
 			},

@@ -29,14 +29,14 @@ func TestSelectViewMode(t *testing.T) {
 			expectedBody: "cannot decode request",
 		},
 		{
-			name: "validation failed",
+			name: "validation error",
 			body: `{"view_mode":"invalid"}`,
 
 			expectedCode: http.StatusBadRequest,
 			expectedBody: `{"view_mode":"view_mode is not valid"}`,
 		},
 		{
-			name: "select view mode failed",
+			name: "select view mode error",
 			body: `{"view_mode":"Embed"}`,
 			mockSelectViewMode: func() error {
 				return errors.New("dummy error")

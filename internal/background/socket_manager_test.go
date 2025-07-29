@@ -144,7 +144,7 @@ func TestSocketManager(t *testing.T) {
 }
 
 func newSocketManager() (*background.SocketManager, string) {
-	path := filepath.Join(os.TempDir(), fmt.Sprintf("%s-%d.sock", "live2text", rand.Uint64()))
+	path := filepath.Join(os.TempDir(), fmt.Sprintf("%d.sock", rand.Uint64()))
 
 	return background.NewSocketManager(logger.NilLogger), path
 }

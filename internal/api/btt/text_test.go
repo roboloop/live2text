@@ -22,7 +22,7 @@ func TestText(t *testing.T) {
 		expectedBody string
 	}{
 		{
-			name: "toggle listening failed",
+			name: "toggle listening error",
 			mockText: func() (string, error) {
 				return "", errors.New("dummy error")
 			},

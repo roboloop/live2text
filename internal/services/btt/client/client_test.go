@@ -32,11 +32,11 @@ func TestGetTriggers(t *testing.T) {
 			expectErr: "cannot query get_triggers",
 		},
 		{
-			name: "failed to parse JSON",
+			name: "error to parse JSON",
 			setupMocks: func(mc *minimock.Controller, c *http.ClientMock) {
 				c.SendMock.Return([]byte("invalid json"), nil)
 			},
-			expectErr: "failed to parse JSON",
+			expectErr: "error to parse JSON",
 		},
 		{
 			name: "get triggers",
@@ -518,6 +518,48 @@ func TestTriggerAction(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
+		})
+	}
+}
+
+func TestHealth(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name         string
+		setupMocks   func(mc *minimock.Controller, c *http.ClientMock)
+		expectHealth bool
+	}{
+		{
+			name: "cannot check health",
+			setupMocks: func(mc *minimock.Controller, c *http.ClientMock) {
+				c.SendMock.Return(nil, errors.New("something happened"))
+			},
+			expectHealth: false,
+		},
+		{
+			name: "health checked successfully",
+			setupMocks: func(mc *minimock.Controller, c *http.ClientMock) {
+				c.SendMock.Return(nil, errors.New("unexpected response status code: 400"))
+			},
+			expectHealth: true,
+		},
+		{
+			name: "health checked unsuccessfully",
+			setupMocks: func(mc *minimock.Controller, c *http.ClientMock) {
+				c.SendMock.Return([]byte{}, nil)
+			},
+			expectHealth: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			c := setupClient(t, tt.setupMocks, "")
+			health := c.Health(t.Context())
+			require.Equal(t, tt.expectHealth, health)
 		})
 	}
 }

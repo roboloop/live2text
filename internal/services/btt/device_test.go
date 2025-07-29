@@ -97,8 +97,8 @@ func TestLoadDevices(t *testing.T) {
 				a.ListOfNamesMock.Return([]string{"foo"}, nil)
 				r.SelectDeviceMock.Expect("foo").Return("baz")
 				c.AddTriggerMock.Inspect(func(ctx context.Context, trigger trigger.Trigger, parentUUID trigger.UUID) {
-					require.EqualValues(t, "foo", trigger.Title())
-					require.EqualValues(t, "quux", parentUUID)
+					require.Equal(t, "foo", trigger.Title().String())
+					require.Equal(t, "quux", parentUUID.String())
 				}).Return("00000000-0000-0000-0000-000000000000", nil)
 			},
 			expectErr: "",
@@ -147,6 +147,57 @@ func TestSelectedDevice(t *testing.T) {
 	device, err := dc.SelectedDevice(t.Context())
 	require.NoError(t, err)
 	require.Equal(t, "foo", device)
+}
+
+func TestIsAvailable(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name            string
+		setupMocks      func(mc *minimock.Controller, a *audio.AudioMock, c *client.ClientMock, r *tmpl.RendererMock, s *btt.SettingsComponentMock)
+		device          string
+		expectAvailable bool
+		expectErr       string
+	}{
+		{
+			name: "cannot get a list of devices",
+			setupMocks: func(mc *minimock.Controller, a *audio.AudioMock, c *client.ClientMock, r *tmpl.RendererMock, s *btt.SettingsComponentMock) {
+				a.ListOfNamesMock.Return(nil, errors.New("something happened"))
+			},
+			expectErr: "cannot get a list of devices",
+		},
+		{
+			name: "device is unavailable",
+			setupMocks: func(mc *minimock.Controller, a *audio.AudioMock, c *client.ClientMock, r *tmpl.RendererMock, s *btt.SettingsComponentMock) {
+				a.ListOfNamesMock.Return([]string{"foo", "bar"}, nil)
+			},
+			device:          "baz",
+			expectAvailable: false,
+		},
+		{
+			name: "device is available",
+			setupMocks: func(mc *minimock.Controller, a *audio.AudioMock, c *client.ClientMock, r *tmpl.RendererMock, s *btt.SettingsComponentMock) {
+				a.ListOfNamesMock.Return([]string{"foo", "bar"}, nil)
+			},
+			device:          "foo",
+			expectAvailable: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			dc := setupDeviceComponent(t, tt.setupMocks)
+			available, err := dc.IsAvailable(t.Context(), tt.device)
+			if tt.expectErr != "" {
+				require.Error(t, err)
+				require.ErrorContains(t, err, tt.expectErr)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, tt.expectAvailable, available)
+		})
+	}
 }
 
 func setupDeviceComponent(

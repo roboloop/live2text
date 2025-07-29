@@ -2,6 +2,7 @@ package btt
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -10,6 +11,12 @@ import (
 	"live2text/internal/services/btt/storage"
 	"live2text/internal/services/btt/tmpl"
 	"live2text/internal/services/recognition"
+)
+
+var (
+	ErrDeviceNotSelected   = errors.New("device is not selected")
+	ErrDeviceIsUnavailable = errors.New("device is unavailable")
+	ErrLanguageNotSelected = errors.New("language is not selected")
 )
 
 type listeningComponent struct {
@@ -71,9 +78,23 @@ func (l *listeningComponent) StartListening(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("cannot get selected device: %w", err)
 	}
+	if device == "" {
+		return ErrDeviceNotSelected
+	}
+	isAvailable, err := l.deviceComponent.IsAvailable(ctx, device)
+	if err != nil {
+		return fmt.Errorf("cannot get device availability: %w", err)
+	}
+	if !isAvailable {
+		return ErrDeviceIsUnavailable
+	}
+
 	language, err := l.languageComponent.SelectedLanguage(ctx)
 	if err != nil {
 		return fmt.Errorf("cannot get selected language: %w", err)
+	}
+	if language == "" {
+		return ErrLanguageNotSelected
 	}
 
 	// Start recognition

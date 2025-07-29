@@ -23,7 +23,7 @@ func TestSelectedViewMode(t *testing.T) {
 		expectedBody    string
 	}{
 		{
-			name: "getting selected view mode failed",
+			name: "getting selected view mode error",
 			mockSelectedViewMode: func() (btt.ViewMode, error) {
 				return "", errors.New("dummy error")
 			},

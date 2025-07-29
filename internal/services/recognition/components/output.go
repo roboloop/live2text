@@ -67,7 +67,15 @@ func (oc *outputComponent) ToFile(ctx context.Context, inputCh <-chan Recognized
 		}
 	}()
 
-	return oc.Print(ctx, text.NewFileWriter(file), inputCh)
+	oc.logger.InfoContext(ctx, "Writing the transcript to the file", "filename", filename)
+
+	if err = oc.Print(ctx, text.NewFileWriter(file), inputCh); err != nil {
+		return err
+	}
+
+	oc.logger.InfoContext(ctx, "Transcript written to the file", "filename", filename)
+
+	return nil
 }
 
 func (oc *outputComponent) ToConsole(ctx context.Context, inputCh <-chan Recognized) error {

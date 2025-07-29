@@ -1,13 +1,18 @@
 {{- define "health-check" }}
-ok=$(curl -sSLf "http://{{ .AppAddress }}/api/health" 2>/dev/null)
-[[ -z "${ok}" ]] && echo "⚠️ {{ .AppName}} is not running!" && exit 1
+response=$(curl -sSL -w "\n%{http_code}" "http://{{ .AppAddress }}/api/btt/health")
+[[ $? -ne 0 ]] && echo -n "⚠️ {{ .AppName}} is not running!" && exit 1
+
+body=$(echo -n "${response}" | head -1)
+code=$(echo -n "${response}" | tail -1)
+[[ ! ("${code}" -ge 200 && "${code}" -lt 300) ]] && echo -n "⚠️ ${body}" && exit 1
 {{- end }}
 
 {{- define "print_status" }}
 {{- template "log" . }}
+{{- template "health-check" . }}
 
-ok=$(curl -sSLf "http://{{ .AppAddress }}/api/health")
-[[ -z "${ok}" ]] && echo "⚠️" && exit 0
+{{/*ok=$(curl -sSLf "http://{{ .AppAddress }}/api/health")*/}}
+{{/*[[ -z "${ok}" ]] && echo "⚠️" && exit 0*/}}
 is_running=$(curl -sSLf "http://{{ .AppAddress }}/api/btt/is-running")
 [[ "${is_running}" == "true" ]] && echo "🔴" || echo "✅"
 {{- end }}
@@ -107,22 +112,28 @@ open_clean_view_query="{{ .OpenCleanViewQuery }}"
 
 # Must not rely on the app
 curl -sSLf "http://{{ .BttAddress }}/trigger_action/?${query}"
+[[ $? -ne 0 ]] && osascript -e "tell application \"BetterTouchTool\" to trigger_action \"{\\\"BTTPredefinedActionType\\\":191}\""
+curl -sSLf "http://{{ .BttAddress }}/update_trigger/?uuid={{ .AppUUID }}&{{ .RefreshAppQuery }}"
 {{- end }}
 
 {{- define "toggle" }}
 {{- template "log" . }}
 {{- template "health-check" . }}
 
-curl -X POST -sSLf "http://{{ .AppAddress }}/api/btt/toggle-listening"
+response=$(curl -X POST -sSL -w "\n%{http_code}" "http://{{ .AppAddress }}/api/btt/toggle-listening")
+body=$(echo -n "${response}" | head -1)
+code=$(echo -n "${response}" | tail -1)
+[[ ! ("${code}" -ge 200 && "${code}" -lt 300) ]] && echo -n "⚠️ ${body}"
 {{- end }}
 
 {{- define "listen_socket" }}
 text="$(nc -U "{{ .SocketPath }}")"
-[[ -n "${text}" ]] && echo "${text}" || echo "(no text recognized)"
+[[ $? -ne 0 ]] && echo -n "⚠️ Listening failed" && exit 0
+[[ -n "${text}" ]] && echo -n "${text}" || echo -n "Listening now..."
 {{- end }}
 
 {{- define "app_placeholder" }}
-echo "{{ .AppName}} App"
+echo -n "{{ .AppName}} App"
 {{- end }}
 
 {{- define "copy_text" }}

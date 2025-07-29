@@ -7,10 +7,11 @@ import (
 	"live2text/internal/services/btt/storage"
 )
 
-//go:generate minimock -g -i Btt,InitializingComponent,ListeningComponent,DeviceComponent,LanguageComponent,ViewModeComponent,FloatingComponent,ClipboardComponent,SettingsComponent -s _mock.go -o .
+//go:generate minimock -g -i Btt,HealthComponent,InstallingComponent,ListeningComponent,DeviceComponent,LanguageComponent,ViewModeComponent,FloatingComponent,ClipboardComponent,SettingsComponent -s _mock.go -o .
 
 type Btt interface {
-	InitializingComponent
+	HealthComponent
+	InstallingComponent
 	ListeningComponent
 	DeviceComponent
 	LanguageComponent
@@ -19,9 +20,13 @@ type Btt interface {
 	ClipboardComponent
 }
 
-type InitializingComponent interface {
-	Initialize(ctx context.Context) error
-	Clear(ctx context.Context) error
+type HealthComponent interface {
+	Health(ctx context.Context) bool
+}
+
+type InstallingComponent interface {
+	Install(ctx context.Context) error
+	Uninstall(ctx context.Context) error
 }
 
 type ListeningComponent interface {
@@ -36,6 +41,7 @@ type DeviceComponent interface {
 	LoadDevices(ctx context.Context) error
 	SelectDevice(ctx context.Context, device string) error
 	SelectedDevice(ctx context.Context) (string, error)
+	IsAvailable(ctx context.Context, device string) (bool, error)
 }
 
 type LanguageComponent interface {

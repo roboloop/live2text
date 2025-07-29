@@ -28,7 +28,6 @@ func (b *burner) Burn(ctx context.Context, w io.Writer, input <-chan []int16, ch
 			b.metrics.AddBytesWrittenOnDisk(len(samples) * int(bitsPerSample/bitsPerByte))
 			return nil
 		case value := <-input:
-			// b.logger.DebugContext(ctx, "Getting samples", "len", len(value))
 			if channels == 1 {
 				samples = append(samples, int16ToSample(value)...)
 			} else {

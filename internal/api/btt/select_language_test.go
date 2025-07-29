@@ -29,14 +29,14 @@ func TestSelectLanguage(t *testing.T) {
 			expectedBody: "cannot decode request",
 		},
 		{
-			name: "validation failed",
+			name: "validation error",
 			body: `{"language":"invalid-code"}`,
 
 			expectedCode: http.StatusBadRequest,
 			expectedBody: `{"language":"language is not valid"}`,
 		},
 		{
-			name: "select language failed",
+			name: "select language error",
 			body: `{"language":"en-US"}`,
 			mockSelectLanguage: func() error {
 				return errors.New("dummy error")

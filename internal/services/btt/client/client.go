@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 
 	"live2text/internal/services/btt/client/http"
@@ -43,7 +44,7 @@ func (c *client) GetTriggers(ctx context.Context, parentUUID trigger.UUID) ([]tr
 
 	var unmarshalled []map[string]any
 	if err = json.Unmarshal(raw, &unmarshalled); err != nil {
-		return nil, fmt.Errorf("failed to parse JSON: %w", err)
+		return nil, fmt.Errorf("error to parse JSON: %w", err)
 	}
 
 	var result []trigger.Trigger
@@ -160,4 +161,12 @@ func (c *client) TriggerAction(ctx context.Context, action trigger.Trigger) erro
 	}
 
 	return nil
+}
+
+func (c *client) Health(ctx context.Context) bool {
+	if _, err := c.httpClient.Send(ctx, "health", nil, nil); err != nil {
+		return strings.Contains(err.Error(), "unexpected response status code")
+	}
+
+	return false
 }

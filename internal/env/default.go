@@ -1,7 +1,3 @@
-//go:build !debug
-
 package env
 
-func IsDebugMode() bool {
-	return false
-}
+const AppName = "Live2Text"

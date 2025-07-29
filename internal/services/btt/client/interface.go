@@ -17,4 +17,5 @@ type Client interface {
 
 	RefreshTrigger(ctx context.Context, title trigger.Title) error
 	TriggerAction(ctx context.Context, action trigger.Trigger) error
+	Health(ctx context.Context) bool
 }

@@ -45,6 +45,13 @@ type ClientMock struct {
 	beforeGetTriggersCounter uint64
 	GetTriggersMock          mClientMockGetTriggers
 
+	funcHealth          func(ctx context.Context) (b1 bool)
+	funcHealthOrigin    string
+	inspectFuncHealth   func(ctx context.Context)
+	afterHealthCounter  uint64
+	beforeHealthCounter uint64
+	HealthMock          mClientMockHealth
+
 	funcRefreshTrigger          func(ctx context.Context, title trigger.Title) (err error)
 	funcRefreshTriggerOrigin    string
 	inspectFuncRefreshTrigger   func(ctx context.Context, title trigger.Title)
@@ -86,6 +93,9 @@ func NewClientMock(t minimock.Tester) *ClientMock {
 
 	m.GetTriggersMock = mClientMockGetTriggers{mock: m}
 	m.GetTriggersMock.callArgs = []*ClientMockGetTriggersParams{}
+
+	m.HealthMock = mClientMockHealth{mock: m}
+	m.HealthMock.callArgs = []*ClientMockHealthParams{}
 
 	m.RefreshTriggerMock = mClientMockRefreshTrigger{mock: m}
 	m.RefreshTriggerMock.callArgs = []*ClientMockRefreshTriggerParams{}
@@ -1503,6 +1513,317 @@ func (m *ClientMock) MinimockGetTriggersInspect() {
 	}
 }
 
+type mClientMockHealth struct {
+	optional           bool
+	mock               *ClientMock
+	defaultExpectation *ClientMockHealthExpectation
+	expectations       []*ClientMockHealthExpectation
+
+	callArgs []*ClientMockHealthParams
+	mutex    sync.RWMutex
+
+	expectedInvocations       uint64
+	expectedInvocationsOrigin string
+}
+
+// ClientMockHealthExpectation specifies expectation struct of the Client.Health
+type ClientMockHealthExpectation struct {
+	mock               *ClientMock
+	params             *ClientMockHealthParams
+	paramPtrs          *ClientMockHealthParamPtrs
+	expectationOrigins ClientMockHealthExpectationOrigins
+	results            *ClientMockHealthResults
+	returnOrigin       string
+	Counter            uint64
+}
+
+// ClientMockHealthParams contains parameters of the Client.Health
+type ClientMockHealthParams struct {
+	ctx context.Context
+}
+
+// ClientMockHealthParamPtrs contains pointers to parameters of the Client.Health
+type ClientMockHealthParamPtrs struct {
+	ctx *context.Context
+}
+
+// ClientMockHealthResults contains results of the Client.Health
+type ClientMockHealthResults struct {
+	b1 bool
+}
+
+// ClientMockHealthOrigins contains origins of expectations of the Client.Health
+type ClientMockHealthExpectationOrigins struct {
+	origin    string
+	originCtx string
+}
+
+// Marks this method to be optional. The default behavior of any method with Return() is '1 or more', meaning
+// the test will fail minimock's automatic final call check if the mocked method was not called at least once.
+// Optional() makes method check to work in '0 or more' mode.
+// It is NOT RECOMMENDED to use this option unless you really need it, as default behaviour helps to
+// catch the problems when the expected method call is totally skipped during test run.
+func (mmHealth *mClientMockHealth) Optional() *mClientMockHealth {
+	mmHealth.optional = true
+	return mmHealth
+}
+
+// Expect sets up expected params for Client.Health
+func (mmHealth *mClientMockHealth) Expect(ctx context.Context) *mClientMockHealth {
+	if mmHealth.mock.funcHealth != nil {
+		mmHealth.mock.t.Fatalf("ClientMock.Health mock is already set by Set")
+	}
+
+	if mmHealth.defaultExpectation == nil {
+		mmHealth.defaultExpectation = &ClientMockHealthExpectation{}
+	}
+
+	if mmHealth.defaultExpectation.paramPtrs != nil {
+		mmHealth.mock.t.Fatalf("ClientMock.Health mock is already set by ExpectParams functions")
+	}
+
+	mmHealth.defaultExpectation.params = &ClientMockHealthParams{ctx}
+	mmHealth.defaultExpectation.expectationOrigins.origin = minimock.CallerInfo(1)
+	for _, e := range mmHealth.expectations {
+		if minimock.Equal(e.params, mmHealth.defaultExpectation.params) {
+			mmHealth.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmHealth.defaultExpectation.params)
+		}
+	}
+
+	return mmHealth
+}
+
+// ExpectCtxParam1 sets up expected param ctx for Client.Health
+func (mmHealth *mClientMockHealth) ExpectCtxParam1(ctx context.Context) *mClientMockHealth {
+	if mmHealth.mock.funcHealth != nil {
+		mmHealth.mock.t.Fatalf("ClientMock.Health mock is already set by Set")
+	}
+
+	if mmHealth.defaultExpectation == nil {
+		mmHealth.defaultExpectation = &ClientMockHealthExpectation{}
+	}
+
+	if mmHealth.defaultExpectation.params != nil {
+		mmHealth.mock.t.Fatalf("ClientMock.Health mock is already set by Expect")
+	}
+
+	if mmHealth.defaultExpectation.paramPtrs == nil {
+		mmHealth.defaultExpectation.paramPtrs = &ClientMockHealthParamPtrs{}
+	}
+	mmHealth.defaultExpectation.paramPtrs.ctx = &ctx
+	mmHealth.defaultExpectation.expectationOrigins.originCtx = minimock.CallerInfo(1)
+
+	return mmHealth
+}
+
+// Inspect accepts an inspector function that has same arguments as the Client.Health
+func (mmHealth *mClientMockHealth) Inspect(f func(ctx context.Context)) *mClientMockHealth {
+	if mmHealth.mock.inspectFuncHealth != nil {
+		mmHealth.mock.t.Fatalf("Inspect function is already set for ClientMock.Health")
+	}
+
+	mmHealth.mock.inspectFuncHealth = f
+
+	return mmHealth
+}
+
+// Return sets up results that will be returned by Client.Health
+func (mmHealth *mClientMockHealth) Return(b1 bool) *ClientMock {
+	if mmHealth.mock.funcHealth != nil {
+		mmHealth.mock.t.Fatalf("ClientMock.Health mock is already set by Set")
+	}
+
+	if mmHealth.defaultExpectation == nil {
+		mmHealth.defaultExpectation = &ClientMockHealthExpectation{mock: mmHealth.mock}
+	}
+	mmHealth.defaultExpectation.results = &ClientMockHealthResults{b1}
+	mmHealth.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
+	return mmHealth.mock
+}
+
+// Set uses given function f to mock the Client.Health method
+func (mmHealth *mClientMockHealth) Set(f func(ctx context.Context) (b1 bool)) *ClientMock {
+	if mmHealth.defaultExpectation != nil {
+		mmHealth.mock.t.Fatalf("Default expectation is already set for the Client.Health method")
+	}
+
+	if len(mmHealth.expectations) > 0 {
+		mmHealth.mock.t.Fatalf("Some expectations are already set for the Client.Health method")
+	}
+
+	mmHealth.mock.funcHealth = f
+	mmHealth.mock.funcHealthOrigin = minimock.CallerInfo(1)
+	return mmHealth.mock
+}
+
+// When sets expectation for the Client.Health which will trigger the result defined by the following
+// Then helper
+func (mmHealth *mClientMockHealth) When(ctx context.Context) *ClientMockHealthExpectation {
+	if mmHealth.mock.funcHealth != nil {
+		mmHealth.mock.t.Fatalf("ClientMock.Health mock is already set by Set")
+	}
+
+	expectation := &ClientMockHealthExpectation{
+		mock:               mmHealth.mock,
+		params:             &ClientMockHealthParams{ctx},
+		expectationOrigins: ClientMockHealthExpectationOrigins{origin: minimock.CallerInfo(1)},
+	}
+	mmHealth.expectations = append(mmHealth.expectations, expectation)
+	return expectation
+}
+
+// Then sets up Client.Health return parameters for the expectation previously defined by the When method
+func (e *ClientMockHealthExpectation) Then(b1 bool) *ClientMock {
+	e.results = &ClientMockHealthResults{b1}
+	return e.mock
+}
+
+// Times sets number of times Client.Health should be invoked
+func (mmHealth *mClientMockHealth) Times(n uint64) *mClientMockHealth {
+	if n == 0 {
+		mmHealth.mock.t.Fatalf("Times of ClientMock.Health mock can not be zero")
+	}
+	mm_atomic.StoreUint64(&mmHealth.expectedInvocations, n)
+	mmHealth.expectedInvocationsOrigin = minimock.CallerInfo(1)
+	return mmHealth
+}
+
+func (mmHealth *mClientMockHealth) invocationsDone() bool {
+	if len(mmHealth.expectations) == 0 && mmHealth.defaultExpectation == nil && mmHealth.mock.funcHealth == nil {
+		return true
+	}
+
+	totalInvocations := mm_atomic.LoadUint64(&mmHealth.mock.afterHealthCounter)
+	expectedInvocations := mm_atomic.LoadUint64(&mmHealth.expectedInvocations)
+
+	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
+}
+
+// Health implements Client
+func (mmHealth *ClientMock) Health(ctx context.Context) (b1 bool) {
+	mm_atomic.AddUint64(&mmHealth.beforeHealthCounter, 1)
+	defer mm_atomic.AddUint64(&mmHealth.afterHealthCounter, 1)
+
+	mmHealth.t.Helper()
+
+	if mmHealth.inspectFuncHealth != nil {
+		mmHealth.inspectFuncHealth(ctx)
+	}
+
+	mm_params := ClientMockHealthParams{ctx}
+
+	// Record call args
+	mmHealth.HealthMock.mutex.Lock()
+	mmHealth.HealthMock.callArgs = append(mmHealth.HealthMock.callArgs, &mm_params)
+	mmHealth.HealthMock.mutex.Unlock()
+
+	for _, e := range mmHealth.HealthMock.expectations {
+		if minimock.Equal(*e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.b1
+		}
+	}
+
+	if mmHealth.HealthMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmHealth.HealthMock.defaultExpectation.Counter, 1)
+		mm_want := mmHealth.HealthMock.defaultExpectation.params
+		mm_want_ptrs := mmHealth.HealthMock.defaultExpectation.paramPtrs
+
+		mm_got := ClientMockHealthParams{ctx}
+
+		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
+				mmHealth.t.Errorf("ClientMock.Health got unexpected parameter ctx, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmHealth.HealthMock.defaultExpectation.expectationOrigins.originCtx, *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
+			}
+
+		} else if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmHealth.t.Errorf("ClientMock.Health got unexpected parameters, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+				mmHealth.HealthMock.defaultExpectation.expectationOrigins.origin, *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmHealth.HealthMock.defaultExpectation.results
+		if mm_results == nil {
+			mmHealth.t.Fatal("No results are set for the ClientMock.Health")
+		}
+		return (*mm_results).b1
+	}
+	if mmHealth.funcHealth != nil {
+		return mmHealth.funcHealth(ctx)
+	}
+	mmHealth.t.Fatalf("Unexpected call to ClientMock.Health. %v", ctx)
+	return
+}
+
+// HealthAfterCounter returns a count of finished ClientMock.Health invocations
+func (mmHealth *ClientMock) HealthAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmHealth.afterHealthCounter)
+}
+
+// HealthBeforeCounter returns a count of ClientMock.Health invocations
+func (mmHealth *ClientMock) HealthBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmHealth.beforeHealthCounter)
+}
+
+// Calls returns a list of arguments used in each call to ClientMock.Health.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmHealth *mClientMockHealth) Calls() []*ClientMockHealthParams {
+	mmHealth.mutex.RLock()
+
+	argCopy := make([]*ClientMockHealthParams, len(mmHealth.callArgs))
+	copy(argCopy, mmHealth.callArgs)
+
+	mmHealth.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockHealthDone returns true if the count of the Health invocations corresponds
+// the number of defined expectations
+func (m *ClientMock) MinimockHealthDone() bool {
+	if m.HealthMock.optional {
+		// Optional methods provide '0 or more' call count restriction.
+		return true
+	}
+
+	for _, e := range m.HealthMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	return m.HealthMock.invocationsDone()
+}
+
+// MinimockHealthInspect logs each unmet expectation
+func (m *ClientMock) MinimockHealthInspect() {
+	for _, e := range m.HealthMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to ClientMock.Health at\n%s with params: %#v", e.expectationOrigins.origin, *e.params)
+		}
+	}
+
+	afterHealthCounter := mm_atomic.LoadUint64(&m.afterHealthCounter)
+	// if default expectation was set then invocations count should be greater than zero
+	if m.HealthMock.defaultExpectation != nil && afterHealthCounter < 1 {
+		if m.HealthMock.defaultExpectation.params == nil {
+			m.t.Errorf("Expected call to ClientMock.Health at\n%s", m.HealthMock.defaultExpectation.returnOrigin)
+		} else {
+			m.t.Errorf("Expected call to ClientMock.Health at\n%s with params: %#v", m.HealthMock.defaultExpectation.expectationOrigins.origin, *m.HealthMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcHealth != nil && afterHealthCounter < 1 {
+		m.t.Errorf("Expected call to ClientMock.Health at\n%s", m.funcHealthOrigin)
+	}
+
+	if !m.HealthMock.invocationsDone() && afterHealthCounter > 0 {
+		m.t.Errorf("Expected %d calls to ClientMock.Health at\n%s but found %d calls",
+			mm_atomic.LoadUint64(&m.HealthMock.expectedInvocations), m.HealthMock.expectedInvocationsOrigin, afterHealthCounter)
+	}
+}
+
 type mClientMockRefreshTrigger struct {
 	optional           bool
 	mock               *ClientMock
@@ -2572,6 +2893,8 @@ func (m *ClientMock) MinimockFinish() {
 
 			m.MinimockGetTriggersInspect()
 
+			m.MinimockHealthInspect()
+
 			m.MinimockRefreshTriggerInspect()
 
 			m.MinimockTriggerActionInspect()
@@ -2604,6 +2927,7 @@ func (m *ClientMock) minimockDone() bool {
 		m.MinimockDeleteTriggersDone() &&
 		m.MinimockGetTriggerDone() &&
 		m.MinimockGetTriggersDone() &&
+		m.MinimockHealthDone() &&
 		m.MinimockRefreshTriggerDone() &&
 		m.MinimockTriggerActionDone() &&
 		m.MinimockUpdateTriggerDone()

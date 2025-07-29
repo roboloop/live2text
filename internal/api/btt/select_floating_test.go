@@ -29,14 +29,14 @@ func TestSelectFloating(t *testing.T) {
 			expectedBody: "cannot decode request",
 		},
 		{
-			name: "validation failed",
+			name: "validation error",
 			body: `{"floating":"invalid"}`,
 
 			expectedCode: http.StatusBadRequest,
 			expectedBody: `{"floating":"floating is not valid"}`,
 		},
 		{
-			name: "select floating failed",
+			name: "select floating error",
 			body: `{"floating":"Shown"}`,
 			mockSelectFloating: func() error {
 				return errors.New("dummy error")

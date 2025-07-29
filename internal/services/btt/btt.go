@@ -5,7 +5,8 @@ const (
 )
 
 type btt struct {
-	InitializingComponent
+	HealthComponent
+	InstallingComponent
 	ListeningComponent
 	DeviceComponent
 	LanguageComponent
@@ -15,7 +16,8 @@ type btt struct {
 }
 
 func NewBtt(
-	initializingComponent InitializingComponent,
+	healthComponent HealthComponent,
+	installingComponent InstallingComponent,
 	listeningComponent ListeningComponent,
 	deviceComponent DeviceComponent,
 	languageComponent LanguageComponent,
@@ -24,12 +26,13 @@ func NewBtt(
 	clipboardComponent ClipboardComponent,
 ) Btt {
 	return &btt{
-		InitializingComponent: initializingComponent,
-		ListeningComponent:    listeningComponent,
-		DeviceComponent:       deviceComponent,
-		LanguageComponent:     languageComponent,
-		ViewModeComponent:     viewModeComponent,
-		FloatingComponent:     floatingComponent,
-		ClipboardComponent:    clipboardComponent,
+		HealthComponent:     healthComponent,
+		InstallingComponent: installingComponent,
+		ListeningComponent:  listeningComponent,
+		DeviceComponent:     deviceComponent,
+		LanguageComponent:   languageComponent,
+		ViewModeComponent:   viewModeComponent,
+		FloatingComponent:   floatingComponent,
+		ClipboardComponent:  clipboardComponent,
 	}
 }

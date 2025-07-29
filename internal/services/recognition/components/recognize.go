@@ -196,7 +196,7 @@ func (r *recognizerComponent) send(
 	}
 }
 
-//nolint:gocognit // TODO: simplify
+//nolint:gocognit // TODO: heavy error handling logic
 func (r *recognizerComponent) receive(
 	ctx context.Context,
 	stream speechwrapper.StreamingRecognizeClient,
@@ -210,7 +210,6 @@ func (r *recognizerComponent) receive(
 		}
 
 		resp, err := stream.Recv()
-		// TODO: heavy error handling logic
 		if err != nil {
 			if errors.Is(err, io.EOF) {
 				return nil

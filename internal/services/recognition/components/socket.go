@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"strings"
 
 	"live2text/internal/background"
 	"live2text/internal/services/recognition/text"
@@ -26,18 +27,31 @@ func NewSocketComponent(logger *slog.Logger, socketManager *background.SocketMan
 }
 
 func (s *socketComponent) Listen(ctx context.Context, socketPath string, formatter *text.Formatter) error {
-	err := s.socketManager.Listen(ctx, socketPath, func(conn net.Conn) {
+	s.logger.InfoContext(ctx, "Listening to the socket", "socketPath", socketPath)
+
+	if err := s.socketManager.Listen(ctx, socketPath, func(conn net.Conn) {
 		defer func() {
 			if closeErr := conn.Close(); closeErr != nil {
 				s.logger.ErrorContext(ctx, "Error during closing the connection", "error", closeErr)
 			}
 		}()
 
-		_, _ = conn.Write([]byte(formatter.Format()))
-	})
-	if err != nil {
+		// TODO: remove this logic, BTT issue
+		formatted := formatter.Format()
+		if strings.HasSuffix(formatted, "\n") {
+			formatted += " "
+		}
+
+		_, _ = conn.Write([]byte(formatted))
+	}); err != nil {
 		return fmt.Errorf("cannot listen to the socket: %w", err)
 	}
 
-	return s.socketManager.WaitFor(socketPath)
+	if err := s.socketManager.WaitFor(socketPath); err != nil {
+		return err
+	}
+
+	s.logger.InfoContext(ctx, "Socket listening finished", "socketPath", socketPath)
+
+	return nil
 }

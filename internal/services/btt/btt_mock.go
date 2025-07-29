@@ -16,13 +16,6 @@ type BttMock struct {
 	t          minimock.Tester
 	finishOnce sync.Once
 
-	funcClear          func(ctx context.Context) (err error)
-	funcClearOrigin    string
-	inspectFuncClear   func(ctx context.Context)
-	afterClearCounter  uint64
-	beforeClearCounter uint64
-	ClearMock          mBttMockClear
-
 	funcDisableCleanView          func(ctx context.Context) (err error)
 	funcDisableCleanViewOrigin    string
 	inspectFuncDisableCleanView   func(ctx context.Context)
@@ -44,6 +37,13 @@ type BttMock struct {
 	beforeFloatingPageCounter uint64
 	FloatingPageMock          mBttMockFloatingPage
 
+	funcHealth          func(ctx context.Context) (b1 bool)
+	funcHealthOrigin    string
+	inspectFuncHealth   func(ctx context.Context)
+	afterHealthCounter  uint64
+	beforeHealthCounter uint64
+	HealthMock          mBttMockHealth
+
 	funcHideClipboard          func(ctx context.Context) (err error)
 	funcHideClipboardOrigin    string
 	inspectFuncHideClipboard   func(ctx context.Context)
@@ -58,12 +58,19 @@ type BttMock struct {
 	beforeHideFloatingCounter uint64
 	HideFloatingMock          mBttMockHideFloating
 
-	funcInitialize          func(ctx context.Context) (err error)
-	funcInitializeOrigin    string
-	inspectFuncInitialize   func(ctx context.Context)
-	afterInitializeCounter  uint64
-	beforeInitializeCounter uint64
-	InitializeMock          mBttMockInitialize
+	funcInstall          func(ctx context.Context) (err error)
+	funcInstallOrigin    string
+	inspectFuncInstall   func(ctx context.Context)
+	afterInstallCounter  uint64
+	beforeInstallCounter uint64
+	InstallMock          mBttMockInstall
+
+	funcIsAvailable          func(ctx context.Context, device string) (b1 bool, err error)
+	funcIsAvailableOrigin    string
+	inspectFuncIsAvailable   func(ctx context.Context, device string)
+	afterIsAvailableCounter  uint64
+	beforeIsAvailableCounter uint64
+	IsAvailableMock          mBttMockIsAvailable
 
 	funcIsRunning          func(ctx context.Context) (b1 bool, err error)
 	funcIsRunningOrigin    string
@@ -197,6 +204,13 @@ type BttMock struct {
 	afterToggleListeningCounter  uint64
 	beforeToggleListeningCounter uint64
 	ToggleListeningMock          mBttMockToggleListening
+
+	funcUninstall          func(ctx context.Context) (err error)
+	funcUninstallOrigin    string
+	inspectFuncUninstall   func(ctx context.Context)
+	afterUninstallCounter  uint64
+	beforeUninstallCounter uint64
+	UninstallMock          mBttMockUninstall
 }
 
 // NewBttMock returns a mock for Btt
@@ -207,9 +221,6 @@ func NewBttMock(t minimock.Tester) *BttMock {
 		controller.RegisterMocker(m)
 	}
 
-	m.ClearMock = mBttMockClear{mock: m}
-	m.ClearMock.callArgs = []*BttMockClearParams{}
-
 	m.DisableCleanViewMock = mBttMockDisableCleanView{mock: m}
 	m.DisableCleanViewMock.callArgs = []*BttMockDisableCleanViewParams{}
 
@@ -218,14 +229,20 @@ func NewBttMock(t minimock.Tester) *BttMock {
 
 	m.FloatingPageMock = mBttMockFloatingPage{mock: m}
 
+	m.HealthMock = mBttMockHealth{mock: m}
+	m.HealthMock.callArgs = []*BttMockHealthParams{}
+
 	m.HideClipboardMock = mBttMockHideClipboard{mock: m}
 	m.HideClipboardMock.callArgs = []*BttMockHideClipboardParams{}
 
 	m.HideFloatingMock = mBttMockHideFloating{mock: m}
 	m.HideFloatingMock.callArgs = []*BttMockHideFloatingParams{}
 
-	m.InitializeMock = mBttMockInitialize{mock: m}
-	m.InitializeMock.callArgs = []*BttMockInitializeParams{}
+	m.InstallMock = mBttMockInstall{mock: m}
+	m.InstallMock.callArgs = []*BttMockInstallParams{}
+
+	m.IsAvailableMock = mBttMockIsAvailable{mock: m}
+	m.IsAvailableMock.callArgs = []*BttMockIsAvailableParams{}
 
 	m.IsRunningMock = mBttMockIsRunning{mock: m}
 	m.IsRunningMock.callArgs = []*BttMockIsRunningParams{}
@@ -284,320 +301,12 @@ func NewBttMock(t minimock.Tester) *BttMock {
 	m.ToggleListeningMock = mBttMockToggleListening{mock: m}
 	m.ToggleListeningMock.callArgs = []*BttMockToggleListeningParams{}
 
+	m.UninstallMock = mBttMockUninstall{mock: m}
+	m.UninstallMock.callArgs = []*BttMockUninstallParams{}
+
 	t.Cleanup(m.MinimockFinish)
 
 	return m
-}
-
-type mBttMockClear struct {
-	optional           bool
-	mock               *BttMock
-	defaultExpectation *BttMockClearExpectation
-	expectations       []*BttMockClearExpectation
-
-	callArgs []*BttMockClearParams
-	mutex    sync.RWMutex
-
-	expectedInvocations       uint64
-	expectedInvocationsOrigin string
-}
-
-// BttMockClearExpectation specifies expectation struct of the Btt.Clear
-type BttMockClearExpectation struct {
-	mock               *BttMock
-	params             *BttMockClearParams
-	paramPtrs          *BttMockClearParamPtrs
-	expectationOrigins BttMockClearExpectationOrigins
-	results            *BttMockClearResults
-	returnOrigin       string
-	Counter            uint64
-}
-
-// BttMockClearParams contains parameters of the Btt.Clear
-type BttMockClearParams struct {
-	ctx context.Context
-}
-
-// BttMockClearParamPtrs contains pointers to parameters of the Btt.Clear
-type BttMockClearParamPtrs struct {
-	ctx *context.Context
-}
-
-// BttMockClearResults contains results of the Btt.Clear
-type BttMockClearResults struct {
-	err error
-}
-
-// BttMockClearOrigins contains origins of expectations of the Btt.Clear
-type BttMockClearExpectationOrigins struct {
-	origin    string
-	originCtx string
-}
-
-// Marks this method to be optional. The default behavior of any method with Return() is '1 or more', meaning
-// the test will fail minimock's automatic final call check if the mocked method was not called at least once.
-// Optional() makes method check to work in '0 or more' mode.
-// It is NOT RECOMMENDED to use this option unless you really need it, as default behaviour helps to
-// catch the problems when the expected method call is totally skipped during test run.
-func (mmClear *mBttMockClear) Optional() *mBttMockClear {
-	mmClear.optional = true
-	return mmClear
-}
-
-// Expect sets up expected params for Btt.Clear
-func (mmClear *mBttMockClear) Expect(ctx context.Context) *mBttMockClear {
-	if mmClear.mock.funcClear != nil {
-		mmClear.mock.t.Fatalf("BttMock.Clear mock is already set by Set")
-	}
-
-	if mmClear.defaultExpectation == nil {
-		mmClear.defaultExpectation = &BttMockClearExpectation{}
-	}
-
-	if mmClear.defaultExpectation.paramPtrs != nil {
-		mmClear.mock.t.Fatalf("BttMock.Clear mock is already set by ExpectParams functions")
-	}
-
-	mmClear.defaultExpectation.params = &BttMockClearParams{ctx}
-	mmClear.defaultExpectation.expectationOrigins.origin = minimock.CallerInfo(1)
-	for _, e := range mmClear.expectations {
-		if minimock.Equal(e.params, mmClear.defaultExpectation.params) {
-			mmClear.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmClear.defaultExpectation.params)
-		}
-	}
-
-	return mmClear
-}
-
-// ExpectCtxParam1 sets up expected param ctx for Btt.Clear
-func (mmClear *mBttMockClear) ExpectCtxParam1(ctx context.Context) *mBttMockClear {
-	if mmClear.mock.funcClear != nil {
-		mmClear.mock.t.Fatalf("BttMock.Clear mock is already set by Set")
-	}
-
-	if mmClear.defaultExpectation == nil {
-		mmClear.defaultExpectation = &BttMockClearExpectation{}
-	}
-
-	if mmClear.defaultExpectation.params != nil {
-		mmClear.mock.t.Fatalf("BttMock.Clear mock is already set by Expect")
-	}
-
-	if mmClear.defaultExpectation.paramPtrs == nil {
-		mmClear.defaultExpectation.paramPtrs = &BttMockClearParamPtrs{}
-	}
-	mmClear.defaultExpectation.paramPtrs.ctx = &ctx
-	mmClear.defaultExpectation.expectationOrigins.originCtx = minimock.CallerInfo(1)
-
-	return mmClear
-}
-
-// Inspect accepts an inspector function that has same arguments as the Btt.Clear
-func (mmClear *mBttMockClear) Inspect(f func(ctx context.Context)) *mBttMockClear {
-	if mmClear.mock.inspectFuncClear != nil {
-		mmClear.mock.t.Fatalf("Inspect function is already set for BttMock.Clear")
-	}
-
-	mmClear.mock.inspectFuncClear = f
-
-	return mmClear
-}
-
-// Return sets up results that will be returned by Btt.Clear
-func (mmClear *mBttMockClear) Return(err error) *BttMock {
-	if mmClear.mock.funcClear != nil {
-		mmClear.mock.t.Fatalf("BttMock.Clear mock is already set by Set")
-	}
-
-	if mmClear.defaultExpectation == nil {
-		mmClear.defaultExpectation = &BttMockClearExpectation{mock: mmClear.mock}
-	}
-	mmClear.defaultExpectation.results = &BttMockClearResults{err}
-	mmClear.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
-	return mmClear.mock
-}
-
-// Set uses given function f to mock the Btt.Clear method
-func (mmClear *mBttMockClear) Set(f func(ctx context.Context) (err error)) *BttMock {
-	if mmClear.defaultExpectation != nil {
-		mmClear.mock.t.Fatalf("Default expectation is already set for the Btt.Clear method")
-	}
-
-	if len(mmClear.expectations) > 0 {
-		mmClear.mock.t.Fatalf("Some expectations are already set for the Btt.Clear method")
-	}
-
-	mmClear.mock.funcClear = f
-	mmClear.mock.funcClearOrigin = minimock.CallerInfo(1)
-	return mmClear.mock
-}
-
-// When sets expectation for the Btt.Clear which will trigger the result defined by the following
-// Then helper
-func (mmClear *mBttMockClear) When(ctx context.Context) *BttMockClearExpectation {
-	if mmClear.mock.funcClear != nil {
-		mmClear.mock.t.Fatalf("BttMock.Clear mock is already set by Set")
-	}
-
-	expectation := &BttMockClearExpectation{
-		mock:               mmClear.mock,
-		params:             &BttMockClearParams{ctx},
-		expectationOrigins: BttMockClearExpectationOrigins{origin: minimock.CallerInfo(1)},
-	}
-	mmClear.expectations = append(mmClear.expectations, expectation)
-	return expectation
-}
-
-// Then sets up Btt.Clear return parameters for the expectation previously defined by the When method
-func (e *BttMockClearExpectation) Then(err error) *BttMock {
-	e.results = &BttMockClearResults{err}
-	return e.mock
-}
-
-// Times sets number of times Btt.Clear should be invoked
-func (mmClear *mBttMockClear) Times(n uint64) *mBttMockClear {
-	if n == 0 {
-		mmClear.mock.t.Fatalf("Times of BttMock.Clear mock can not be zero")
-	}
-	mm_atomic.StoreUint64(&mmClear.expectedInvocations, n)
-	mmClear.expectedInvocationsOrigin = minimock.CallerInfo(1)
-	return mmClear
-}
-
-func (mmClear *mBttMockClear) invocationsDone() bool {
-	if len(mmClear.expectations) == 0 && mmClear.defaultExpectation == nil && mmClear.mock.funcClear == nil {
-		return true
-	}
-
-	totalInvocations := mm_atomic.LoadUint64(&mmClear.mock.afterClearCounter)
-	expectedInvocations := mm_atomic.LoadUint64(&mmClear.expectedInvocations)
-
-	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
-}
-
-// Clear implements Btt
-func (mmClear *BttMock) Clear(ctx context.Context) (err error) {
-	mm_atomic.AddUint64(&mmClear.beforeClearCounter, 1)
-	defer mm_atomic.AddUint64(&mmClear.afterClearCounter, 1)
-
-	mmClear.t.Helper()
-
-	if mmClear.inspectFuncClear != nil {
-		mmClear.inspectFuncClear(ctx)
-	}
-
-	mm_params := BttMockClearParams{ctx}
-
-	// Record call args
-	mmClear.ClearMock.mutex.Lock()
-	mmClear.ClearMock.callArgs = append(mmClear.ClearMock.callArgs, &mm_params)
-	mmClear.ClearMock.mutex.Unlock()
-
-	for _, e := range mmClear.ClearMock.expectations {
-		if minimock.Equal(*e.params, mm_params) {
-			mm_atomic.AddUint64(&e.Counter, 1)
-			return e.results.err
-		}
-	}
-
-	if mmClear.ClearMock.defaultExpectation != nil {
-		mm_atomic.AddUint64(&mmClear.ClearMock.defaultExpectation.Counter, 1)
-		mm_want := mmClear.ClearMock.defaultExpectation.params
-		mm_want_ptrs := mmClear.ClearMock.defaultExpectation.paramPtrs
-
-		mm_got := BttMockClearParams{ctx}
-
-		if mm_want_ptrs != nil {
-
-			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
-				mmClear.t.Errorf("BttMock.Clear got unexpected parameter ctx, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
-					mmClear.ClearMock.defaultExpectation.expectationOrigins.originCtx, *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
-			}
-
-		} else if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
-			mmClear.t.Errorf("BttMock.Clear got unexpected parameters, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
-				mmClear.ClearMock.defaultExpectation.expectationOrigins.origin, *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
-		}
-
-		mm_results := mmClear.ClearMock.defaultExpectation.results
-		if mm_results == nil {
-			mmClear.t.Fatal("No results are set for the BttMock.Clear")
-		}
-		return (*mm_results).err
-	}
-	if mmClear.funcClear != nil {
-		return mmClear.funcClear(ctx)
-	}
-	mmClear.t.Fatalf("Unexpected call to BttMock.Clear. %v", ctx)
-	return
-}
-
-// ClearAfterCounter returns a count of finished BttMock.Clear invocations
-func (mmClear *BttMock) ClearAfterCounter() uint64 {
-	return mm_atomic.LoadUint64(&mmClear.afterClearCounter)
-}
-
-// ClearBeforeCounter returns a count of BttMock.Clear invocations
-func (mmClear *BttMock) ClearBeforeCounter() uint64 {
-	return mm_atomic.LoadUint64(&mmClear.beforeClearCounter)
-}
-
-// Calls returns a list of arguments used in each call to BttMock.Clear.
-// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
-func (mmClear *mBttMockClear) Calls() []*BttMockClearParams {
-	mmClear.mutex.RLock()
-
-	argCopy := make([]*BttMockClearParams, len(mmClear.callArgs))
-	copy(argCopy, mmClear.callArgs)
-
-	mmClear.mutex.RUnlock()
-
-	return argCopy
-}
-
-// MinimockClearDone returns true if the count of the Clear invocations corresponds
-// the number of defined expectations
-func (m *BttMock) MinimockClearDone() bool {
-	if m.ClearMock.optional {
-		// Optional methods provide '0 or more' call count restriction.
-		return true
-	}
-
-	for _, e := range m.ClearMock.expectations {
-		if mm_atomic.LoadUint64(&e.Counter) < 1 {
-			return false
-		}
-	}
-
-	return m.ClearMock.invocationsDone()
-}
-
-// MinimockClearInspect logs each unmet expectation
-func (m *BttMock) MinimockClearInspect() {
-	for _, e := range m.ClearMock.expectations {
-		if mm_atomic.LoadUint64(&e.Counter) < 1 {
-			m.t.Errorf("Expected call to BttMock.Clear at\n%s with params: %#v", e.expectationOrigins.origin, *e.params)
-		}
-	}
-
-	afterClearCounter := mm_atomic.LoadUint64(&m.afterClearCounter)
-	// if default expectation was set then invocations count should be greater than zero
-	if m.ClearMock.defaultExpectation != nil && afterClearCounter < 1 {
-		if m.ClearMock.defaultExpectation.params == nil {
-			m.t.Errorf("Expected call to BttMock.Clear at\n%s", m.ClearMock.defaultExpectation.returnOrigin)
-		} else {
-			m.t.Errorf("Expected call to BttMock.Clear at\n%s with params: %#v", m.ClearMock.defaultExpectation.expectationOrigins.origin, *m.ClearMock.defaultExpectation.params)
-		}
-	}
-	// if func was set then invocations count should be greater than zero
-	if m.funcClear != nil && afterClearCounter < 1 {
-		m.t.Errorf("Expected call to BttMock.Clear at\n%s", m.funcClearOrigin)
-	}
-
-	if !m.ClearMock.invocationsDone() && afterClearCounter > 0 {
-		m.t.Errorf("Expected %d calls to BttMock.Clear at\n%s but found %d calls",
-			mm_atomic.LoadUint64(&m.ClearMock.expectedInvocations), m.ClearMock.expectedInvocationsOrigin, afterClearCounter)
-	}
 }
 
 type mBttMockDisableCleanView struct {
@@ -1408,6 +1117,317 @@ func (m *BttMock) MinimockFloatingPageInspect() {
 	}
 }
 
+type mBttMockHealth struct {
+	optional           bool
+	mock               *BttMock
+	defaultExpectation *BttMockHealthExpectation
+	expectations       []*BttMockHealthExpectation
+
+	callArgs []*BttMockHealthParams
+	mutex    sync.RWMutex
+
+	expectedInvocations       uint64
+	expectedInvocationsOrigin string
+}
+
+// BttMockHealthExpectation specifies expectation struct of the Btt.Health
+type BttMockHealthExpectation struct {
+	mock               *BttMock
+	params             *BttMockHealthParams
+	paramPtrs          *BttMockHealthParamPtrs
+	expectationOrigins BttMockHealthExpectationOrigins
+	results            *BttMockHealthResults
+	returnOrigin       string
+	Counter            uint64
+}
+
+// BttMockHealthParams contains parameters of the Btt.Health
+type BttMockHealthParams struct {
+	ctx context.Context
+}
+
+// BttMockHealthParamPtrs contains pointers to parameters of the Btt.Health
+type BttMockHealthParamPtrs struct {
+	ctx *context.Context
+}
+
+// BttMockHealthResults contains results of the Btt.Health
+type BttMockHealthResults struct {
+	b1 bool
+}
+
+// BttMockHealthOrigins contains origins of expectations of the Btt.Health
+type BttMockHealthExpectationOrigins struct {
+	origin    string
+	originCtx string
+}
+
+// Marks this method to be optional. The default behavior of any method with Return() is '1 or more', meaning
+// the test will fail minimock's automatic final call check if the mocked method was not called at least once.
+// Optional() makes method check to work in '0 or more' mode.
+// It is NOT RECOMMENDED to use this option unless you really need it, as default behaviour helps to
+// catch the problems when the expected method call is totally skipped during test run.
+func (mmHealth *mBttMockHealth) Optional() *mBttMockHealth {
+	mmHealth.optional = true
+	return mmHealth
+}
+
+// Expect sets up expected params for Btt.Health
+func (mmHealth *mBttMockHealth) Expect(ctx context.Context) *mBttMockHealth {
+	if mmHealth.mock.funcHealth != nil {
+		mmHealth.mock.t.Fatalf("BttMock.Health mock is already set by Set")
+	}
+
+	if mmHealth.defaultExpectation == nil {
+		mmHealth.defaultExpectation = &BttMockHealthExpectation{}
+	}
+
+	if mmHealth.defaultExpectation.paramPtrs != nil {
+		mmHealth.mock.t.Fatalf("BttMock.Health mock is already set by ExpectParams functions")
+	}
+
+	mmHealth.defaultExpectation.params = &BttMockHealthParams{ctx}
+	mmHealth.defaultExpectation.expectationOrigins.origin = minimock.CallerInfo(1)
+	for _, e := range mmHealth.expectations {
+		if minimock.Equal(e.params, mmHealth.defaultExpectation.params) {
+			mmHealth.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmHealth.defaultExpectation.params)
+		}
+	}
+
+	return mmHealth
+}
+
+// ExpectCtxParam1 sets up expected param ctx for Btt.Health
+func (mmHealth *mBttMockHealth) ExpectCtxParam1(ctx context.Context) *mBttMockHealth {
+	if mmHealth.mock.funcHealth != nil {
+		mmHealth.mock.t.Fatalf("BttMock.Health mock is already set by Set")
+	}
+
+	if mmHealth.defaultExpectation == nil {
+		mmHealth.defaultExpectation = &BttMockHealthExpectation{}
+	}
+
+	if mmHealth.defaultExpectation.params != nil {
+		mmHealth.mock.t.Fatalf("BttMock.Health mock is already set by Expect")
+	}
+
+	if mmHealth.defaultExpectation.paramPtrs == nil {
+		mmHealth.defaultExpectation.paramPtrs = &BttMockHealthParamPtrs{}
+	}
+	mmHealth.defaultExpectation.paramPtrs.ctx = &ctx
+	mmHealth.defaultExpectation.expectationOrigins.originCtx = minimock.CallerInfo(1)
+
+	return mmHealth
+}
+
+// Inspect accepts an inspector function that has same arguments as the Btt.Health
+func (mmHealth *mBttMockHealth) Inspect(f func(ctx context.Context)) *mBttMockHealth {
+	if mmHealth.mock.inspectFuncHealth != nil {
+		mmHealth.mock.t.Fatalf("Inspect function is already set for BttMock.Health")
+	}
+
+	mmHealth.mock.inspectFuncHealth = f
+
+	return mmHealth
+}
+
+// Return sets up results that will be returned by Btt.Health
+func (mmHealth *mBttMockHealth) Return(b1 bool) *BttMock {
+	if mmHealth.mock.funcHealth != nil {
+		mmHealth.mock.t.Fatalf("BttMock.Health mock is already set by Set")
+	}
+
+	if mmHealth.defaultExpectation == nil {
+		mmHealth.defaultExpectation = &BttMockHealthExpectation{mock: mmHealth.mock}
+	}
+	mmHealth.defaultExpectation.results = &BttMockHealthResults{b1}
+	mmHealth.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
+	return mmHealth.mock
+}
+
+// Set uses given function f to mock the Btt.Health method
+func (mmHealth *mBttMockHealth) Set(f func(ctx context.Context) (b1 bool)) *BttMock {
+	if mmHealth.defaultExpectation != nil {
+		mmHealth.mock.t.Fatalf("Default expectation is already set for the Btt.Health method")
+	}
+
+	if len(mmHealth.expectations) > 0 {
+		mmHealth.mock.t.Fatalf("Some expectations are already set for the Btt.Health method")
+	}
+
+	mmHealth.mock.funcHealth = f
+	mmHealth.mock.funcHealthOrigin = minimock.CallerInfo(1)
+	return mmHealth.mock
+}
+
+// When sets expectation for the Btt.Health which will trigger the result defined by the following
+// Then helper
+func (mmHealth *mBttMockHealth) When(ctx context.Context) *BttMockHealthExpectation {
+	if mmHealth.mock.funcHealth != nil {
+		mmHealth.mock.t.Fatalf("BttMock.Health mock is already set by Set")
+	}
+
+	expectation := &BttMockHealthExpectation{
+		mock:               mmHealth.mock,
+		params:             &BttMockHealthParams{ctx},
+		expectationOrigins: BttMockHealthExpectationOrigins{origin: minimock.CallerInfo(1)},
+	}
+	mmHealth.expectations = append(mmHealth.expectations, expectation)
+	return expectation
+}
+
+// Then sets up Btt.Health return parameters for the expectation previously defined by the When method
+func (e *BttMockHealthExpectation) Then(b1 bool) *BttMock {
+	e.results = &BttMockHealthResults{b1}
+	return e.mock
+}
+
+// Times sets number of times Btt.Health should be invoked
+func (mmHealth *mBttMockHealth) Times(n uint64) *mBttMockHealth {
+	if n == 0 {
+		mmHealth.mock.t.Fatalf("Times of BttMock.Health mock can not be zero")
+	}
+	mm_atomic.StoreUint64(&mmHealth.expectedInvocations, n)
+	mmHealth.expectedInvocationsOrigin = minimock.CallerInfo(1)
+	return mmHealth
+}
+
+func (mmHealth *mBttMockHealth) invocationsDone() bool {
+	if len(mmHealth.expectations) == 0 && mmHealth.defaultExpectation == nil && mmHealth.mock.funcHealth == nil {
+		return true
+	}
+
+	totalInvocations := mm_atomic.LoadUint64(&mmHealth.mock.afterHealthCounter)
+	expectedInvocations := mm_atomic.LoadUint64(&mmHealth.expectedInvocations)
+
+	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
+}
+
+// Health implements Btt
+func (mmHealth *BttMock) Health(ctx context.Context) (b1 bool) {
+	mm_atomic.AddUint64(&mmHealth.beforeHealthCounter, 1)
+	defer mm_atomic.AddUint64(&mmHealth.afterHealthCounter, 1)
+
+	mmHealth.t.Helper()
+
+	if mmHealth.inspectFuncHealth != nil {
+		mmHealth.inspectFuncHealth(ctx)
+	}
+
+	mm_params := BttMockHealthParams{ctx}
+
+	// Record call args
+	mmHealth.HealthMock.mutex.Lock()
+	mmHealth.HealthMock.callArgs = append(mmHealth.HealthMock.callArgs, &mm_params)
+	mmHealth.HealthMock.mutex.Unlock()
+
+	for _, e := range mmHealth.HealthMock.expectations {
+		if minimock.Equal(*e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.b1
+		}
+	}
+
+	if mmHealth.HealthMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmHealth.HealthMock.defaultExpectation.Counter, 1)
+		mm_want := mmHealth.HealthMock.defaultExpectation.params
+		mm_want_ptrs := mmHealth.HealthMock.defaultExpectation.paramPtrs
+
+		mm_got := BttMockHealthParams{ctx}
+
+		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
+				mmHealth.t.Errorf("BttMock.Health got unexpected parameter ctx, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmHealth.HealthMock.defaultExpectation.expectationOrigins.originCtx, *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
+			}
+
+		} else if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmHealth.t.Errorf("BttMock.Health got unexpected parameters, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+				mmHealth.HealthMock.defaultExpectation.expectationOrigins.origin, *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmHealth.HealthMock.defaultExpectation.results
+		if mm_results == nil {
+			mmHealth.t.Fatal("No results are set for the BttMock.Health")
+		}
+		return (*mm_results).b1
+	}
+	if mmHealth.funcHealth != nil {
+		return mmHealth.funcHealth(ctx)
+	}
+	mmHealth.t.Fatalf("Unexpected call to BttMock.Health. %v", ctx)
+	return
+}
+
+// HealthAfterCounter returns a count of finished BttMock.Health invocations
+func (mmHealth *BttMock) HealthAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmHealth.afterHealthCounter)
+}
+
+// HealthBeforeCounter returns a count of BttMock.Health invocations
+func (mmHealth *BttMock) HealthBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmHealth.beforeHealthCounter)
+}
+
+// Calls returns a list of arguments used in each call to BttMock.Health.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmHealth *mBttMockHealth) Calls() []*BttMockHealthParams {
+	mmHealth.mutex.RLock()
+
+	argCopy := make([]*BttMockHealthParams, len(mmHealth.callArgs))
+	copy(argCopy, mmHealth.callArgs)
+
+	mmHealth.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockHealthDone returns true if the count of the Health invocations corresponds
+// the number of defined expectations
+func (m *BttMock) MinimockHealthDone() bool {
+	if m.HealthMock.optional {
+		// Optional methods provide '0 or more' call count restriction.
+		return true
+	}
+
+	for _, e := range m.HealthMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	return m.HealthMock.invocationsDone()
+}
+
+// MinimockHealthInspect logs each unmet expectation
+func (m *BttMock) MinimockHealthInspect() {
+	for _, e := range m.HealthMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to BttMock.Health at\n%s with params: %#v", e.expectationOrigins.origin, *e.params)
+		}
+	}
+
+	afterHealthCounter := mm_atomic.LoadUint64(&m.afterHealthCounter)
+	// if default expectation was set then invocations count should be greater than zero
+	if m.HealthMock.defaultExpectation != nil && afterHealthCounter < 1 {
+		if m.HealthMock.defaultExpectation.params == nil {
+			m.t.Errorf("Expected call to BttMock.Health at\n%s", m.HealthMock.defaultExpectation.returnOrigin)
+		} else {
+			m.t.Errorf("Expected call to BttMock.Health at\n%s with params: %#v", m.HealthMock.defaultExpectation.expectationOrigins.origin, *m.HealthMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcHealth != nil && afterHealthCounter < 1 {
+		m.t.Errorf("Expected call to BttMock.Health at\n%s", m.funcHealthOrigin)
+	}
+
+	if !m.HealthMock.invocationsDone() && afterHealthCounter > 0 {
+		m.t.Errorf("Expected %d calls to BttMock.Health at\n%s but found %d calls",
+			mm_atomic.LoadUint64(&m.HealthMock.expectedInvocations), m.HealthMock.expectedInvocationsOrigin, afterHealthCounter)
+	}
+}
+
 type mBttMockHideClipboard struct {
 	optional           bool
 	mock               *BttMock
@@ -2030,47 +2050,47 @@ func (m *BttMock) MinimockHideFloatingInspect() {
 	}
 }
 
-type mBttMockInitialize struct {
+type mBttMockInstall struct {
 	optional           bool
 	mock               *BttMock
-	defaultExpectation *BttMockInitializeExpectation
-	expectations       []*BttMockInitializeExpectation
+	defaultExpectation *BttMockInstallExpectation
+	expectations       []*BttMockInstallExpectation
 
-	callArgs []*BttMockInitializeParams
+	callArgs []*BttMockInstallParams
 	mutex    sync.RWMutex
 
 	expectedInvocations       uint64
 	expectedInvocationsOrigin string
 }
 
-// BttMockInitializeExpectation specifies expectation struct of the Btt.Initialize
-type BttMockInitializeExpectation struct {
+// BttMockInstallExpectation specifies expectation struct of the Btt.Install
+type BttMockInstallExpectation struct {
 	mock               *BttMock
-	params             *BttMockInitializeParams
-	paramPtrs          *BttMockInitializeParamPtrs
-	expectationOrigins BttMockInitializeExpectationOrigins
-	results            *BttMockInitializeResults
+	params             *BttMockInstallParams
+	paramPtrs          *BttMockInstallParamPtrs
+	expectationOrigins BttMockInstallExpectationOrigins
+	results            *BttMockInstallResults
 	returnOrigin       string
 	Counter            uint64
 }
 
-// BttMockInitializeParams contains parameters of the Btt.Initialize
-type BttMockInitializeParams struct {
+// BttMockInstallParams contains parameters of the Btt.Install
+type BttMockInstallParams struct {
 	ctx context.Context
 }
 
-// BttMockInitializeParamPtrs contains pointers to parameters of the Btt.Initialize
-type BttMockInitializeParamPtrs struct {
+// BttMockInstallParamPtrs contains pointers to parameters of the Btt.Install
+type BttMockInstallParamPtrs struct {
 	ctx *context.Context
 }
 
-// BttMockInitializeResults contains results of the Btt.Initialize
-type BttMockInitializeResults struct {
+// BttMockInstallResults contains results of the Btt.Install
+type BttMockInstallResults struct {
 	err error
 }
 
-// BttMockInitializeOrigins contains origins of expectations of the Btt.Initialize
-type BttMockInitializeExpectationOrigins struct {
+// BttMockInstallOrigins contains origins of expectations of the Btt.Install
+type BttMockInstallExpectationOrigins struct {
 	origin    string
 	originCtx string
 }
@@ -2080,264 +2100,607 @@ type BttMockInitializeExpectationOrigins struct {
 // Optional() makes method check to work in '0 or more' mode.
 // It is NOT RECOMMENDED to use this option unless you really need it, as default behaviour helps to
 // catch the problems when the expected method call is totally skipped during test run.
-func (mmInitialize *mBttMockInitialize) Optional() *mBttMockInitialize {
-	mmInitialize.optional = true
-	return mmInitialize
+func (mmInstall *mBttMockInstall) Optional() *mBttMockInstall {
+	mmInstall.optional = true
+	return mmInstall
 }
 
-// Expect sets up expected params for Btt.Initialize
-func (mmInitialize *mBttMockInitialize) Expect(ctx context.Context) *mBttMockInitialize {
-	if mmInitialize.mock.funcInitialize != nil {
-		mmInitialize.mock.t.Fatalf("BttMock.Initialize mock is already set by Set")
+// Expect sets up expected params for Btt.Install
+func (mmInstall *mBttMockInstall) Expect(ctx context.Context) *mBttMockInstall {
+	if mmInstall.mock.funcInstall != nil {
+		mmInstall.mock.t.Fatalf("BttMock.Install mock is already set by Set")
 	}
 
-	if mmInitialize.defaultExpectation == nil {
-		mmInitialize.defaultExpectation = &BttMockInitializeExpectation{}
+	if mmInstall.defaultExpectation == nil {
+		mmInstall.defaultExpectation = &BttMockInstallExpectation{}
 	}
 
-	if mmInitialize.defaultExpectation.paramPtrs != nil {
-		mmInitialize.mock.t.Fatalf("BttMock.Initialize mock is already set by ExpectParams functions")
+	if mmInstall.defaultExpectation.paramPtrs != nil {
+		mmInstall.mock.t.Fatalf("BttMock.Install mock is already set by ExpectParams functions")
 	}
 
-	mmInitialize.defaultExpectation.params = &BttMockInitializeParams{ctx}
-	mmInitialize.defaultExpectation.expectationOrigins.origin = minimock.CallerInfo(1)
-	for _, e := range mmInitialize.expectations {
-		if minimock.Equal(e.params, mmInitialize.defaultExpectation.params) {
-			mmInitialize.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmInitialize.defaultExpectation.params)
+	mmInstall.defaultExpectation.params = &BttMockInstallParams{ctx}
+	mmInstall.defaultExpectation.expectationOrigins.origin = minimock.CallerInfo(1)
+	for _, e := range mmInstall.expectations {
+		if minimock.Equal(e.params, mmInstall.defaultExpectation.params) {
+			mmInstall.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmInstall.defaultExpectation.params)
 		}
 	}
 
-	return mmInitialize
+	return mmInstall
 }
 
-// ExpectCtxParam1 sets up expected param ctx for Btt.Initialize
-func (mmInitialize *mBttMockInitialize) ExpectCtxParam1(ctx context.Context) *mBttMockInitialize {
-	if mmInitialize.mock.funcInitialize != nil {
-		mmInitialize.mock.t.Fatalf("BttMock.Initialize mock is already set by Set")
+// ExpectCtxParam1 sets up expected param ctx for Btt.Install
+func (mmInstall *mBttMockInstall) ExpectCtxParam1(ctx context.Context) *mBttMockInstall {
+	if mmInstall.mock.funcInstall != nil {
+		mmInstall.mock.t.Fatalf("BttMock.Install mock is already set by Set")
 	}
 
-	if mmInitialize.defaultExpectation == nil {
-		mmInitialize.defaultExpectation = &BttMockInitializeExpectation{}
+	if mmInstall.defaultExpectation == nil {
+		mmInstall.defaultExpectation = &BttMockInstallExpectation{}
 	}
 
-	if mmInitialize.defaultExpectation.params != nil {
-		mmInitialize.mock.t.Fatalf("BttMock.Initialize mock is already set by Expect")
+	if mmInstall.defaultExpectation.params != nil {
+		mmInstall.mock.t.Fatalf("BttMock.Install mock is already set by Expect")
 	}
 
-	if mmInitialize.defaultExpectation.paramPtrs == nil {
-		mmInitialize.defaultExpectation.paramPtrs = &BttMockInitializeParamPtrs{}
+	if mmInstall.defaultExpectation.paramPtrs == nil {
+		mmInstall.defaultExpectation.paramPtrs = &BttMockInstallParamPtrs{}
 	}
-	mmInitialize.defaultExpectation.paramPtrs.ctx = &ctx
-	mmInitialize.defaultExpectation.expectationOrigins.originCtx = minimock.CallerInfo(1)
+	mmInstall.defaultExpectation.paramPtrs.ctx = &ctx
+	mmInstall.defaultExpectation.expectationOrigins.originCtx = minimock.CallerInfo(1)
 
-	return mmInitialize
+	return mmInstall
 }
 
-// Inspect accepts an inspector function that has same arguments as the Btt.Initialize
-func (mmInitialize *mBttMockInitialize) Inspect(f func(ctx context.Context)) *mBttMockInitialize {
-	if mmInitialize.mock.inspectFuncInitialize != nil {
-		mmInitialize.mock.t.Fatalf("Inspect function is already set for BttMock.Initialize")
+// Inspect accepts an inspector function that has same arguments as the Btt.Install
+func (mmInstall *mBttMockInstall) Inspect(f func(ctx context.Context)) *mBttMockInstall {
+	if mmInstall.mock.inspectFuncInstall != nil {
+		mmInstall.mock.t.Fatalf("Inspect function is already set for BttMock.Install")
 	}
 
-	mmInitialize.mock.inspectFuncInitialize = f
+	mmInstall.mock.inspectFuncInstall = f
 
-	return mmInitialize
+	return mmInstall
 }
 
-// Return sets up results that will be returned by Btt.Initialize
-func (mmInitialize *mBttMockInitialize) Return(err error) *BttMock {
-	if mmInitialize.mock.funcInitialize != nil {
-		mmInitialize.mock.t.Fatalf("BttMock.Initialize mock is already set by Set")
+// Return sets up results that will be returned by Btt.Install
+func (mmInstall *mBttMockInstall) Return(err error) *BttMock {
+	if mmInstall.mock.funcInstall != nil {
+		mmInstall.mock.t.Fatalf("BttMock.Install mock is already set by Set")
 	}
 
-	if mmInitialize.defaultExpectation == nil {
-		mmInitialize.defaultExpectation = &BttMockInitializeExpectation{mock: mmInitialize.mock}
+	if mmInstall.defaultExpectation == nil {
+		mmInstall.defaultExpectation = &BttMockInstallExpectation{mock: mmInstall.mock}
 	}
-	mmInitialize.defaultExpectation.results = &BttMockInitializeResults{err}
-	mmInitialize.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
-	return mmInitialize.mock
+	mmInstall.defaultExpectation.results = &BttMockInstallResults{err}
+	mmInstall.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
+	return mmInstall.mock
 }
 
-// Set uses given function f to mock the Btt.Initialize method
-func (mmInitialize *mBttMockInitialize) Set(f func(ctx context.Context) (err error)) *BttMock {
-	if mmInitialize.defaultExpectation != nil {
-		mmInitialize.mock.t.Fatalf("Default expectation is already set for the Btt.Initialize method")
+// Set uses given function f to mock the Btt.Install method
+func (mmInstall *mBttMockInstall) Set(f func(ctx context.Context) (err error)) *BttMock {
+	if mmInstall.defaultExpectation != nil {
+		mmInstall.mock.t.Fatalf("Default expectation is already set for the Btt.Install method")
 	}
 
-	if len(mmInitialize.expectations) > 0 {
-		mmInitialize.mock.t.Fatalf("Some expectations are already set for the Btt.Initialize method")
+	if len(mmInstall.expectations) > 0 {
+		mmInstall.mock.t.Fatalf("Some expectations are already set for the Btt.Install method")
 	}
 
-	mmInitialize.mock.funcInitialize = f
-	mmInitialize.mock.funcInitializeOrigin = minimock.CallerInfo(1)
-	return mmInitialize.mock
+	mmInstall.mock.funcInstall = f
+	mmInstall.mock.funcInstallOrigin = minimock.CallerInfo(1)
+	return mmInstall.mock
 }
 
-// When sets expectation for the Btt.Initialize which will trigger the result defined by the following
+// When sets expectation for the Btt.Install which will trigger the result defined by the following
 // Then helper
-func (mmInitialize *mBttMockInitialize) When(ctx context.Context) *BttMockInitializeExpectation {
-	if mmInitialize.mock.funcInitialize != nil {
-		mmInitialize.mock.t.Fatalf("BttMock.Initialize mock is already set by Set")
+func (mmInstall *mBttMockInstall) When(ctx context.Context) *BttMockInstallExpectation {
+	if mmInstall.mock.funcInstall != nil {
+		mmInstall.mock.t.Fatalf("BttMock.Install mock is already set by Set")
 	}
 
-	expectation := &BttMockInitializeExpectation{
-		mock:               mmInitialize.mock,
-		params:             &BttMockInitializeParams{ctx},
-		expectationOrigins: BttMockInitializeExpectationOrigins{origin: minimock.CallerInfo(1)},
+	expectation := &BttMockInstallExpectation{
+		mock:               mmInstall.mock,
+		params:             &BttMockInstallParams{ctx},
+		expectationOrigins: BttMockInstallExpectationOrigins{origin: minimock.CallerInfo(1)},
 	}
-	mmInitialize.expectations = append(mmInitialize.expectations, expectation)
+	mmInstall.expectations = append(mmInstall.expectations, expectation)
 	return expectation
 }
 
-// Then sets up Btt.Initialize return parameters for the expectation previously defined by the When method
-func (e *BttMockInitializeExpectation) Then(err error) *BttMock {
-	e.results = &BttMockInitializeResults{err}
+// Then sets up Btt.Install return parameters for the expectation previously defined by the When method
+func (e *BttMockInstallExpectation) Then(err error) *BttMock {
+	e.results = &BttMockInstallResults{err}
 	return e.mock
 }
 
-// Times sets number of times Btt.Initialize should be invoked
-func (mmInitialize *mBttMockInitialize) Times(n uint64) *mBttMockInitialize {
+// Times sets number of times Btt.Install should be invoked
+func (mmInstall *mBttMockInstall) Times(n uint64) *mBttMockInstall {
 	if n == 0 {
-		mmInitialize.mock.t.Fatalf("Times of BttMock.Initialize mock can not be zero")
+		mmInstall.mock.t.Fatalf("Times of BttMock.Install mock can not be zero")
 	}
-	mm_atomic.StoreUint64(&mmInitialize.expectedInvocations, n)
-	mmInitialize.expectedInvocationsOrigin = minimock.CallerInfo(1)
-	return mmInitialize
+	mm_atomic.StoreUint64(&mmInstall.expectedInvocations, n)
+	mmInstall.expectedInvocationsOrigin = minimock.CallerInfo(1)
+	return mmInstall
 }
 
-func (mmInitialize *mBttMockInitialize) invocationsDone() bool {
-	if len(mmInitialize.expectations) == 0 && mmInitialize.defaultExpectation == nil && mmInitialize.mock.funcInitialize == nil {
+func (mmInstall *mBttMockInstall) invocationsDone() bool {
+	if len(mmInstall.expectations) == 0 && mmInstall.defaultExpectation == nil && mmInstall.mock.funcInstall == nil {
 		return true
 	}
 
-	totalInvocations := mm_atomic.LoadUint64(&mmInitialize.mock.afterInitializeCounter)
-	expectedInvocations := mm_atomic.LoadUint64(&mmInitialize.expectedInvocations)
+	totalInvocations := mm_atomic.LoadUint64(&mmInstall.mock.afterInstallCounter)
+	expectedInvocations := mm_atomic.LoadUint64(&mmInstall.expectedInvocations)
 
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// Initialize implements Btt
-func (mmInitialize *BttMock) Initialize(ctx context.Context) (err error) {
-	mm_atomic.AddUint64(&mmInitialize.beforeInitializeCounter, 1)
-	defer mm_atomic.AddUint64(&mmInitialize.afterInitializeCounter, 1)
+// Install implements Btt
+func (mmInstall *BttMock) Install(ctx context.Context) (err error) {
+	mm_atomic.AddUint64(&mmInstall.beforeInstallCounter, 1)
+	defer mm_atomic.AddUint64(&mmInstall.afterInstallCounter, 1)
 
-	mmInitialize.t.Helper()
+	mmInstall.t.Helper()
 
-	if mmInitialize.inspectFuncInitialize != nil {
-		mmInitialize.inspectFuncInitialize(ctx)
+	if mmInstall.inspectFuncInstall != nil {
+		mmInstall.inspectFuncInstall(ctx)
 	}
 
-	mm_params := BttMockInitializeParams{ctx}
+	mm_params := BttMockInstallParams{ctx}
 
 	// Record call args
-	mmInitialize.InitializeMock.mutex.Lock()
-	mmInitialize.InitializeMock.callArgs = append(mmInitialize.InitializeMock.callArgs, &mm_params)
-	mmInitialize.InitializeMock.mutex.Unlock()
+	mmInstall.InstallMock.mutex.Lock()
+	mmInstall.InstallMock.callArgs = append(mmInstall.InstallMock.callArgs, &mm_params)
+	mmInstall.InstallMock.mutex.Unlock()
 
-	for _, e := range mmInitialize.InitializeMock.expectations {
+	for _, e := range mmInstall.InstallMock.expectations {
 		if minimock.Equal(*e.params, mm_params) {
 			mm_atomic.AddUint64(&e.Counter, 1)
 			return e.results.err
 		}
 	}
 
-	if mmInitialize.InitializeMock.defaultExpectation != nil {
-		mm_atomic.AddUint64(&mmInitialize.InitializeMock.defaultExpectation.Counter, 1)
-		mm_want := mmInitialize.InitializeMock.defaultExpectation.params
-		mm_want_ptrs := mmInitialize.InitializeMock.defaultExpectation.paramPtrs
+	if mmInstall.InstallMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmInstall.InstallMock.defaultExpectation.Counter, 1)
+		mm_want := mmInstall.InstallMock.defaultExpectation.params
+		mm_want_ptrs := mmInstall.InstallMock.defaultExpectation.paramPtrs
 
-		mm_got := BttMockInitializeParams{ctx}
+		mm_got := BttMockInstallParams{ctx}
 
 		if mm_want_ptrs != nil {
 
 			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
-				mmInitialize.t.Errorf("BttMock.Initialize got unexpected parameter ctx, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
-					mmInitialize.InitializeMock.defaultExpectation.expectationOrigins.originCtx, *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
+				mmInstall.t.Errorf("BttMock.Install got unexpected parameter ctx, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmInstall.InstallMock.defaultExpectation.expectationOrigins.originCtx, *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
 			}
 
 		} else if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
-			mmInitialize.t.Errorf("BttMock.Initialize got unexpected parameters, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
-				mmInitialize.InitializeMock.defaultExpectation.expectationOrigins.origin, *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+			mmInstall.t.Errorf("BttMock.Install got unexpected parameters, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+				mmInstall.InstallMock.defaultExpectation.expectationOrigins.origin, *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
 		}
 
-		mm_results := mmInitialize.InitializeMock.defaultExpectation.results
+		mm_results := mmInstall.InstallMock.defaultExpectation.results
 		if mm_results == nil {
-			mmInitialize.t.Fatal("No results are set for the BttMock.Initialize")
+			mmInstall.t.Fatal("No results are set for the BttMock.Install")
 		}
 		return (*mm_results).err
 	}
-	if mmInitialize.funcInitialize != nil {
-		return mmInitialize.funcInitialize(ctx)
+	if mmInstall.funcInstall != nil {
+		return mmInstall.funcInstall(ctx)
 	}
-	mmInitialize.t.Fatalf("Unexpected call to BttMock.Initialize. %v", ctx)
+	mmInstall.t.Fatalf("Unexpected call to BttMock.Install. %v", ctx)
 	return
 }
 
-// InitializeAfterCounter returns a count of finished BttMock.Initialize invocations
-func (mmInitialize *BttMock) InitializeAfterCounter() uint64 {
-	return mm_atomic.LoadUint64(&mmInitialize.afterInitializeCounter)
+// InstallAfterCounter returns a count of finished BttMock.Install invocations
+func (mmInstall *BttMock) InstallAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmInstall.afterInstallCounter)
 }
 
-// InitializeBeforeCounter returns a count of BttMock.Initialize invocations
-func (mmInitialize *BttMock) InitializeBeforeCounter() uint64 {
-	return mm_atomic.LoadUint64(&mmInitialize.beforeInitializeCounter)
+// InstallBeforeCounter returns a count of BttMock.Install invocations
+func (mmInstall *BttMock) InstallBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmInstall.beforeInstallCounter)
 }
 
-// Calls returns a list of arguments used in each call to BttMock.Initialize.
+// Calls returns a list of arguments used in each call to BttMock.Install.
 // The list is in the same order as the calls were made (i.e. recent calls have a higher index)
-func (mmInitialize *mBttMockInitialize) Calls() []*BttMockInitializeParams {
-	mmInitialize.mutex.RLock()
+func (mmInstall *mBttMockInstall) Calls() []*BttMockInstallParams {
+	mmInstall.mutex.RLock()
 
-	argCopy := make([]*BttMockInitializeParams, len(mmInitialize.callArgs))
-	copy(argCopy, mmInitialize.callArgs)
+	argCopy := make([]*BttMockInstallParams, len(mmInstall.callArgs))
+	copy(argCopy, mmInstall.callArgs)
 
-	mmInitialize.mutex.RUnlock()
+	mmInstall.mutex.RUnlock()
 
 	return argCopy
 }
 
-// MinimockInitializeDone returns true if the count of the Initialize invocations corresponds
+// MinimockInstallDone returns true if the count of the Install invocations corresponds
 // the number of defined expectations
-func (m *BttMock) MinimockInitializeDone() bool {
-	if m.InitializeMock.optional {
+func (m *BttMock) MinimockInstallDone() bool {
+	if m.InstallMock.optional {
 		// Optional methods provide '0 or more' call count restriction.
 		return true
 	}
 
-	for _, e := range m.InitializeMock.expectations {
+	for _, e := range m.InstallMock.expectations {
 		if mm_atomic.LoadUint64(&e.Counter) < 1 {
 			return false
 		}
 	}
 
-	return m.InitializeMock.invocationsDone()
+	return m.InstallMock.invocationsDone()
 }
 
-// MinimockInitializeInspect logs each unmet expectation
-func (m *BttMock) MinimockInitializeInspect() {
-	for _, e := range m.InitializeMock.expectations {
+// MinimockInstallInspect logs each unmet expectation
+func (m *BttMock) MinimockInstallInspect() {
+	for _, e := range m.InstallMock.expectations {
 		if mm_atomic.LoadUint64(&e.Counter) < 1 {
-			m.t.Errorf("Expected call to BttMock.Initialize at\n%s with params: %#v", e.expectationOrigins.origin, *e.params)
+			m.t.Errorf("Expected call to BttMock.Install at\n%s with params: %#v", e.expectationOrigins.origin, *e.params)
 		}
 	}
 
-	afterInitializeCounter := mm_atomic.LoadUint64(&m.afterInitializeCounter)
+	afterInstallCounter := mm_atomic.LoadUint64(&m.afterInstallCounter)
 	// if default expectation was set then invocations count should be greater than zero
-	if m.InitializeMock.defaultExpectation != nil && afterInitializeCounter < 1 {
-		if m.InitializeMock.defaultExpectation.params == nil {
-			m.t.Errorf("Expected call to BttMock.Initialize at\n%s", m.InitializeMock.defaultExpectation.returnOrigin)
+	if m.InstallMock.defaultExpectation != nil && afterInstallCounter < 1 {
+		if m.InstallMock.defaultExpectation.params == nil {
+			m.t.Errorf("Expected call to BttMock.Install at\n%s", m.InstallMock.defaultExpectation.returnOrigin)
 		} else {
-			m.t.Errorf("Expected call to BttMock.Initialize at\n%s with params: %#v", m.InitializeMock.defaultExpectation.expectationOrigins.origin, *m.InitializeMock.defaultExpectation.params)
+			m.t.Errorf("Expected call to BttMock.Install at\n%s with params: %#v", m.InstallMock.defaultExpectation.expectationOrigins.origin, *m.InstallMock.defaultExpectation.params)
 		}
 	}
 	// if func was set then invocations count should be greater than zero
-	if m.funcInitialize != nil && afterInitializeCounter < 1 {
-		m.t.Errorf("Expected call to BttMock.Initialize at\n%s", m.funcInitializeOrigin)
+	if m.funcInstall != nil && afterInstallCounter < 1 {
+		m.t.Errorf("Expected call to BttMock.Install at\n%s", m.funcInstallOrigin)
 	}
 
-	if !m.InitializeMock.invocationsDone() && afterInitializeCounter > 0 {
-		m.t.Errorf("Expected %d calls to BttMock.Initialize at\n%s but found %d calls",
-			mm_atomic.LoadUint64(&m.InitializeMock.expectedInvocations), m.InitializeMock.expectedInvocationsOrigin, afterInitializeCounter)
+	if !m.InstallMock.invocationsDone() && afterInstallCounter > 0 {
+		m.t.Errorf("Expected %d calls to BttMock.Install at\n%s but found %d calls",
+			mm_atomic.LoadUint64(&m.InstallMock.expectedInvocations), m.InstallMock.expectedInvocationsOrigin, afterInstallCounter)
+	}
+}
+
+type mBttMockIsAvailable struct {
+	optional           bool
+	mock               *BttMock
+	defaultExpectation *BttMockIsAvailableExpectation
+	expectations       []*BttMockIsAvailableExpectation
+
+	callArgs []*BttMockIsAvailableParams
+	mutex    sync.RWMutex
+
+	expectedInvocations       uint64
+	expectedInvocationsOrigin string
+}
+
+// BttMockIsAvailableExpectation specifies expectation struct of the Btt.IsAvailable
+type BttMockIsAvailableExpectation struct {
+	mock               *BttMock
+	params             *BttMockIsAvailableParams
+	paramPtrs          *BttMockIsAvailableParamPtrs
+	expectationOrigins BttMockIsAvailableExpectationOrigins
+	results            *BttMockIsAvailableResults
+	returnOrigin       string
+	Counter            uint64
+}
+
+// BttMockIsAvailableParams contains parameters of the Btt.IsAvailable
+type BttMockIsAvailableParams struct {
+	ctx    context.Context
+	device string
+}
+
+// BttMockIsAvailableParamPtrs contains pointers to parameters of the Btt.IsAvailable
+type BttMockIsAvailableParamPtrs struct {
+	ctx    *context.Context
+	device *string
+}
+
+// BttMockIsAvailableResults contains results of the Btt.IsAvailable
+type BttMockIsAvailableResults struct {
+	b1  bool
+	err error
+}
+
+// BttMockIsAvailableOrigins contains origins of expectations of the Btt.IsAvailable
+type BttMockIsAvailableExpectationOrigins struct {
+	origin       string
+	originCtx    string
+	originDevice string
+}
+
+// Marks this method to be optional. The default behavior of any method with Return() is '1 or more', meaning
+// the test will fail minimock's automatic final call check if the mocked method was not called at least once.
+// Optional() makes method check to work in '0 or more' mode.
+// It is NOT RECOMMENDED to use this option unless you really need it, as default behaviour helps to
+// catch the problems when the expected method call is totally skipped during test run.
+func (mmIsAvailable *mBttMockIsAvailable) Optional() *mBttMockIsAvailable {
+	mmIsAvailable.optional = true
+	return mmIsAvailable
+}
+
+// Expect sets up expected params for Btt.IsAvailable
+func (mmIsAvailable *mBttMockIsAvailable) Expect(ctx context.Context, device string) *mBttMockIsAvailable {
+	if mmIsAvailable.mock.funcIsAvailable != nil {
+		mmIsAvailable.mock.t.Fatalf("BttMock.IsAvailable mock is already set by Set")
+	}
+
+	if mmIsAvailable.defaultExpectation == nil {
+		mmIsAvailable.defaultExpectation = &BttMockIsAvailableExpectation{}
+	}
+
+	if mmIsAvailable.defaultExpectation.paramPtrs != nil {
+		mmIsAvailable.mock.t.Fatalf("BttMock.IsAvailable mock is already set by ExpectParams functions")
+	}
+
+	mmIsAvailable.defaultExpectation.params = &BttMockIsAvailableParams{ctx, device}
+	mmIsAvailable.defaultExpectation.expectationOrigins.origin = minimock.CallerInfo(1)
+	for _, e := range mmIsAvailable.expectations {
+		if minimock.Equal(e.params, mmIsAvailable.defaultExpectation.params) {
+			mmIsAvailable.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmIsAvailable.defaultExpectation.params)
+		}
+	}
+
+	return mmIsAvailable
+}
+
+// ExpectCtxParam1 sets up expected param ctx for Btt.IsAvailable
+func (mmIsAvailable *mBttMockIsAvailable) ExpectCtxParam1(ctx context.Context) *mBttMockIsAvailable {
+	if mmIsAvailable.mock.funcIsAvailable != nil {
+		mmIsAvailable.mock.t.Fatalf("BttMock.IsAvailable mock is already set by Set")
+	}
+
+	if mmIsAvailable.defaultExpectation == nil {
+		mmIsAvailable.defaultExpectation = &BttMockIsAvailableExpectation{}
+	}
+
+	if mmIsAvailable.defaultExpectation.params != nil {
+		mmIsAvailable.mock.t.Fatalf("BttMock.IsAvailable mock is already set by Expect")
+	}
+
+	if mmIsAvailable.defaultExpectation.paramPtrs == nil {
+		mmIsAvailable.defaultExpectation.paramPtrs = &BttMockIsAvailableParamPtrs{}
+	}
+	mmIsAvailable.defaultExpectation.paramPtrs.ctx = &ctx
+	mmIsAvailable.defaultExpectation.expectationOrigins.originCtx = minimock.CallerInfo(1)
+
+	return mmIsAvailable
+}
+
+// ExpectDeviceParam2 sets up expected param device for Btt.IsAvailable
+func (mmIsAvailable *mBttMockIsAvailable) ExpectDeviceParam2(device string) *mBttMockIsAvailable {
+	if mmIsAvailable.mock.funcIsAvailable != nil {
+		mmIsAvailable.mock.t.Fatalf("BttMock.IsAvailable mock is already set by Set")
+	}
+
+	if mmIsAvailable.defaultExpectation == nil {
+		mmIsAvailable.defaultExpectation = &BttMockIsAvailableExpectation{}
+	}
+
+	if mmIsAvailable.defaultExpectation.params != nil {
+		mmIsAvailable.mock.t.Fatalf("BttMock.IsAvailable mock is already set by Expect")
+	}
+
+	if mmIsAvailable.defaultExpectation.paramPtrs == nil {
+		mmIsAvailable.defaultExpectation.paramPtrs = &BttMockIsAvailableParamPtrs{}
+	}
+	mmIsAvailable.defaultExpectation.paramPtrs.device = &device
+	mmIsAvailable.defaultExpectation.expectationOrigins.originDevice = minimock.CallerInfo(1)
+
+	return mmIsAvailable
+}
+
+// Inspect accepts an inspector function that has same arguments as the Btt.IsAvailable
+func (mmIsAvailable *mBttMockIsAvailable) Inspect(f func(ctx context.Context, device string)) *mBttMockIsAvailable {
+	if mmIsAvailable.mock.inspectFuncIsAvailable != nil {
+		mmIsAvailable.mock.t.Fatalf("Inspect function is already set for BttMock.IsAvailable")
+	}
+
+	mmIsAvailable.mock.inspectFuncIsAvailable = f
+
+	return mmIsAvailable
+}
+
+// Return sets up results that will be returned by Btt.IsAvailable
+func (mmIsAvailable *mBttMockIsAvailable) Return(b1 bool, err error) *BttMock {
+	if mmIsAvailable.mock.funcIsAvailable != nil {
+		mmIsAvailable.mock.t.Fatalf("BttMock.IsAvailable mock is already set by Set")
+	}
+
+	if mmIsAvailable.defaultExpectation == nil {
+		mmIsAvailable.defaultExpectation = &BttMockIsAvailableExpectation{mock: mmIsAvailable.mock}
+	}
+	mmIsAvailable.defaultExpectation.results = &BttMockIsAvailableResults{b1, err}
+	mmIsAvailable.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
+	return mmIsAvailable.mock
+}
+
+// Set uses given function f to mock the Btt.IsAvailable method
+func (mmIsAvailable *mBttMockIsAvailable) Set(f func(ctx context.Context, device string) (b1 bool, err error)) *BttMock {
+	if mmIsAvailable.defaultExpectation != nil {
+		mmIsAvailable.mock.t.Fatalf("Default expectation is already set for the Btt.IsAvailable method")
+	}
+
+	if len(mmIsAvailable.expectations) > 0 {
+		mmIsAvailable.mock.t.Fatalf("Some expectations are already set for the Btt.IsAvailable method")
+	}
+
+	mmIsAvailable.mock.funcIsAvailable = f
+	mmIsAvailable.mock.funcIsAvailableOrigin = minimock.CallerInfo(1)
+	return mmIsAvailable.mock
+}
+
+// When sets expectation for the Btt.IsAvailable which will trigger the result defined by the following
+// Then helper
+func (mmIsAvailable *mBttMockIsAvailable) When(ctx context.Context, device string) *BttMockIsAvailableExpectation {
+	if mmIsAvailable.mock.funcIsAvailable != nil {
+		mmIsAvailable.mock.t.Fatalf("BttMock.IsAvailable mock is already set by Set")
+	}
+
+	expectation := &BttMockIsAvailableExpectation{
+		mock:               mmIsAvailable.mock,
+		params:             &BttMockIsAvailableParams{ctx, device},
+		expectationOrigins: BttMockIsAvailableExpectationOrigins{origin: minimock.CallerInfo(1)},
+	}
+	mmIsAvailable.expectations = append(mmIsAvailable.expectations, expectation)
+	return expectation
+}
+
+// Then sets up Btt.IsAvailable return parameters for the expectation previously defined by the When method
+func (e *BttMockIsAvailableExpectation) Then(b1 bool, err error) *BttMock {
+	e.results = &BttMockIsAvailableResults{b1, err}
+	return e.mock
+}
+
+// Times sets number of times Btt.IsAvailable should be invoked
+func (mmIsAvailable *mBttMockIsAvailable) Times(n uint64) *mBttMockIsAvailable {
+	if n == 0 {
+		mmIsAvailable.mock.t.Fatalf("Times of BttMock.IsAvailable mock can not be zero")
+	}
+	mm_atomic.StoreUint64(&mmIsAvailable.expectedInvocations, n)
+	mmIsAvailable.expectedInvocationsOrigin = minimock.CallerInfo(1)
+	return mmIsAvailable
+}
+
+func (mmIsAvailable *mBttMockIsAvailable) invocationsDone() bool {
+	if len(mmIsAvailable.expectations) == 0 && mmIsAvailable.defaultExpectation == nil && mmIsAvailable.mock.funcIsAvailable == nil {
+		return true
+	}
+
+	totalInvocations := mm_atomic.LoadUint64(&mmIsAvailable.mock.afterIsAvailableCounter)
+	expectedInvocations := mm_atomic.LoadUint64(&mmIsAvailable.expectedInvocations)
+
+	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
+}
+
+// IsAvailable implements Btt
+func (mmIsAvailable *BttMock) IsAvailable(ctx context.Context, device string) (b1 bool, err error) {
+	mm_atomic.AddUint64(&mmIsAvailable.beforeIsAvailableCounter, 1)
+	defer mm_atomic.AddUint64(&mmIsAvailable.afterIsAvailableCounter, 1)
+
+	mmIsAvailable.t.Helper()
+
+	if mmIsAvailable.inspectFuncIsAvailable != nil {
+		mmIsAvailable.inspectFuncIsAvailable(ctx, device)
+	}
+
+	mm_params := BttMockIsAvailableParams{ctx, device}
+
+	// Record call args
+	mmIsAvailable.IsAvailableMock.mutex.Lock()
+	mmIsAvailable.IsAvailableMock.callArgs = append(mmIsAvailable.IsAvailableMock.callArgs, &mm_params)
+	mmIsAvailable.IsAvailableMock.mutex.Unlock()
+
+	for _, e := range mmIsAvailable.IsAvailableMock.expectations {
+		if minimock.Equal(*e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.b1, e.results.err
+		}
+	}
+
+	if mmIsAvailable.IsAvailableMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmIsAvailable.IsAvailableMock.defaultExpectation.Counter, 1)
+		mm_want := mmIsAvailable.IsAvailableMock.defaultExpectation.params
+		mm_want_ptrs := mmIsAvailable.IsAvailableMock.defaultExpectation.paramPtrs
+
+		mm_got := BttMockIsAvailableParams{ctx, device}
+
+		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
+				mmIsAvailable.t.Errorf("BttMock.IsAvailable got unexpected parameter ctx, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmIsAvailable.IsAvailableMock.defaultExpectation.expectationOrigins.originCtx, *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
+			}
+
+			if mm_want_ptrs.device != nil && !minimock.Equal(*mm_want_ptrs.device, mm_got.device) {
+				mmIsAvailable.t.Errorf("BttMock.IsAvailable got unexpected parameter device, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmIsAvailable.IsAvailableMock.defaultExpectation.expectationOrigins.originDevice, *mm_want_ptrs.device, mm_got.device, minimock.Diff(*mm_want_ptrs.device, mm_got.device))
+			}
+
+		} else if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmIsAvailable.t.Errorf("BttMock.IsAvailable got unexpected parameters, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+				mmIsAvailable.IsAvailableMock.defaultExpectation.expectationOrigins.origin, *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmIsAvailable.IsAvailableMock.defaultExpectation.results
+		if mm_results == nil {
+			mmIsAvailable.t.Fatal("No results are set for the BttMock.IsAvailable")
+		}
+		return (*mm_results).b1, (*mm_results).err
+	}
+	if mmIsAvailable.funcIsAvailable != nil {
+		return mmIsAvailable.funcIsAvailable(ctx, device)
+	}
+	mmIsAvailable.t.Fatalf("Unexpected call to BttMock.IsAvailable. %v %v", ctx, device)
+	return
+}
+
+// IsAvailableAfterCounter returns a count of finished BttMock.IsAvailable invocations
+func (mmIsAvailable *BttMock) IsAvailableAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmIsAvailable.afterIsAvailableCounter)
+}
+
+// IsAvailableBeforeCounter returns a count of BttMock.IsAvailable invocations
+func (mmIsAvailable *BttMock) IsAvailableBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmIsAvailable.beforeIsAvailableCounter)
+}
+
+// Calls returns a list of arguments used in each call to BttMock.IsAvailable.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmIsAvailable *mBttMockIsAvailable) Calls() []*BttMockIsAvailableParams {
+	mmIsAvailable.mutex.RLock()
+
+	argCopy := make([]*BttMockIsAvailableParams, len(mmIsAvailable.callArgs))
+	copy(argCopy, mmIsAvailable.callArgs)
+
+	mmIsAvailable.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockIsAvailableDone returns true if the count of the IsAvailable invocations corresponds
+// the number of defined expectations
+func (m *BttMock) MinimockIsAvailableDone() bool {
+	if m.IsAvailableMock.optional {
+		// Optional methods provide '0 or more' call count restriction.
+		return true
+	}
+
+	for _, e := range m.IsAvailableMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	return m.IsAvailableMock.invocationsDone()
+}
+
+// MinimockIsAvailableInspect logs each unmet expectation
+func (m *BttMock) MinimockIsAvailableInspect() {
+	for _, e := range m.IsAvailableMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to BttMock.IsAvailable at\n%s with params: %#v", e.expectationOrigins.origin, *e.params)
+		}
+	}
+
+	afterIsAvailableCounter := mm_atomic.LoadUint64(&m.afterIsAvailableCounter)
+	// if default expectation was set then invocations count should be greater than zero
+	if m.IsAvailableMock.defaultExpectation != nil && afterIsAvailableCounter < 1 {
+		if m.IsAvailableMock.defaultExpectation.params == nil {
+			m.t.Errorf("Expected call to BttMock.IsAvailable at\n%s", m.IsAvailableMock.defaultExpectation.returnOrigin)
+		} else {
+			m.t.Errorf("Expected call to BttMock.IsAvailable at\n%s with params: %#v", m.IsAvailableMock.defaultExpectation.expectationOrigins.origin, *m.IsAvailableMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcIsAvailable != nil && afterIsAvailableCounter < 1 {
+		m.t.Errorf("Expected call to BttMock.IsAvailable at\n%s", m.funcIsAvailableOrigin)
+	}
+
+	if !m.IsAvailableMock.invocationsDone() && afterIsAvailableCounter > 0 {
+		m.t.Errorf("Expected %d calls to BttMock.IsAvailable at\n%s but found %d calls",
+			mm_atomic.LoadUint64(&m.IsAvailableMock.expectedInvocations), m.IsAvailableMock.expectedInvocationsOrigin, afterIsAvailableCounter)
 	}
 }
 
@@ -8414,23 +8777,336 @@ func (m *BttMock) MinimockToggleListeningInspect() {
 	}
 }
 
+type mBttMockUninstall struct {
+	optional           bool
+	mock               *BttMock
+	defaultExpectation *BttMockUninstallExpectation
+	expectations       []*BttMockUninstallExpectation
+
+	callArgs []*BttMockUninstallParams
+	mutex    sync.RWMutex
+
+	expectedInvocations       uint64
+	expectedInvocationsOrigin string
+}
+
+// BttMockUninstallExpectation specifies expectation struct of the Btt.Uninstall
+type BttMockUninstallExpectation struct {
+	mock               *BttMock
+	params             *BttMockUninstallParams
+	paramPtrs          *BttMockUninstallParamPtrs
+	expectationOrigins BttMockUninstallExpectationOrigins
+	results            *BttMockUninstallResults
+	returnOrigin       string
+	Counter            uint64
+}
+
+// BttMockUninstallParams contains parameters of the Btt.Uninstall
+type BttMockUninstallParams struct {
+	ctx context.Context
+}
+
+// BttMockUninstallParamPtrs contains pointers to parameters of the Btt.Uninstall
+type BttMockUninstallParamPtrs struct {
+	ctx *context.Context
+}
+
+// BttMockUninstallResults contains results of the Btt.Uninstall
+type BttMockUninstallResults struct {
+	err error
+}
+
+// BttMockUninstallOrigins contains origins of expectations of the Btt.Uninstall
+type BttMockUninstallExpectationOrigins struct {
+	origin    string
+	originCtx string
+}
+
+// Marks this method to be optional. The default behavior of any method with Return() is '1 or more', meaning
+// the test will fail minimock's automatic final call check if the mocked method was not called at least once.
+// Optional() makes method check to work in '0 or more' mode.
+// It is NOT RECOMMENDED to use this option unless you really need it, as default behaviour helps to
+// catch the problems when the expected method call is totally skipped during test run.
+func (mmUninstall *mBttMockUninstall) Optional() *mBttMockUninstall {
+	mmUninstall.optional = true
+	return mmUninstall
+}
+
+// Expect sets up expected params for Btt.Uninstall
+func (mmUninstall *mBttMockUninstall) Expect(ctx context.Context) *mBttMockUninstall {
+	if mmUninstall.mock.funcUninstall != nil {
+		mmUninstall.mock.t.Fatalf("BttMock.Uninstall mock is already set by Set")
+	}
+
+	if mmUninstall.defaultExpectation == nil {
+		mmUninstall.defaultExpectation = &BttMockUninstallExpectation{}
+	}
+
+	if mmUninstall.defaultExpectation.paramPtrs != nil {
+		mmUninstall.mock.t.Fatalf("BttMock.Uninstall mock is already set by ExpectParams functions")
+	}
+
+	mmUninstall.defaultExpectation.params = &BttMockUninstallParams{ctx}
+	mmUninstall.defaultExpectation.expectationOrigins.origin = minimock.CallerInfo(1)
+	for _, e := range mmUninstall.expectations {
+		if minimock.Equal(e.params, mmUninstall.defaultExpectation.params) {
+			mmUninstall.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmUninstall.defaultExpectation.params)
+		}
+	}
+
+	return mmUninstall
+}
+
+// ExpectCtxParam1 sets up expected param ctx for Btt.Uninstall
+func (mmUninstall *mBttMockUninstall) ExpectCtxParam1(ctx context.Context) *mBttMockUninstall {
+	if mmUninstall.mock.funcUninstall != nil {
+		mmUninstall.mock.t.Fatalf("BttMock.Uninstall mock is already set by Set")
+	}
+
+	if mmUninstall.defaultExpectation == nil {
+		mmUninstall.defaultExpectation = &BttMockUninstallExpectation{}
+	}
+
+	if mmUninstall.defaultExpectation.params != nil {
+		mmUninstall.mock.t.Fatalf("BttMock.Uninstall mock is already set by Expect")
+	}
+
+	if mmUninstall.defaultExpectation.paramPtrs == nil {
+		mmUninstall.defaultExpectation.paramPtrs = &BttMockUninstallParamPtrs{}
+	}
+	mmUninstall.defaultExpectation.paramPtrs.ctx = &ctx
+	mmUninstall.defaultExpectation.expectationOrigins.originCtx = minimock.CallerInfo(1)
+
+	return mmUninstall
+}
+
+// Inspect accepts an inspector function that has same arguments as the Btt.Uninstall
+func (mmUninstall *mBttMockUninstall) Inspect(f func(ctx context.Context)) *mBttMockUninstall {
+	if mmUninstall.mock.inspectFuncUninstall != nil {
+		mmUninstall.mock.t.Fatalf("Inspect function is already set for BttMock.Uninstall")
+	}
+
+	mmUninstall.mock.inspectFuncUninstall = f
+
+	return mmUninstall
+}
+
+// Return sets up results that will be returned by Btt.Uninstall
+func (mmUninstall *mBttMockUninstall) Return(err error) *BttMock {
+	if mmUninstall.mock.funcUninstall != nil {
+		mmUninstall.mock.t.Fatalf("BttMock.Uninstall mock is already set by Set")
+	}
+
+	if mmUninstall.defaultExpectation == nil {
+		mmUninstall.defaultExpectation = &BttMockUninstallExpectation{mock: mmUninstall.mock}
+	}
+	mmUninstall.defaultExpectation.results = &BttMockUninstallResults{err}
+	mmUninstall.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
+	return mmUninstall.mock
+}
+
+// Set uses given function f to mock the Btt.Uninstall method
+func (mmUninstall *mBttMockUninstall) Set(f func(ctx context.Context) (err error)) *BttMock {
+	if mmUninstall.defaultExpectation != nil {
+		mmUninstall.mock.t.Fatalf("Default expectation is already set for the Btt.Uninstall method")
+	}
+
+	if len(mmUninstall.expectations) > 0 {
+		mmUninstall.mock.t.Fatalf("Some expectations are already set for the Btt.Uninstall method")
+	}
+
+	mmUninstall.mock.funcUninstall = f
+	mmUninstall.mock.funcUninstallOrigin = minimock.CallerInfo(1)
+	return mmUninstall.mock
+}
+
+// When sets expectation for the Btt.Uninstall which will trigger the result defined by the following
+// Then helper
+func (mmUninstall *mBttMockUninstall) When(ctx context.Context) *BttMockUninstallExpectation {
+	if mmUninstall.mock.funcUninstall != nil {
+		mmUninstall.mock.t.Fatalf("BttMock.Uninstall mock is already set by Set")
+	}
+
+	expectation := &BttMockUninstallExpectation{
+		mock:               mmUninstall.mock,
+		params:             &BttMockUninstallParams{ctx},
+		expectationOrigins: BttMockUninstallExpectationOrigins{origin: minimock.CallerInfo(1)},
+	}
+	mmUninstall.expectations = append(mmUninstall.expectations, expectation)
+	return expectation
+}
+
+// Then sets up Btt.Uninstall return parameters for the expectation previously defined by the When method
+func (e *BttMockUninstallExpectation) Then(err error) *BttMock {
+	e.results = &BttMockUninstallResults{err}
+	return e.mock
+}
+
+// Times sets number of times Btt.Uninstall should be invoked
+func (mmUninstall *mBttMockUninstall) Times(n uint64) *mBttMockUninstall {
+	if n == 0 {
+		mmUninstall.mock.t.Fatalf("Times of BttMock.Uninstall mock can not be zero")
+	}
+	mm_atomic.StoreUint64(&mmUninstall.expectedInvocations, n)
+	mmUninstall.expectedInvocationsOrigin = minimock.CallerInfo(1)
+	return mmUninstall
+}
+
+func (mmUninstall *mBttMockUninstall) invocationsDone() bool {
+	if len(mmUninstall.expectations) == 0 && mmUninstall.defaultExpectation == nil && mmUninstall.mock.funcUninstall == nil {
+		return true
+	}
+
+	totalInvocations := mm_atomic.LoadUint64(&mmUninstall.mock.afterUninstallCounter)
+	expectedInvocations := mm_atomic.LoadUint64(&mmUninstall.expectedInvocations)
+
+	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
+}
+
+// Uninstall implements Btt
+func (mmUninstall *BttMock) Uninstall(ctx context.Context) (err error) {
+	mm_atomic.AddUint64(&mmUninstall.beforeUninstallCounter, 1)
+	defer mm_atomic.AddUint64(&mmUninstall.afterUninstallCounter, 1)
+
+	mmUninstall.t.Helper()
+
+	if mmUninstall.inspectFuncUninstall != nil {
+		mmUninstall.inspectFuncUninstall(ctx)
+	}
+
+	mm_params := BttMockUninstallParams{ctx}
+
+	// Record call args
+	mmUninstall.UninstallMock.mutex.Lock()
+	mmUninstall.UninstallMock.callArgs = append(mmUninstall.UninstallMock.callArgs, &mm_params)
+	mmUninstall.UninstallMock.mutex.Unlock()
+
+	for _, e := range mmUninstall.UninstallMock.expectations {
+		if minimock.Equal(*e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.err
+		}
+	}
+
+	if mmUninstall.UninstallMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmUninstall.UninstallMock.defaultExpectation.Counter, 1)
+		mm_want := mmUninstall.UninstallMock.defaultExpectation.params
+		mm_want_ptrs := mmUninstall.UninstallMock.defaultExpectation.paramPtrs
+
+		mm_got := BttMockUninstallParams{ctx}
+
+		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
+				mmUninstall.t.Errorf("BttMock.Uninstall got unexpected parameter ctx, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmUninstall.UninstallMock.defaultExpectation.expectationOrigins.originCtx, *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
+			}
+
+		} else if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmUninstall.t.Errorf("BttMock.Uninstall got unexpected parameters, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+				mmUninstall.UninstallMock.defaultExpectation.expectationOrigins.origin, *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmUninstall.UninstallMock.defaultExpectation.results
+		if mm_results == nil {
+			mmUninstall.t.Fatal("No results are set for the BttMock.Uninstall")
+		}
+		return (*mm_results).err
+	}
+	if mmUninstall.funcUninstall != nil {
+		return mmUninstall.funcUninstall(ctx)
+	}
+	mmUninstall.t.Fatalf("Unexpected call to BttMock.Uninstall. %v", ctx)
+	return
+}
+
+// UninstallAfterCounter returns a count of finished BttMock.Uninstall invocations
+func (mmUninstall *BttMock) UninstallAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmUninstall.afterUninstallCounter)
+}
+
+// UninstallBeforeCounter returns a count of BttMock.Uninstall invocations
+func (mmUninstall *BttMock) UninstallBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmUninstall.beforeUninstallCounter)
+}
+
+// Calls returns a list of arguments used in each call to BttMock.Uninstall.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmUninstall *mBttMockUninstall) Calls() []*BttMockUninstallParams {
+	mmUninstall.mutex.RLock()
+
+	argCopy := make([]*BttMockUninstallParams, len(mmUninstall.callArgs))
+	copy(argCopy, mmUninstall.callArgs)
+
+	mmUninstall.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockUninstallDone returns true if the count of the Uninstall invocations corresponds
+// the number of defined expectations
+func (m *BttMock) MinimockUninstallDone() bool {
+	if m.UninstallMock.optional {
+		// Optional methods provide '0 or more' call count restriction.
+		return true
+	}
+
+	for _, e := range m.UninstallMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	return m.UninstallMock.invocationsDone()
+}
+
+// MinimockUninstallInspect logs each unmet expectation
+func (m *BttMock) MinimockUninstallInspect() {
+	for _, e := range m.UninstallMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to BttMock.Uninstall at\n%s with params: %#v", e.expectationOrigins.origin, *e.params)
+		}
+	}
+
+	afterUninstallCounter := mm_atomic.LoadUint64(&m.afterUninstallCounter)
+	// if default expectation was set then invocations count should be greater than zero
+	if m.UninstallMock.defaultExpectation != nil && afterUninstallCounter < 1 {
+		if m.UninstallMock.defaultExpectation.params == nil {
+			m.t.Errorf("Expected call to BttMock.Uninstall at\n%s", m.UninstallMock.defaultExpectation.returnOrigin)
+		} else {
+			m.t.Errorf("Expected call to BttMock.Uninstall at\n%s with params: %#v", m.UninstallMock.defaultExpectation.expectationOrigins.origin, *m.UninstallMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcUninstall != nil && afterUninstallCounter < 1 {
+		m.t.Errorf("Expected call to BttMock.Uninstall at\n%s", m.funcUninstallOrigin)
+	}
+
+	if !m.UninstallMock.invocationsDone() && afterUninstallCounter > 0 {
+		m.t.Errorf("Expected %d calls to BttMock.Uninstall at\n%s but found %d calls",
+			mm_atomic.LoadUint64(&m.UninstallMock.expectedInvocations), m.UninstallMock.expectedInvocationsOrigin, afterUninstallCounter)
+	}
+}
+
 // MinimockFinish checks that all mocked methods have been called the expected number of times
 func (m *BttMock) MinimockFinish() {
 	m.finishOnce.Do(func() {
 		if !m.minimockDone() {
-			m.MinimockClearInspect()
-
 			m.MinimockDisableCleanViewInspect()
 
 			m.MinimockEnableCleanModeInspect()
 
 			m.MinimockFloatingPageInspect()
 
+			m.MinimockHealthInspect()
+
 			m.MinimockHideClipboardInspect()
 
 			m.MinimockHideFloatingInspect()
 
-			m.MinimockInitializeInspect()
+			m.MinimockInstallInspect()
+
+			m.MinimockIsAvailableInspect()
 
 			m.MinimockIsRunningInspect()
 
@@ -8469,6 +9145,8 @@ func (m *BttMock) MinimockFinish() {
 			m.MinimockTextInspect()
 
 			m.MinimockToggleListeningInspect()
+
+			m.MinimockUninstallInspect()
 		}
 	})
 }
@@ -8492,13 +9170,14 @@ func (m *BttMock) MinimockWait(timeout mm_time.Duration) {
 func (m *BttMock) minimockDone() bool {
 	done := true
 	return done &&
-		m.MinimockClearDone() &&
 		m.MinimockDisableCleanViewDone() &&
 		m.MinimockEnableCleanModeDone() &&
 		m.MinimockFloatingPageDone() &&
+		m.MinimockHealthDone() &&
 		m.MinimockHideClipboardDone() &&
 		m.MinimockHideFloatingDone() &&
-		m.MinimockInitializeDone() &&
+		m.MinimockInstallDone() &&
+		m.MinimockIsAvailableDone() &&
 		m.MinimockIsRunningDone() &&
 		m.MinimockLoadDevicesDone() &&
 		m.MinimockSelectClipboardDone() &&
@@ -8517,5 +9196,6 @@ func (m *BttMock) minimockDone() bool {
 		m.MinimockStopListeningDone() &&
 		m.MinimockStreamTextDone() &&
 		m.MinimockTextDone() &&
-		m.MinimockToggleListeningDone()
+		m.MinimockToggleListeningDone() &&
+		m.MinimockUninstallDone()
 }

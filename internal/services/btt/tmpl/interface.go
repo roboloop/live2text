@@ -19,7 +19,13 @@ type Renderer interface {
 	SelectClipboard(clipboard string) string
 
 	FloatingPage() string
-	CloseSettings(cleanViewMode string, closeAction map[string]any, openCleanViewAction map[string]any) string
+	CloseSettings(
+		cleanViewMode string,
+		closeAction map[string]any,
+		openCleanViewAction map[string]any,
+		appUUID string,
+		refreshAppPayload map[string]any,
+	) string
 	OpenSettings(action map[string]any) string
 	Toggle() string
 	ListenSocket(socketPath string) string

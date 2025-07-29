@@ -1,164 +1,276 @@
 package text
 
 import (
+	"slices"
 	"strings"
+	"sync"
 	"time"
+	"unicode"
 	"unicode/utf8"
 )
 
-type section struct {
-	text    string
-	isFinal bool
-}
-
 type lineBreak struct {
-	sectionID int
-	offset    int
+	segmentIndex int
+	runeOffset   int
 }
 
+// Formatter is responsible for displaying real-time recognized text as
+// subtitles, maintaining a fixed number of visible lines (default: 2).
+// The format of incoming data: `text` + `isFinal` mark.
+// If `isFinal` is true, the previous section is replaced with the current.
+//
+// Older content is discarded once the line limit is exceeded,
+// ensuring only the most recent lines are shown.
 type Formatter struct {
-	totalLines int
-	perLine    int
-	sections   []section
-	newLines   []lineBreak
+	lineCount     int
+	lineRuneCount int
+
+	prevIsFinal      bool
+	lineSeparator    string
+	segmentSeparator string
+	segments         []string
+	lineBreaks       []lineBreak
+	mu               sync.RWMutex
+
+	commitedLinesOffset          int
+	lineBreaksOfPrevSegmentCount int
 }
 
-func NewSubtitleFormatter(totalLines, perLine int) *Formatter {
-	if totalLines == 0 {
-		totalLines = 2
+// NewSubtitleFormatter creates a new instance, where
+// `displayLineLimit` emphasizes an exact number of output lines
+// `lineRuneCount` describes line length in character count.
+func NewSubtitleFormatter(lineCount int, lineCharCount int) *Formatter {
+	if lineCount == 0 {
+		lineCount = 2
 	}
-	if perLine == 0 {
-		perLine = 80
+	if lineCharCount == 0 {
+		lineCharCount = 80
 	}
 	return &Formatter{
-		totalLines: totalLines,
-		perLine:    perLine,
+		lineCount:     lineCount,
+		lineRuneCount: lineCharCount,
+
+		prevIsFinal:      false,
+		lineSeparator:    "\n",
+		segmentSeparator: " ",
+		segments:         []string{},
+		lineBreaks:       []lineBreak{},
 	}
 }
 
-//nolint:gocognit // TODO: simplify
 func (f *Formatter) Append(text string, isFinal bool) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	text = sanitize(text)
+	if text == "" && f.prevIsFinal && isFinal {
+		return
+	}
+
+	text = capitalize(text)
 	if isFinal {
-		text += "."
+		text = finalize(text)
 	}
 
-	separatorLength := 1
-
-	if len(f.sections) == 0 || f.sections[len(f.sections)-1].isFinal {
-		f.sections = append(f.sections, section{text: text, isFinal: isFinal})
+	if len(f.segments) == 0 || f.prevIsFinal {
+		f.segments = append(f.segments, text)
 	} else {
-		f.sections[len(f.sections)-1] = section{text: text, isFinal: isFinal}
-		// Remove line breaks related to last section
-		var newLines []lineBreak
-		for _, l := range f.newLines {
-			if l.sectionID != len(f.sections)-1 {
-				newLines = append(newLines, l)
-			}
-		}
-		f.newLines = newLines
+		f.segments[len(f.segments)-1] = text
 	}
+	f.clearLineBreaksOfLastSegment()
+	f.fillLineBreaksOfLastSegment()
+	f.adjustSkippedSegments()
+	f.prevIsFinal = isFinal
 
-	lineLength := 0
-	startSectionID := 0
-	if len(f.newLines) > 0 {
-		sectionID := f.newLines[len(f.newLines)-1].sectionID
-		offset := f.newLines[len(f.newLines)-1].offset
-		lineLength = utf8.RuneCountInString(f.sections[sectionID].text) - offset
-		startSectionID = sectionID + 1
-	}
-	for i := startSectionID; i < len(f.sections)-1; i++ {
-		lineLength += separatorLength + utf8.RuneCountInString(f.sections[i].text)
-	}
+	f.dropOutdatedSegments()
+}
 
-	words := strings.Fields(text)
-	newSectionID := len(f.sections) - 1
-	offset := 0
-	for i, word := range words {
-		if utf8.RuneCountInString(word) > f.perLine {
-			wordRunes := []rune(word)
-			word = string(wordRunes[:f.perLine])
+func (f *Formatter) clearLineBreaksOfLastSegment() {
+	activeSegmentIndex := len(f.segments) - 1
+	index := slices.IndexFunc(f.lineBreaks, func(lb lineBreak) bool {
+		return lb.segmentIndex == activeSegmentIndex
+	})
+	if index != -1 {
+		f.lineBreaks = f.lineBreaks[:index]
+	}
+}
+
+func (f *Formatter) fillLineBreaksOfLastSegment() {
+	lineLength := f.commitedLineLength()
+	activeSegmentIndex := len(f.segments) - 1
+	segment := f.segments[activeSegmentIndex]
+	runeOffset := 0
+	for i, word := range strings.Fields(segment) {
+		// Dirty hack for not implementing that case
+		if utf8.RuneCountInString(word) > f.lineRuneCount {
+			runes := []rune(word)
+			word = string(runes[:f.lineRuneCount])
 		}
-		partLength := utf8.RuneCountInString(word)
+
+		var wordLength int
+		// Count the space before the word (not applied to the first word)
 		if i > 0 {
-			partLength += separatorLength
+			wordLength = utf8.RuneCountInString(f.segmentSeparator)
 		}
-		lineLength += partLength
-		if lineLength > f.perLine {
-			f.newLines = append(f.newLines, lineBreak{sectionID: newSectionID, offset: offset})
+		wordLength += utf8.RuneCountInString(word)
+		lineLength += wordLength
+
+		// If the line is longer than should be, then cut it
+		if lineLength > f.lineRuneCount {
+			f.lineBreaks = append(f.lineBreaks, lineBreak{segmentIndex: activeSegmentIndex, runeOffset: runeOffset})
 			lineLength = utf8.RuneCountInString(word)
 		}
-		offset += partLength
+		runeOffset += wordLength
+	}
+}
+
+func (f *Formatter) adjustSkippedSegments() {
+	if f.prevIsFinal {
+		f.commitedLinesOffset = 0
+		f.lineBreaksOfPrevSegmentCount = 0
+		return
 	}
 
-	// Normalize if lines exceed limit
-	lastSectionID := len(f.sections) - 1
-	newLinesBeforeNonFinal := 0
-	if !f.sections[lastSectionID].isFinal {
-		for _, line := range f.newLines {
-			if line.sectionID >= lastSectionID {
-				break
+	activeSegmentIndex := len(f.segments) - 1
+	lineBreaksOfActiveSegmentCount := 0
+	for _, lb := range f.lineBreaks {
+		if lb.segmentIndex == activeSegmentIndex {
+			lineBreaksOfActiveSegmentCount += 1
+		}
+	}
+
+	f.commitedLinesOffset = max(0, f.lineBreaksOfPrevSegmentCount-lineBreaksOfActiveSegmentCount)
+	f.lineBreaksOfPrevSegmentCount = lineBreaksOfActiveSegmentCount
+}
+
+func (f *Formatter) dropOutdatedSegments() {
+	lineBreaksCount := 0
+	if !f.prevIsFinal {
+		for _, line := range f.lineBreaks {
+			if line.segmentIndex == len(f.segments)-1 {
+				lineBreaksCount++
 			}
-			newLinesBeforeNonFinal++
 		}
 	}
 
-	if len(f.newLines)-newLinesBeforeNonFinal > f.totalLines {
-		extracts := len(f.newLines) - f.totalLines
-		f.newLines = f.newLines[extracts:]
-
-		firstSectionID := f.newLines[0].sectionID
-		f.sections = f.sections[firstSectionID:]
-		for i := range f.newLines {
-			f.newLines[i].sectionID -= firstSectionID
-		}
+	if len(f.lineBreaks)-lineBreaksCount <= f.lineCount {
+		return
 	}
+
+	linesToDrop := len(f.lineBreaks) - f.lineCount - lineBreaksCount
+	f.lineBreaks = f.lineBreaks[linesToDrop:]
+
+	segmentIndexOffset := f.lineBreaks[0].segmentIndex
+	f.segments = f.segments[segmentIndexOffset:]
+	for i := range f.lineBreaks {
+		f.lineBreaks[i].segmentIndex -= segmentIndexOffset
+	}
+}
+
+func (f *Formatter) commitedLineLength() int {
+	commitedLineLength := 0
+	startSegmentIndex := 0
+	if len(f.lineBreaks) > 0 {
+		lastLineBreak := f.lineBreaks[len(f.lineBreaks)-1]
+		segmentIndex := lastLineBreak.segmentIndex
+		runeOffset := lastLineBreak.runeOffset
+		commitedLineLength = utf8.RuneCountInString(f.segments[segmentIndex]) - runeOffset
+
+		startSegmentIndex = segmentIndex + 1
+	}
+	for i := startSegmentIndex; i < len(f.segments)-1; i++ {
+		commitedLineLength += utf8.RuneCountInString(f.segmentSeparator) + utf8.RuneCountInString(f.segments[i])
+	}
+
+	return commitedLineLength
 }
 
 func (f *Formatter) Format() string {
-	lines := [][]string{{}}
-	lineIndex := 0
+	f.mu.RLock()
+	defer f.mu.RUnlock()
 
-	for i, section := range f.sections {
-		text := section.text
-		var offsets []int
+	if len(f.segments) == 0 {
+		return ""
+	}
 
-		for _, l := range f.newLines {
-			if l.sectionID == i {
-				offsets = append(offsets, l.offset)
-				lines = append(lines, []string{})
+	var lines [][]string
+	// At least one line output is expected
+	lines = append(lines, []string{})
+
+	for i, s := range f.segments {
+		var runeOffsets []int
+
+		// Find all line breaks that apply to this section
+		for _, lb := range f.lineBreaks {
+			if lb.segmentIndex == i {
+				runeOffsets = append(runeOffsets, lb.runeOffset)
 			}
 		}
 
-		runes := []rune(text)
-
-		if len(offsets) == 0 {
-			lines[lineIndex] = append(lines[lineIndex], text)
+		// If no line breaks in this section, add entire text to current line
+		if len(runeOffsets) == 0 {
+			lines[len(lines)-1] = append(lines[len(lines)-1], s)
 			continue
 		}
 
-		if offsets[0] == 0 {
-			lineIndex++
-		} else {
-			offsets = append([]int{0}, offsets...)
+		// combine all segments according to their offsets
+		runes := []rune(s)
+		prevRuneOffset := 0
+		for _, runeOffset := range runeOffsets {
+			if runeOffset != 0 {
+				fragment := strings.TrimLeft(string(runes[prevRuneOffset:runeOffset]), f.segmentSeparator)
+				lines[len(lines)-1] = append(lines[len(lines)-1], fragment)
+			}
+
+			lines = append(lines, []string{})
+			prevRuneOffset = runeOffset
 		}
 
-		for j := range len(offsets) - 1 {
-			segment := strings.TrimLeft(string(runes[offsets[j]:offsets[j+1]]), " ")
-			lines[lineIndex] = append(lines[lineIndex], segment)
-			lineIndex++
-		}
-		lines[lineIndex] = append(lines[lineIndex], strings.TrimLeft(string(runes[offsets[len(offsets)-1]:]), " "))
+		// Add the final segment (from last offset to end of the segment)
+		lines[len(lines)-1] = append(
+			lines[len(lines)-1],
+			strings.TrimLeft(string(runes[prevRuneOffset:]), f.segmentSeparator),
+		)
 	}
 
+	// Ensure we only show the most recent lines if exceeding our display limit
 	start := 0
-	if len(lines) > f.totalLines {
-		start = len(lines) - f.totalLines
+	if len(lines) > f.lineCount {
+		start = len(lines) - f.lineCount
 	}
-	var formatted []string
+	start += f.commitedLinesOffset
+
+	var committedLines []string
 	for _, line := range lines[start:] {
-		formatted = append(formatted, strings.Join(line, " "))
+		committedLines = append(committedLines, strings.Join(line, f.segmentSeparator))
 	}
-	return strings.Join(formatted, "\n")
+
+	// Padding the list of committed lines
+	for i := len(committedLines); i < f.lineCount; i++ {
+		committedLines = append(committedLines, "")
+	}
+
+	return strings.Join(committedLines, f.lineSeparator)
+}
+
+func sanitize(text string) string {
+	return strings.TrimSpace(text)
+}
+
+func capitalize(text string) string {
+	if len(text) == 0 {
+		return text
+	}
+	runes := []rune(text)
+	if r := runes[0]; unicode.IsLetter(r) && unicode.IsLower(r) {
+		runes[0] = unicode.ToUpper(r)
+		return string(runes)
+	}
+	return text
+}
+
+func finalize(text string) string {
+	return text + "."
 }
 
 type subtitleWriter struct {

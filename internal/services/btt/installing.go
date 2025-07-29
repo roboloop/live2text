@@ -10,19 +10,23 @@ import (
 	"live2text/internal/services/metrics"
 )
 
-type initializingComponent struct {
+type installingComponent struct {
 	client    client.Client
 	renderer  tmpl.Renderer
 	languages []string
 }
 
-func NewInitializingComponent(client client.Client, renderer tmpl.Renderer, languages []string) InitializingComponent {
-	return &initializingComponent{client: client, renderer: renderer, languages: languages}
+func NewInstallingComponent(client client.Client, renderer tmpl.Renderer, languages []string) InstallingComponent {
+	return &installingComponent{
+		client:    client,
+		renderer:  renderer,
+		languages: languages,
+	}
 }
 
 type addingTriggerFunc func(ctx context.Context, parentUUID trigger.UUID, after trigger.Trigger) (trigger.Trigger, error)
 
-func (i *initializingComponent) Initialize(ctx context.Context) error {
+func (i *installingComponent) Install(ctx context.Context) error {
 	after := trigger.NewTrigger().AddOrder(trigger.OrderSettings)
 	settingsDir, err := i.addSettingsSection(ctx, "", after)
 	if err != nil {
@@ -35,11 +39,14 @@ func (i *initializingComponent) Initialize(ctx context.Context) error {
 	if err = i.addAppSection(ctx, "", cleanViewDir); err != nil {
 		return fmt.Errorf("cannot add app section: %w", err)
 	}
+	if err = i.adjustCloseSettings(ctx); err != nil {
+		return fmt.Errorf("cannot adjust close settings: %w", err)
+	}
 
 	return nil
 }
 
-func (i *initializingComponent) addSettingsSection(
+func (i *installingComponent) addSettingsSection(
 	ctx context.Context,
 	parentUUID trigger.UUID,
 	after trigger.Trigger,
@@ -62,7 +69,7 @@ func (i *initializingComponent) addSettingsSection(
 	}, nil)
 }
 
-func (i *initializingComponent) addCloseSettingsSection(
+func (i *installingComponent) addCloseSettingsSection(
 	ctx context.Context,
 	parentUUID trigger.UUID,
 	after trigger.Trigger,
@@ -71,8 +78,12 @@ func (i *initializingComponent) addCloseSettingsSection(
 		string(ViewModeClean),
 		trigger.NewCloseDirAction(),
 		trigger.NewOpenDirAction(trigger.TitleCleanViewDir),
+
+		// Keep empty values, later that would be changed
+		"",
+		map[string]any{},
 	)
-	closeDir := trigger.NewTapButton(trigger.TitleCloseDir, rendered).
+	closeDir := trigger.NewTapButton(trigger.TitleCloseSettingsDir, rendered).
 		AddCloseIcon().
 		AddOrderAfter(after)
 	if _, err := i.client.AddTrigger(ctx, closeDir, parentUUID); err != nil {
@@ -82,7 +93,7 @@ func (i *initializingComponent) addCloseSettingsSection(
 	return closeDir, nil
 }
 
-func (i *initializingComponent) addStatusSection(
+func (i *installingComponent) addStatusSection(
 	ctx context.Context,
 	parentUUID trigger.UUID,
 	after trigger.Trigger,
@@ -95,7 +106,7 @@ func (i *initializingComponent) addStatusSection(
 	return printStatus, nil
 }
 
-func (i *initializingComponent) addDeviceSection(
+func (i *installingComponent) addDeviceSection(
 	ctx context.Context,
 	parentUUID trigger.UUID,
 	after trigger.Trigger,
@@ -115,7 +126,7 @@ func (i *initializingComponent) addDeviceSection(
 	}, nil)
 }
 
-func (i *initializingComponent) addLanguageSection(
+func (i *installingComponent) addLanguageSection(
 	ctx context.Context,
 	parentUUID trigger.UUID,
 	after trigger.Trigger,
@@ -142,7 +153,7 @@ func (i *initializingComponent) addLanguageSection(
 }
 
 //nolint:dupl
-func (i *initializingComponent) addViewModeSection(
+func (i *installingComponent) addViewModeSection(
 	ctx context.Context,
 	parentUUID trigger.UUID,
 	after trigger.Trigger,
@@ -166,7 +177,7 @@ func (i *initializingComponent) addViewModeSection(
 	}, nil)
 }
 
-func (i *initializingComponent) addFloatingStateSection(
+func (i *installingComponent) addFloatingStateSection(
 	ctx context.Context,
 	parentUUID trigger.UUID,
 	after trigger.Trigger,
@@ -209,7 +220,7 @@ func (i *initializingComponent) addFloatingStateSection(
 }
 
 //nolint:dupl
-func (i *initializingComponent) addClipboardSection(
+func (i *installingComponent) addClipboardSection(
 	ctx context.Context,
 	parentUUID trigger.UUID,
 	after trigger.Trigger,
@@ -242,7 +253,7 @@ func (i *initializingComponent) addClipboardSection(
 	}, nil)
 }
 
-func (i *initializingComponent) addMetricsSection(
+func (i *installingComponent) addMetricsSection(
 	ctx context.Context,
 	parentUUID trigger.UUID,
 	after trigger.Trigger,
@@ -304,7 +315,7 @@ func (i *initializingComponent) addMetricsSection(
 	}, nil)
 }
 
-func (i *initializingComponent) addCleanViewSection(
+func (i *installingComponent) addCleanViewSection(
 	ctx context.Context,
 	parentUUID trigger.UUID,
 	after trigger.Trigger,
@@ -324,7 +335,7 @@ func (i *initializingComponent) addCleanViewSection(
 	)
 }
 
-func (i *initializingComponent) addAppSection(
+func (i *installingComponent) addAppSection(
 	ctx context.Context,
 	parentUUID trigger.UUID,
 	after trigger.Trigger,
@@ -339,7 +350,7 @@ func (i *initializingComponent) addAppSection(
 	return i.addAppTriggers(ctx, trigger.TitleApp, trigger.TitleClipboard, parentUUID, after)
 }
 
-func (i *initializingComponent) addAppTriggers(
+func (i *installingComponent) addAppTriggers(
 	ctx context.Context,
 	appTitle trigger.Title,
 	clipboardTitle trigger.Title,
@@ -359,7 +370,29 @@ func (i *initializingComponent) addAppTriggers(
 	}, after)
 }
 
-func (i *initializingComponent) Clear(ctx context.Context) error {
+func (i *installingComponent) adjustCloseSettings(ctx context.Context) error {
+	app, err := i.client.GetTrigger(ctx, trigger.TitleApp)
+	if err != nil {
+		return fmt.Errorf("cannot get app trigger: %w", err)
+	}
+
+	rendered := i.renderer.CloseSettings(
+		string(ViewModeClean),
+		trigger.NewCloseDirAction(),
+		trigger.NewOpenDirAction(trigger.TitleCleanViewDir),
+		app.UUID().String(),
+		map[string]any{},
+	)
+
+	patch := trigger.NewTapButton(trigger.TitleCloseSettingsDir, rendered)
+	if err = i.client.UpdateTrigger(ctx, trigger.TitleCloseSettingsDir, patch); err != nil {
+		return fmt.Errorf("cannot update close settings trigger: %w", err)
+	}
+
+	return nil
+}
+
+func (i *installingComponent) Uninstall(ctx context.Context) error {
 	action := trigger.NewCloseDirAction()
 	if err := i.client.TriggerAction(ctx, action); err != nil {
 		return fmt.Errorf("cannot close directory: %w", err)
@@ -376,7 +409,7 @@ func (i *initializingComponent) Clear(ctx context.Context) error {
 	return nil
 }
 
-func (i *initializingComponent) wrapAddingTrigger(t trigger.Trigger) addingTriggerFunc {
+func (i *installingComponent) wrapAddingTrigger(t trigger.Trigger) addingTriggerFunc {
 	return func(ctx context.Context, parentUUID trigger.UUID, after trigger.Trigger) (trigger.Trigger, error) {
 		t.AddOrderAfter(after)
 		if _, err := i.client.AddTrigger(ctx, t, parentUUID); err != nil {
@@ -386,7 +419,7 @@ func (i *initializingComponent) wrapAddingTrigger(t trigger.Trigger) addingTrigg
 	}
 }
 
-func (i *initializingComponent) addTriggers(
+func (i *installingComponent) addTriggers(
 	ctx context.Context,
 	parentUUID trigger.UUID,
 	fns []addingTriggerFunc,

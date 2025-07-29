@@ -29,14 +29,14 @@ func TestSelectClipboard(t *testing.T) {
 			expectedBody: "cannot decode request",
 		},
 		{
-			name: "validation failed",
+			name: "validation error",
 			body: `{"clipboard":"invalid"}`,
 
 			expectedCode: http.StatusBadRequest,
 			expectedBody: `{"clipboard":"clipboard is not valid"}`,
 		},
 		{
-			name: "select clipboard failed",
+			name: "select clipboard error",
 			body: `{"clipboard":"Shown"}`,
 			mockSelectClipboard: func() error {
 				return errors.New("dummy error")

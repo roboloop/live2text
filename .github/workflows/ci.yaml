@@ -33,9 +33,6 @@ jobs:
       - name: Build live2text
         run: go build -v ./cmd/live2text
 
-      - name: Build btt
-        run: go build -v ./cmd/btt
-
   test:
     runs-on: ubuntu-latest
     steps:

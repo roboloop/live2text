@@ -36,7 +36,7 @@ func TestStart(t *testing.T) {
 			expectedBody: "cannot decode request",
 		},
 		{
-			name: "audio list failed",
+			name: "audio list error",
 			body: "{}",
 			mockList: func() ([]string, error) {
 				return nil, errors.New("dummy error")
@@ -45,7 +45,7 @@ func TestStart(t *testing.T) {
 			expectedBody: "dummy error",
 		},
 		{
-			name: "validation failed",
+			name: "validation error",
 			body: `{"device":"foo","language":"bar"}`,
 			mockList: func() ([]string, error) {
 				return []string{"baz"}, nil

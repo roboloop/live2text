@@ -39,16 +39,31 @@ paths:
               schema:
                 type: string
 
-  /api/btt/selected-floating-state:
+  /api/btt/selected-floating:
     get:
-      summary: Get selected floating state
-      description: Returns the current floating state
-      operationId: getSelectedFloatingState
+      summary: Get selected floating
+      description: Returns the current floating
+      operationId: getSelectedFloating
       tags:
         - btt
       responses:
         '200':
-          description: The current floating state
+          description: The current floating
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /api/btt/selected-clipboard:
+    get:
+      summary: Get selected clipboard
+      description: Returns the current clipboard
+      operationId: getSelectedClipboard
+      tags:
+        - btt
+      responses:
+        '200':
+          description: The current clipboard
           content:
             text/plain:
               schema:
@@ -117,11 +132,11 @@ paths:
         '200':
           description: View mode selected successfully
 
-  /api/btt/select-floating-state:
+  /api/btt/select-floating:
     post:
-      summary: Select floating state
-      description: Sets the floating state of the application
-      operationId: selectFloatingState
+      summary: Select floating
+      description: Sets the floating of the application
+      operationId: selectFloating
       tags:
         - btt
       requestBody:
@@ -133,10 +148,31 @@ paths:
               properties:
                 state:
                   type: string
-                  description: The floating state to select
+                  description: The floating to select
       responses:
         '200':
-          description: Floating state selected successfully
+          description: Floating selected successfully
+
+  /api/btt/select-clipboard:
+    post:
+      summary: Select clipboard
+      description: Sets the clipboard of the application
+      operationId: selectClipboard
+      tags:
+        - btt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                state:
+                  type: string
+                  description: The clipboard to select
+      responses:
+        '200':
+          description: Clipboard selected successfully
 
   /api/btt/load-devices:
     post:
@@ -201,6 +237,21 @@ paths:
       responses:
         '200':
           description: Stream of transcribed text
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /api/btt/text:
+    get:
+      summary: Transcribed text
+      description: Provides a transcribed text
+      operationId: getText
+      tags:
+        - btt
+      responses:
+        '200':
+          description: The transcribed text
           content:
             text/event-stream:
               schema:

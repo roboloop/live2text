@@ -23,7 +23,7 @@ func TestSelectedDevice(t *testing.T) {
 		expectedBody    string
 	}{
 		{
-			name: "getting selected device failed",
+			name: "getting selected device error",
 			mockSelectedDevice: func() (string, error) {
 				return "", errors.New("dummy error")
 			},

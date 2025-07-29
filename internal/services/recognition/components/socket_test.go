@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -48,7 +49,6 @@ func TestHandleConn(t *testing.T) {
 
 	t.Run("cannot listen to the socket", func(t *testing.T) {
 		t.Parallel()
-		t.Skip("doesn't work in CI")
 
 		socketManager := background.NewSocketManager(logger.NilLogger)
 		defer socketManager.Close()
@@ -62,7 +62,8 @@ func TestHandleConn(t *testing.T) {
 			cancel()
 		}()
 
-		err := socketComponent.Listen(ctx, string([]byte{0x00}), formatter)
+		socketPath := filepath.Join(t.TempDir(), strings.Repeat("x", 200))
+		err := socketComponent.Listen(ctx, socketPath, formatter)
 
 		require.Error(t, err)
 		require.ErrorContains(t, err, "cannot listen to the socket")

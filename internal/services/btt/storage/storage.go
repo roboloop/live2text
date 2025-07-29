@@ -9,7 +9,6 @@ import (
 
 const (
 	variablePrefix            Key = "LIVE2TEXT_"
-	HostVariable                  = variablePrefix + "HOST"
 	SelectedDeviceVariable        = variablePrefix + "SELECTED_DEVICE"
 	SelectedLanguageVariable      = variablePrefix + "SELECTED_LANGUAGE"
 	SelectedFloatingVariable      = variablePrefix + "SELECTED_FLOATING"

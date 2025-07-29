@@ -22,9 +22,9 @@ type RendererMock struct {
 	beforeAppPlaceholderCounter uint64
 	AppPlaceholderMock          mRendererMockAppPlaceholder
 
-	funcCloseSettings          func(cleanViewMode string, closeAction map[string]any, openCleanViewAction map[string]any) (s1 string)
+	funcCloseSettings          func(cleanViewMode string, closeAction map[string]any, openCleanViewAction map[string]any, appUUID string, refreshAppPayload map[string]any) (s1 string)
 	funcCloseSettingsOrigin    string
-	inspectFuncCloseSettings   func(cleanViewMode string, closeAction map[string]any, openCleanViewAction map[string]any)
+	inspectFuncCloseSettings   func(cleanViewMode string, closeAction map[string]any, openCleanViewAction map[string]any, appUUID string, refreshAppPayload map[string]any)
 	afterCloseSettingsCounter  uint64
 	beforeCloseSettingsCounter uint64
 	CloseSettingsMock          mRendererMockCloseSettings
@@ -424,6 +424,8 @@ type RendererMockCloseSettingsParams struct {
 	cleanViewMode       string
 	closeAction         map[string]any
 	openCleanViewAction map[string]any
+	appUUID             string
+	refreshAppPayload   map[string]any
 }
 
 // RendererMockCloseSettingsParamPtrs contains pointers to parameters of the Renderer.CloseSettings
@@ -431,6 +433,8 @@ type RendererMockCloseSettingsParamPtrs struct {
 	cleanViewMode       *string
 	closeAction         *map[string]any
 	openCleanViewAction *map[string]any
+	appUUID             *string
+	refreshAppPayload   *map[string]any
 }
 
 // RendererMockCloseSettingsResults contains results of the Renderer.CloseSettings
@@ -444,6 +448,8 @@ type RendererMockCloseSettingsExpectationOrigins struct {
 	originCleanViewMode       string
 	originCloseAction         string
 	originOpenCleanViewAction string
+	originAppUUID             string
+	originRefreshAppPayload   string
 }
 
 // Marks this method to be optional. The default behavior of any method with Return() is '1 or more', meaning
@@ -457,7 +463,7 @@ func (mmCloseSettings *mRendererMockCloseSettings) Optional() *mRendererMockClos
 }
 
 // Expect sets up expected params for Renderer.CloseSettings
-func (mmCloseSettings *mRendererMockCloseSettings) Expect(cleanViewMode string, closeAction map[string]any, openCleanViewAction map[string]any) *mRendererMockCloseSettings {
+func (mmCloseSettings *mRendererMockCloseSettings) Expect(cleanViewMode string, closeAction map[string]any, openCleanViewAction map[string]any, appUUID string, refreshAppPayload map[string]any) *mRendererMockCloseSettings {
 	if mmCloseSettings.mock.funcCloseSettings != nil {
 		mmCloseSettings.mock.t.Fatalf("RendererMock.CloseSettings mock is already set by Set")
 	}
@@ -470,7 +476,7 @@ func (mmCloseSettings *mRendererMockCloseSettings) Expect(cleanViewMode string, 
 		mmCloseSettings.mock.t.Fatalf("RendererMock.CloseSettings mock is already set by ExpectParams functions")
 	}
 
-	mmCloseSettings.defaultExpectation.params = &RendererMockCloseSettingsParams{cleanViewMode, closeAction, openCleanViewAction}
+	mmCloseSettings.defaultExpectation.params = &RendererMockCloseSettingsParams{cleanViewMode, closeAction, openCleanViewAction, appUUID, refreshAppPayload}
 	mmCloseSettings.defaultExpectation.expectationOrigins.origin = minimock.CallerInfo(1)
 	for _, e := range mmCloseSettings.expectations {
 		if minimock.Equal(e.params, mmCloseSettings.defaultExpectation.params) {
@@ -550,8 +556,54 @@ func (mmCloseSettings *mRendererMockCloseSettings) ExpectOpenCleanViewActionPara
 	return mmCloseSettings
 }
 
+// ExpectAppUUIDParam4 sets up expected param appUUID for Renderer.CloseSettings
+func (mmCloseSettings *mRendererMockCloseSettings) ExpectAppUUIDParam4(appUUID string) *mRendererMockCloseSettings {
+	if mmCloseSettings.mock.funcCloseSettings != nil {
+		mmCloseSettings.mock.t.Fatalf("RendererMock.CloseSettings mock is already set by Set")
+	}
+
+	if mmCloseSettings.defaultExpectation == nil {
+		mmCloseSettings.defaultExpectation = &RendererMockCloseSettingsExpectation{}
+	}
+
+	if mmCloseSettings.defaultExpectation.params != nil {
+		mmCloseSettings.mock.t.Fatalf("RendererMock.CloseSettings mock is already set by Expect")
+	}
+
+	if mmCloseSettings.defaultExpectation.paramPtrs == nil {
+		mmCloseSettings.defaultExpectation.paramPtrs = &RendererMockCloseSettingsParamPtrs{}
+	}
+	mmCloseSettings.defaultExpectation.paramPtrs.appUUID = &appUUID
+	mmCloseSettings.defaultExpectation.expectationOrigins.originAppUUID = minimock.CallerInfo(1)
+
+	return mmCloseSettings
+}
+
+// ExpectRefreshAppPayloadParam5 sets up expected param refreshAppPayload for Renderer.CloseSettings
+func (mmCloseSettings *mRendererMockCloseSettings) ExpectRefreshAppPayloadParam5(refreshAppPayload map[string]any) *mRendererMockCloseSettings {
+	if mmCloseSettings.mock.funcCloseSettings != nil {
+		mmCloseSettings.mock.t.Fatalf("RendererMock.CloseSettings mock is already set by Set")
+	}
+
+	if mmCloseSettings.defaultExpectation == nil {
+		mmCloseSettings.defaultExpectation = &RendererMockCloseSettingsExpectation{}
+	}
+
+	if mmCloseSettings.defaultExpectation.params != nil {
+		mmCloseSettings.mock.t.Fatalf("RendererMock.CloseSettings mock is already set by Expect")
+	}
+
+	if mmCloseSettings.defaultExpectation.paramPtrs == nil {
+		mmCloseSettings.defaultExpectation.paramPtrs = &RendererMockCloseSettingsParamPtrs{}
+	}
+	mmCloseSettings.defaultExpectation.paramPtrs.refreshAppPayload = &refreshAppPayload
+	mmCloseSettings.defaultExpectation.expectationOrigins.originRefreshAppPayload = minimock.CallerInfo(1)
+
+	return mmCloseSettings
+}
+
 // Inspect accepts an inspector function that has same arguments as the Renderer.CloseSettings
-func (mmCloseSettings *mRendererMockCloseSettings) Inspect(f func(cleanViewMode string, closeAction map[string]any, openCleanViewAction map[string]any)) *mRendererMockCloseSettings {
+func (mmCloseSettings *mRendererMockCloseSettings) Inspect(f func(cleanViewMode string, closeAction map[string]any, openCleanViewAction map[string]any, appUUID string, refreshAppPayload map[string]any)) *mRendererMockCloseSettings {
 	if mmCloseSettings.mock.inspectFuncCloseSettings != nil {
 		mmCloseSettings.mock.t.Fatalf("Inspect function is already set for RendererMock.CloseSettings")
 	}
@@ -576,7 +628,7 @@ func (mmCloseSettings *mRendererMockCloseSettings) Return(s1 string) *RendererMo
 }
 
 // Set uses given function f to mock the Renderer.CloseSettings method
-func (mmCloseSettings *mRendererMockCloseSettings) Set(f func(cleanViewMode string, closeAction map[string]any, openCleanViewAction map[string]any) (s1 string)) *RendererMock {
+func (mmCloseSettings *mRendererMockCloseSettings) Set(f func(cleanViewMode string, closeAction map[string]any, openCleanViewAction map[string]any, appUUID string, refreshAppPayload map[string]any) (s1 string)) *RendererMock {
 	if mmCloseSettings.defaultExpectation != nil {
 		mmCloseSettings.mock.t.Fatalf("Default expectation is already set for the Renderer.CloseSettings method")
 	}
@@ -592,14 +644,14 @@ func (mmCloseSettings *mRendererMockCloseSettings) Set(f func(cleanViewMode stri
 
 // When sets expectation for the Renderer.CloseSettings which will trigger the result defined by the following
 // Then helper
-func (mmCloseSettings *mRendererMockCloseSettings) When(cleanViewMode string, closeAction map[string]any, openCleanViewAction map[string]any) *RendererMockCloseSettingsExpectation {
+func (mmCloseSettings *mRendererMockCloseSettings) When(cleanViewMode string, closeAction map[string]any, openCleanViewAction map[string]any, appUUID string, refreshAppPayload map[string]any) *RendererMockCloseSettingsExpectation {
 	if mmCloseSettings.mock.funcCloseSettings != nil {
 		mmCloseSettings.mock.t.Fatalf("RendererMock.CloseSettings mock is already set by Set")
 	}
 
 	expectation := &RendererMockCloseSettingsExpectation{
 		mock:               mmCloseSettings.mock,
-		params:             &RendererMockCloseSettingsParams{cleanViewMode, closeAction, openCleanViewAction},
+		params:             &RendererMockCloseSettingsParams{cleanViewMode, closeAction, openCleanViewAction, appUUID, refreshAppPayload},
 		expectationOrigins: RendererMockCloseSettingsExpectationOrigins{origin: minimock.CallerInfo(1)},
 	}
 	mmCloseSettings.expectations = append(mmCloseSettings.expectations, expectation)
@@ -634,17 +686,17 @@ func (mmCloseSettings *mRendererMockCloseSettings) invocationsDone() bool {
 }
 
 // CloseSettings implements Renderer
-func (mmCloseSettings *RendererMock) CloseSettings(cleanViewMode string, closeAction map[string]any, openCleanViewAction map[string]any) (s1 string) {
+func (mmCloseSettings *RendererMock) CloseSettings(cleanViewMode string, closeAction map[string]any, openCleanViewAction map[string]any, appUUID string, refreshAppPayload map[string]any) (s1 string) {
 	mm_atomic.AddUint64(&mmCloseSettings.beforeCloseSettingsCounter, 1)
 	defer mm_atomic.AddUint64(&mmCloseSettings.afterCloseSettingsCounter, 1)
 
 	mmCloseSettings.t.Helper()
 
 	if mmCloseSettings.inspectFuncCloseSettings != nil {
-		mmCloseSettings.inspectFuncCloseSettings(cleanViewMode, closeAction, openCleanViewAction)
+		mmCloseSettings.inspectFuncCloseSettings(cleanViewMode, closeAction, openCleanViewAction, appUUID, refreshAppPayload)
 	}
 
-	mm_params := RendererMockCloseSettingsParams{cleanViewMode, closeAction, openCleanViewAction}
+	mm_params := RendererMockCloseSettingsParams{cleanViewMode, closeAction, openCleanViewAction, appUUID, refreshAppPayload}
 
 	// Record call args
 	mmCloseSettings.CloseSettingsMock.mutex.Lock()
@@ -663,7 +715,7 @@ func (mmCloseSettings *RendererMock) CloseSettings(cleanViewMode string, closeAc
 		mm_want := mmCloseSettings.CloseSettingsMock.defaultExpectation.params
 		mm_want_ptrs := mmCloseSettings.CloseSettingsMock.defaultExpectation.paramPtrs
 
-		mm_got := RendererMockCloseSettingsParams{cleanViewMode, closeAction, openCleanViewAction}
+		mm_got := RendererMockCloseSettingsParams{cleanViewMode, closeAction, openCleanViewAction, appUUID, refreshAppPayload}
 
 		if mm_want_ptrs != nil {
 
@@ -682,6 +734,16 @@ func (mmCloseSettings *RendererMock) CloseSettings(cleanViewMode string, closeAc
 					mmCloseSettings.CloseSettingsMock.defaultExpectation.expectationOrigins.originOpenCleanViewAction, *mm_want_ptrs.openCleanViewAction, mm_got.openCleanViewAction, minimock.Diff(*mm_want_ptrs.openCleanViewAction, mm_got.openCleanViewAction))
 			}
 
+			if mm_want_ptrs.appUUID != nil && !minimock.Equal(*mm_want_ptrs.appUUID, mm_got.appUUID) {
+				mmCloseSettings.t.Errorf("RendererMock.CloseSettings got unexpected parameter appUUID, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmCloseSettings.CloseSettingsMock.defaultExpectation.expectationOrigins.originAppUUID, *mm_want_ptrs.appUUID, mm_got.appUUID, minimock.Diff(*mm_want_ptrs.appUUID, mm_got.appUUID))
+			}
+
+			if mm_want_ptrs.refreshAppPayload != nil && !minimock.Equal(*mm_want_ptrs.refreshAppPayload, mm_got.refreshAppPayload) {
+				mmCloseSettings.t.Errorf("RendererMock.CloseSettings got unexpected parameter refreshAppPayload, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmCloseSettings.CloseSettingsMock.defaultExpectation.expectationOrigins.originRefreshAppPayload, *mm_want_ptrs.refreshAppPayload, mm_got.refreshAppPayload, minimock.Diff(*mm_want_ptrs.refreshAppPayload, mm_got.refreshAppPayload))
+			}
+
 		} else if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
 			mmCloseSettings.t.Errorf("RendererMock.CloseSettings got unexpected parameters, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
 				mmCloseSettings.CloseSettingsMock.defaultExpectation.expectationOrigins.origin, *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
@@ -694,9 +756,9 @@ func (mmCloseSettings *RendererMock) CloseSettings(cleanViewMode string, closeAc
 		return (*mm_results).s1
 	}
 	if mmCloseSettings.funcCloseSettings != nil {
-		return mmCloseSettings.funcCloseSettings(cleanViewMode, closeAction, openCleanViewAction)
+		return mmCloseSettings.funcCloseSettings(cleanViewMode, closeAction, openCleanViewAction, appUUID, refreshAppPayload)
 	}
-	mmCloseSettings.t.Fatalf("Unexpected call to RendererMock.CloseSettings. %v %v %v", cleanViewMode, closeAction, openCleanViewAction)
+	mmCloseSettings.t.Fatalf("Unexpected call to RendererMock.CloseSettings. %v %v %v %v %v", cleanViewMode, closeAction, openCleanViewAction, appUUID, refreshAppPayload)
 	return
 }
 

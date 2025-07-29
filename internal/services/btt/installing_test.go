@@ -13,10 +13,10 @@ import (
 	"live2text/internal/services/btt/tmpl"
 )
 
-func TestInitialize(t *testing.T) {
+func TestInstall(t *testing.T) {
 	t.Parallel()
 
-	ic := setupInitializingComponent(t, func(mc *minimock.Controller, c *client.ClientMock, r *tmpl.RendererMock) {
+	ic := setupInstallingComponent(t, func(mc *minimock.Controller, c *client.ClientMock, r *tmpl.RendererMock) {
 		r.PrintStatusMock.Return("sample")
 		r.PrintMetricMock.Return("sample")
 		r.PrintSelectedDeviceMock.Return("sample")
@@ -38,13 +38,15 @@ func TestInitialize(t *testing.T) {
 		r.CopyTextMock.Return("sample")
 
 		c.AddTriggerMock.Return("", nil)
+		c.GetTriggerMock.Return(trigger.Trigger{}, nil)
+		c.UpdateTriggerMock.Return(nil)
 	}, []string{"en"})
 
-	err := ic.Initialize(t.Context())
+	err := ic.Install(t.Context())
 	require.NoError(t, err)
 }
 
-func TestClear(t *testing.T) {
+func TestUninstall(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -93,9 +95,9 @@ func TestClear(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			ic := setupInitializingComponent(t, tt.setupMocks, []string{})
+			ic := setupInstallingComponent(t, tt.setupMocks, []string{})
 
-			err := ic.Clear(t.Context())
+			err := ic.Uninstall(t.Context())
 			if tt.expectErr != "" {
 				require.Error(t, err)
 				require.ErrorContains(t, err, tt.expectErr)
@@ -106,11 +108,11 @@ func TestClear(t *testing.T) {
 	}
 }
 
-func setupInitializingComponent(
+func setupInstallingComponent(
 	t *testing.T,
 	setupMocks func(mc *minimock.Controller, c *client.ClientMock, r *tmpl.RendererMock),
 	languages []string,
-) btt.InitializingComponent {
+) btt.InstallingComponent {
 	t.Helper()
 
 	mc := minimock.NewController(t)
@@ -121,5 +123,5 @@ func setupInitializingComponent(
 		setupMocks(mc, c, r)
 	}
 
-	return btt.NewInitializingComponent(c, r, languages)
+	return btt.NewInstallingComponent(c, r, languages)
 }

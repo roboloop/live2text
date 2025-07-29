@@ -45,9 +45,13 @@ func (b *burnerComponent) SaveAudio(ctx context.Context, input <-chan []int16, p
 		}
 	}()
 
+	b.logger.InfoContext(ctx, "Saving the audio to the file", "filename", filename)
+
 	if err = b.burner.Burn(ctx, file, input, parameters.Channels, parameters.SampleRate); err != nil {
 		return fmt.Errorf("cannot burn the file: %w", err)
 	}
+
+	b.logger.InfoContext(ctx, "Audio saved to the file", "filename", filename)
 
 	return nil
 }
