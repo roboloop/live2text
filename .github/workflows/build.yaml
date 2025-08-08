@@ -82,9 +82,9 @@ jobs:
           build_time="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           go_version="$(go version | sed 's/go version //')"
           override="$(cat <<EOF
-            -X '${{ env.app }}/internal/env.Version=${version}'
-            -X '${{ env.app }}/internal/env.BuildTime=${build_time}'
-            -X '${{ env.app }}/internal/env.GoVersion=${go_version}'
+            -X 'github.com/roboloop/live2text/internal/env.Version=${version}'
+            -X 'github.com/roboloop/live2text/internal/env.BuildTime=${build_time}'
+            -X 'github.com/roboloop/live2text/internal/env.GoVersion=${go_version}'
           EOF
           )"
 
@@ -202,9 +202,9 @@ jobs:
           build_time="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           go_version="$(go version | sed 's/go version //')"
           override="$(cat <<EOF
-            -X '${{ env.app }}/internal/env.Version=${version}'
-            -X '${{ env.app }}/internal/env.BuildTime=${build_time}'
-            -X '${{ env.app }}/internal/env.GoVersion=${go_version}'
+            -X 'github.com/roboloop/live2text/internal/env.Version=${version}'
+            -X 'github.com/roboloop/live2text/internal/env.BuildTime=${build_time}'
+            -X 'github.com/roboloop/live2text/internal/env.GoVersion=${go_version}'
           EOF
           )"
 

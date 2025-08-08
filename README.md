@@ -42,7 +42,7 @@ Download from the [release page](https://github.com/roboloop/live2text/releases)
 [portaudio](https://www.portaudio.com/) required
 
 ```shell
-go install github.com/roboloop/live2text@latest 
+go install github.com/roboloop/live2text/cmd/live2text@latest
 ```
 
 ## 🔧 Setup
