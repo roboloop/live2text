@@ -7,8 +7,8 @@ import (
 	"github.com/gojuno/minimock/v3"
 	"github.com/stretchr/testify/require"
 
-	"live2text/internal/services/btt/client/http"
-	"live2text/internal/services/btt/storage"
+	"github.com/roboloop/live2text/internal/services/btt/client/http"
+	"github.com/roboloop/live2text/internal/services/btt/storage"
 )
 
 func TestGetValue(t *testing.T) {

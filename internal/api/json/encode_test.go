@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"live2text/internal/api/json"
+	"github.com/roboloop/live2text/internal/api/json"
 )
 
 func TestEncode(t *testing.T) {

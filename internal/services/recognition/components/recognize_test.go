@@ -15,10 +15,10 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	"live2text/internal/services/metrics"
-	"live2text/internal/services/recognition/components"
-	speechwrapper "live2text/internal/services/speech_wrapper"
-	"live2text/internal/utils/logger"
+	"github.com/roboloop/live2text/internal/services/metrics"
+	"github.com/roboloop/live2text/internal/services/recognition/components"
+	speechwrapper "github.com/roboloop/live2text/internal/services/speech_wrapper"
+	"github.com/roboloop/live2text/internal/utils/logger"
 )
 
 // TODO: more tests

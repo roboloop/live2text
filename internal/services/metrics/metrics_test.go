@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"live2text/internal/services/metrics"
+	"github.com/roboloop/live2text/internal/services/metrics"
 )
 
 func TestMetrics(t *testing.T) {

@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"live2text/internal/services/btt/tmpl"
+	"github.com/roboloop/live2text/internal/services/btt/tmpl"
 )
 
 func TestPrintStatus(t *testing.T) {

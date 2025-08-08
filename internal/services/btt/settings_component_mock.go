@@ -4,8 +4,8 @@ package btt
 
 import (
 	"context"
-	"live2text/internal/services/btt/client/trigger"
-	"live2text/internal/services/btt/storage"
+	"github.com/roboloop/live2text/internal/services/btt/client/trigger"
+	"github.com/roboloop/live2text/internal/services/btt/storage"
 	"sync"
 	mm_atomic "sync/atomic"
 	mm_time "time"

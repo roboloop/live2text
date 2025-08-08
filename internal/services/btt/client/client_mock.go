@@ -4,7 +4,7 @@ package client
 
 import (
 	"context"
-	"live2text/internal/services/btt/client/trigger"
+	"github.com/roboloop/live2text/internal/services/btt/client/trigger"
 	"sync"
 	mm_atomic "sync/atomic"
 	mm_time "time"

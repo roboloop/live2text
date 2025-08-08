@@ -7,9 +7,9 @@ import (
 	"github.com/gojuno/minimock/v3"
 	"github.com/stretchr/testify/require"
 
-	"live2text/internal/services/audio"
-	audiowrapper "live2text/internal/services/audio_wrapper"
-	"live2text/internal/services/metrics"
+	"github.com/roboloop/live2text/internal/services/audio"
+	audiowrapper "github.com/roboloop/live2text/internal/services/audio_wrapper"
+	"github.com/roboloop/live2text/internal/services/metrics"
 )
 
 func TestListenDevice(t *testing.T) {

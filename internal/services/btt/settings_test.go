@@ -7,10 +7,10 @@ import (
 	"github.com/gojuno/minimock/v3"
 	"github.com/stretchr/testify/require"
 
-	"live2text/internal/services/btt"
-	"live2text/internal/services/btt/client"
-	"live2text/internal/services/btt/client/trigger"
-	"live2text/internal/services/btt/storage"
+	"github.com/roboloop/live2text/internal/services/btt"
+	"github.com/roboloop/live2text/internal/services/btt/client"
+	"github.com/roboloop/live2text/internal/services/btt/client/trigger"
+	"github.com/roboloop/live2text/internal/services/btt/storage"
 )
 
 func TestSelectSettings(t *testing.T) {

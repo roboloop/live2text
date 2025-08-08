@@ -10,12 +10,12 @@ import (
 	"github.com/gojuno/minimock/v3"
 	"github.com/stretchr/testify/require"
 
-	"live2text/internal/services/audio"
-	audiowrapper "live2text/internal/services/audio_wrapper"
-	"live2text/internal/services/recognition"
-	"live2text/internal/services/recognition/components"
-	"live2text/internal/services/recognition/text"
-	"live2text/internal/utils/logger"
+	"github.com/roboloop/live2text/internal/services/audio"
+	audiowrapper "github.com/roboloop/live2text/internal/services/audio_wrapper"
+	"github.com/roboloop/live2text/internal/services/recognition"
+	"github.com/roboloop/live2text/internal/services/recognition/components"
+	"github.com/roboloop/live2text/internal/services/recognition/text"
+	"github.com/roboloop/live2text/internal/utils/logger"
 )
 
 func TestTask(t *testing.T) {

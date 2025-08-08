@@ -3,8 +3,8 @@ package btt
 import (
 	"net/http"
 
-	"live2text/internal/api/json"
-	"live2text/internal/api/validation"
+	"github.com/roboloop/live2text/internal/api/json"
+	"github.com/roboloop/live2text/internal/api/validation"
 )
 
 type selectLanguageRequest struct {

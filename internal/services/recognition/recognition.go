@@ -3,7 +3,7 @@ package recognition
 import (
 	"log/slog"
 
-	"live2text/internal/background"
+	"github.com/roboloop/live2text/internal/background"
 )
 
 type recognition struct {

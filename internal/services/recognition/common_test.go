@@ -6,11 +6,11 @@ import (
 
 	"github.com/gojuno/minimock/v3"
 
-	"live2text/internal/background"
-	"live2text/internal/services/audio"
-	"live2text/internal/services/recognition"
-	"live2text/internal/services/recognition/components"
-	"live2text/internal/utils/logger"
+	"github.com/roboloop/live2text/internal/background"
+	"github.com/roboloop/live2text/internal/services/audio"
+	"github.com/roboloop/live2text/internal/services/recognition"
+	"github.com/roboloop/live2text/internal/services/recognition/components"
+	"github.com/roboloop/live2text/internal/utils/logger"
 )
 
 func setupRecognition(

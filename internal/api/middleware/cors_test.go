@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"live2text/internal/api/middleware"
+	"github.com/roboloop/live2text/internal/api/middleware"
 )
 
 func TestCORSMiddleware(t *testing.T) {

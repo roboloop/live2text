@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"live2text/internal/services/recognition/text"
+	"github.com/roboloop/live2text/internal/services/recognition/text"
 )
 
 func TestAddNonFinalText(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	audiowrapper "live2text/internal/services/audio_wrapper"
+	audiowrapper "github.com/roboloop/live2text/internal/services/audio_wrapper"
 )
 
 func (a *audio) FindInputDevice(deviceName string) (*audiowrapper.DeviceInfo, error) {

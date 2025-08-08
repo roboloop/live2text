@@ -6,11 +6,11 @@ import (
 	"slices"
 	"sync"
 
-	"live2text/internal/services/audio"
-	"live2text/internal/services/btt/client"
-	"live2text/internal/services/btt/client/trigger"
-	"live2text/internal/services/btt/storage"
-	"live2text/internal/services/btt/tmpl"
+	"github.com/roboloop/live2text/internal/services/audio"
+	"github.com/roboloop/live2text/internal/services/btt/client"
+	"github.com/roboloop/live2text/internal/services/btt/client/trigger"
+	"github.com/roboloop/live2text/internal/services/btt/storage"
+	"github.com/roboloop/live2text/internal/services/btt/tmpl"
 )
 
 var loadDevicesMutex sync.Mutex

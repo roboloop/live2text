@@ -7,8 +7,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"live2text/internal/utils"
-	"live2text/internal/utils/logger"
+	"github.com/roboloop/live2text/internal/utils"
+	"github.com/roboloop/live2text/internal/utils/logger"
 )
 
 func TestBroadcaster(t *testing.T) {

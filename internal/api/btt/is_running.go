@@ -3,7 +3,7 @@ package btt
 import (
 	"net/http"
 
-	"live2text/internal/api/json"
+	"github.com/roboloop/live2text/internal/api/json"
 )
 
 func (s *Server) IsRunning(w http.ResponseWriter, r *http.Request) {

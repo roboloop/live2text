@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"live2text/internal/background"
+	"github.com/roboloop/live2text/internal/background"
 )
 
 func TestHas(t *testing.T) {

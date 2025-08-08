@@ -10,8 +10,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"live2text/internal/api/middleware"
-	"live2text/internal/utils/logger"
+	"github.com/roboloop/live2text/internal/api/middleware"
+	"github.com/roboloop/live2text/internal/utils/logger"
 )
 
 type errorCloser struct{}

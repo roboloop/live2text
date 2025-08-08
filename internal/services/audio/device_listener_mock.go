@@ -4,7 +4,7 @@ package audio
 
 import (
 	"context"
-	audiowrapper "live2text/internal/services/audio_wrapper"
+	audiowrapper "github.com/roboloop/live2text/internal/services/audio_wrapper"
 	"sync"
 	mm_atomic "sync/atomic"
 	mm_time "time"

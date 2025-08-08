@@ -1,0 +1,244 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+env:
+  GOLANG_VERSION: '1.24.6'
+  app: live2text
+  sysroot: "${{ github.workspace }}/sysroot"
+
+concurrency:
+  cancel-in-progress: true
+  group: ${{ github.ref }}
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - amd64
+          - arm64
+        include:
+          - arch: amd64
+            target: x86_64-apple-darwin
+            runner_arch: X64
+          - arch: arm64
+            target: aarch64-apple-darwin
+            runner_arch: ARM64
+    env:
+      suffix: macos-${{ matrix.arch }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go environment
+        uses: actions/setup-go@v5
+        with:
+          go-version: "^${{ env.GOLANG_VERSION }}"
+          cache: 'true'
+
+      - name: Restore PortAudio build
+        uses: actions/cache@v4
+        id: cache-portaudio
+        with:
+          path: |
+            ${{ env.sysroot }}/lib/libportaudio.a
+            ${{ env.sysroot }}/lib/libportaudio.la
+            ${{ env.sysroot }}/lib/pkgconfig/portaudio-2.0.pc
+            ${{ env.sysroot }}/include/portaudio.h
+          key: 'portaudio-${{ matrix.target }}'
+
+      - name: Build PortAudio from source
+        if: steps.cache-portaudio.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p portaudio
+          mkdir -p "${{ env.sysroot }}"
+          curl -sSLf "https://files.portaudio.com/archives/pa_snapshot.tgz" | tar -xzvf - --strip-components=1 -C portaudio
+          ( cd portaudio && ./configure --host=${{ matrix.target }} --disable-shared --enable-static --prefix="${{ env.sysroot }}" )
+          make -C portaudio -j"$(sysctl -n hw.logicalcpu)"
+          make -C portaudio install
+          strip -S "${{ env.sysroot }}/lib/libportaudio.a"
+          file "${{ env.sysroot }}/lib/libportaudio.a"
+
+      - name: Upload Test Logs
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs-${{ env.suffix }}
+          retention-days: 7
+          path: |
+            *.log
+            portaudio/*.log
+
+      - name: Build App
+        run: |
+          version=$(git describe --tags --exact-match 2>/dev/null || git rev-parse --short HEAD)
+          build_time="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          go_version="$(go version | sed 's/go version //')"
+          override="$(cat <<EOF
+            -X '${{ env.app }}/internal/env.Version=${version}'
+            -X '${{ env.app }}/internal/env.BuildTime=${build_time}'
+            -X '${{ env.app }}/internal/env.GoVersion=${go_version}'
+          EOF
+          )"
+
+          PKG_CONFIG_PATH="${{ env.sysroot }}/lib/pkgconfig" \
+          CGO_ENABLED=1 GOOS=darwin GOARCH=${{ matrix.arch }} CC=clang \
+          CGO_CFLAGS="-v --sysroot=$(xcrun --sdk macosx --show-sdk-path) -I${{ env.sysroot }}/include" \
+          CGO_LDFLAGS="-v --sysroot=$(xcrun --sdk macosx --show-sdk-path) -L${{ env.sysroot }}/lib" \
+          go build -trimpath \
+            -ldflags="-s -w ${override}" \
+            -o build/${{ env.app }}-${{ env.suffix }} \
+            cmd/${{ env.app }}/main.go
+
+      - name: Test App
+        if: runner.arch == matrix.runner_arch
+        run: |
+          PKG_CONFIG_PATH="${{ env.sysroot }}/lib/pkgconfig" \
+          CGO_ENABLED=1 GOOS=darwin GOARCH=${{ matrix.arch }} CC=clang \
+          CGO_CFLAGS="-v --sysroot=$(xcrun --sdk macosx --show-sdk-path) -I${{ env.sysroot }}/include" \
+          CGO_LDFLAGS="-v --sysroot=$(xcrun --sdk macosx --show-sdk-path) -L${{ env.sysroot }}/lib" \
+          go test ./... -coverprofile=coverage.out -covermode=atomic
+
+      - name: Upload test coverage
+        if: runner.arch == matrix.runner_arch
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.app }}-${{ env.suffix }}-coverage
+          path: coverage.out
+          retention-days: 7
+          if-no-files-found: 'error'
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.app }}-${{ env.suffix }}
+          path: build/${{ env.app }}-*
+          retention-days: 7
+          if-no-files-found: 'error'
+
+
+  # Experimental
+  linux:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - amd64
+          - arm64
+        include:
+          - arch: amd64
+            target: x86_64-linux-gnu
+            runner_arch: X64
+          - arch: arm64
+            target: aarch64-linux-gnu
+            runner_arch: ARM64
+
+    env:
+      suffix: linux-${{ matrix.arch }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y crossbuild-essential-${{ matrix.arch }}
+
+      - name: Setup Go environment
+        uses: actions/setup-go@v5
+        with:
+          go-version: "^${{ env.GOLANG_VERSION }}"
+          cache: 'true'
+
+      - name: Restore PortAudio build
+        uses: actions/cache@v4
+        id: cache-portaudio
+        with:
+          path: |
+            ${{ env.sysroot }}/lib/libportaudio.a
+            ${{ env.sysroot }}/lib/libportaudio.la
+            ${{ env.sysroot }}/lib/pkgconfig/portaudio-2.0.pc
+            ${{ env.sysroot }}/include/portaudio.h
+          key: 'portaudio-${{ matrix.target }}'
+
+      - name: Build PortAudio from source
+        if: steps.cache-portaudio.outputs.cache-hit != 'true'
+        env:
+          AR: ${{ matrix.target }}-ar
+          CC: ${{ matrix.target }}-gcc
+          CXX: ${{ matrix.target }}-cpp
+          RANLIB: ${{ matrix.target }}-ranlib
+        run: |
+          mkdir -p portaudio
+          mkdir -p "${{ env.sysroot }}"
+          curl -sSLf "https://files.portaudio.com/archives/pa_snapshot.tgz" | tar -xzvf - --strip-components=1 -C portaudio
+          ( cd portaudio && ./configure --host=${{ matrix.target }} --disable-shared --enable-static --prefix="${{ env.sysroot }}" )
+          make -C portaudio -j"$(nproc)"
+          make -C portaudio install
+          strip -S "${{ env.sysroot }}/lib/libportaudio.a"
+          file "${{ env.sysroot }}/lib/libportaudio.a"
+
+      - name: Upload Test Logs
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs-${{ env.suffix }}
+          retention-days: 7
+          path: |
+            *.log
+            portaudio/*.log
+
+      - name: Build App
+        run: |
+          version=$(git describe --tags --exact-match 2>/dev/null || git rev-parse --short HEAD)
+          build_time="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          go_version="$(go version | sed 's/go version //')"
+          override="$(cat <<EOF
+            -X '${{ env.app }}/internal/env.Version=${version}'
+            -X '${{ env.app }}/internal/env.BuildTime=${build_time}'
+            -X '${{ env.app }}/internal/env.GoVersion=${go_version}'
+          EOF
+          )"
+
+          PKG_CONFIG_PATH="${{ env.sysroot }}/lib/pkgconfig" \
+          CGO_ENABLED=1 GOOS=linux GOARCH=${{ matrix.arch }} CC="${{ matrix.target }}-gcc" \
+          CGO_CFLAGS="-v -I${{ env.sysroot }}/include" \
+          CGO_LDFLAGS="-v -L${{ env.sysroot }}/lib" \
+          go build -trimpath \
+            -ldflags="-s -w ${override}" \
+            -o build/${{ env.app }}-${{ env.suffix }} \
+            cmd/${{ env.app }}/main.go
+
+      - name: Test App
+        if: runner.arch == matrix.runner_arch
+        run: |
+          PKG_CONFIG_PATH="${{ env.sysroot }}/lib/pkgconfig" \
+          CGO_ENABLED=1 GOOS=linux GOARCH=${{ matrix.arch }} CC="${{ matrix.target }}-gcc" \
+          CGO_CFLAGS="-v -I${{ env.sysroot }}/include" \
+          CGO_LDFLAGS="-v -L${{ env.sysroot }}/lib" \
+          go test ./... -coverprofile=coverage.out -covermode=atomic
+
+      - name: Upload test coverage
+        if: runner.arch == matrix.runner_arch
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.app }}-${{ env.suffix }}-coverage
+          path: coverage.out
+          retention-days: 7
+          if-no-files-found: 'error'
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.app }}-${{ env.suffix }}
+          path: build/${{ env.app }}-*
+          retention-days: 7
+          if-no-files-found: 'error'

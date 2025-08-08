@@ -1,0 +1,40 @@
+name: Lint
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+env:
+  GOLANG_VERSION: '1.24.6'
+
+concurrency:
+  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go environment
+        uses: actions/setup-go@v5
+        with:
+          go-version: "^${{ env.GOLANG_VERSION }}"
+
+      - name: Install Linux dependencies (gcc, portaudio)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential portaudio19-dev
+
+      - name: Install golangci-lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.1
+
+      - name: Run golangci-lint
+        run: |
+          golangci-lint run --config .golangci.yml

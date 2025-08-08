@@ -9,10 +9,10 @@ import (
 	"github.com/gojuno/minimock/v3"
 	"github.com/stretchr/testify/require"
 
-	"live2text/internal/api/core"
-	"live2text/internal/services"
-	"live2text/internal/services/audio"
-	"live2text/internal/utils/logger"
+	"github.com/roboloop/live2text/internal/api/core"
+	"github.com/roboloop/live2text/internal/services"
+	"github.com/roboloop/live2text/internal/services/audio"
+	"github.com/roboloop/live2text/internal/utils/logger"
 )
 
 func TestDevices(t *testing.T) {

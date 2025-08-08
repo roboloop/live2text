@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
-	"live2text/internal/api/json"
-	"live2text/internal/services/recognition"
+	"github.com/roboloop/live2text/internal/api/json"
+	"github.com/roboloop/live2text/internal/services/recognition"
 )
 
 type stopRequest struct {

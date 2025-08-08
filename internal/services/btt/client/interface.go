@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 
-	"live2text/internal/services/btt/client/trigger"
+	"github.com/roboloop/live2text/internal/services/btt/client/trigger"
 )
 
 //go:generate minimock -g -i Client -s _mock.go -o .

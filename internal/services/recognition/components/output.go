@@ -9,7 +9,7 @@ import (
 	"path"
 	"time"
 
-	"live2text/internal/services/recognition/text"
+	"github.com/roboloop/live2text/internal/services/recognition/text"
 )
 
 //go:generate minimock -g -i OutputComponent -s _mock.go -o .

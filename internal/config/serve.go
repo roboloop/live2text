@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"live2text/internal/env"
+	"github.com/roboloop/live2text/internal/env"
 )
 
 type Serve struct {

@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"slices"
 
-	"live2text/internal/api/json"
-	"live2text/internal/api/validation"
-	"live2text/internal/services"
-	"live2text/internal/services/recognition"
+	"github.com/roboloop/live2text/internal/api/json"
+	"github.com/roboloop/live2text/internal/api/validation"
+	"github.com/roboloop/live2text/internal/services"
+	"github.com/roboloop/live2text/internal/services/recognition"
 )
 
 type startRequest struct {

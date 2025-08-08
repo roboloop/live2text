@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"live2text/internal/api/middleware"
+	"github.com/roboloop/live2text/internal/api/middleware"
 )
 
 func TestTimeoutMiddleware(t *testing.T) {

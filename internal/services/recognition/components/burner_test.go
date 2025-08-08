@@ -10,9 +10,9 @@ import (
 	"github.com/gojuno/minimock/v3"
 	"github.com/stretchr/testify/require"
 
-	"live2text/internal/services/burner"
-	"live2text/internal/services/recognition/components"
-	"live2text/internal/utils/logger"
+	"github.com/roboloop/live2text/internal/services/burner"
+	"github.com/roboloop/live2text/internal/services/recognition/components"
+	"github.com/roboloop/live2text/internal/utils/logger"
 )
 
 func TestBurner(t *testing.T) {

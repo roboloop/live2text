@@ -7,8 +7,8 @@ import (
 
 	"github.com/gojuno/minimock/v3"
 
-	"live2text/internal/services"
-	"live2text/internal/services/btt"
+	"github.com/roboloop/live2text/internal/services"
+	"github.com/roboloop/live2text/internal/services/btt"
 )
 
 func TestIsRunning(t *testing.T) {

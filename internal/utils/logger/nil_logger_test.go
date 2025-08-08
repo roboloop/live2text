@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"live2text/internal/utils/logger"
+	"github.com/roboloop/live2text/internal/utils/logger"
 )
 
 func TestNilLogger(t *testing.T) {

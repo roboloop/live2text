@@ -19,23 +19,23 @@ import (
 	"github.com/lmittmann/tint"
 	"golang.org/x/term"
 
-	"live2text/internal/api"
-	"live2text/internal/background"
-	"live2text/internal/config"
-	"live2text/internal/env"
-	"live2text/internal/services"
-	"live2text/internal/services/audio"
-	audiowrapper "live2text/internal/services/audio_wrapper"
-	"live2text/internal/services/btt"
-	bttclient "live2text/internal/services/btt/client"
-	httpclient "live2text/internal/services/btt/client/http"
-	"live2text/internal/services/btt/storage"
-	"live2text/internal/services/btt/tmpl"
-	"live2text/internal/services/burner"
-	"live2text/internal/services/metrics"
-	"live2text/internal/services/recognition"
-	"live2text/internal/services/recognition/components"
-	speechwrapper "live2text/internal/services/speech_wrapper"
+	"github.com/roboloop/live2text/internal/api"
+	"github.com/roboloop/live2text/internal/background"
+	"github.com/roboloop/live2text/internal/config"
+	"github.com/roboloop/live2text/internal/env"
+	"github.com/roboloop/live2text/internal/services"
+	"github.com/roboloop/live2text/internal/services/audio"
+	audiowrapper "github.com/roboloop/live2text/internal/services/audio_wrapper"
+	"github.com/roboloop/live2text/internal/services/btt"
+	bttclient "github.com/roboloop/live2text/internal/services/btt/client"
+	httpclient "github.com/roboloop/live2text/internal/services/btt/client/http"
+	"github.com/roboloop/live2text/internal/services/btt/storage"
+	"github.com/roboloop/live2text/internal/services/btt/tmpl"
+	"github.com/roboloop/live2text/internal/services/burner"
+	"github.com/roboloop/live2text/internal/services/metrics"
+	"github.com/roboloop/live2text/internal/services/recognition"
+	"github.com/roboloop/live2text/internal/services/recognition/components"
+	speechwrapper "github.com/roboloop/live2text/internal/services/speech_wrapper"
 )
 
 func main() {
@@ -47,19 +47,22 @@ func main() {
 }
 
 func run(ctx context.Context, args []string) error {
-	if len(args) == 0 {
-		return errors.New("no command specified")
+	cmd := ""
+	if len(args) > 0 {
+		cmd = args[0]
 	}
 
-	switch args[0] {
+	switch cmd {
 	case "install":
 		return runInstall(ctx, args[1:])
 	case "uninstall":
 		return runUninstall(ctx, args[1:])
 	case "serve":
 		return runServe(ctx, args[1:])
+	case "version":
+		return runVersion(ctx, args[1:])
 	default:
-		return fmt.Errorf("unknown command: %s. known commands: install, uninstall, serve", args[0])
+		return fmt.Errorf("unknown command: %s. known commands: install, uninstall, serve, version", cmd)
 	}
 }
 
@@ -186,6 +189,14 @@ func runServe(ctx context.Context, args []string) error {
 	tm.Wait()
 
 	sl.InfoContext(ctx, "Application shutdown complete")
+
+	return nil
+}
+
+func runVersion(_ context.Context, _ []string) error {
+	_, _ = fmt.Fprintf(os.Stdout, "Version:   %s\n", env.Version)
+	_, _ = fmt.Fprintf(os.Stdout, "BuildTime: %s\n", env.BuildTime)
+	_, _ = fmt.Fprintf(os.Stdout, "GoVersion: %s\n", env.GoVersion)
 
 	return nil
 }

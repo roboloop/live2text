@@ -3,7 +3,7 @@ package burner
 import (
 	"log/slog"
 
-	"live2text/internal/services/metrics"
+	"github.com/roboloop/live2text/internal/services/metrics"
 )
 
 type burner struct {

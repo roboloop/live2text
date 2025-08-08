@@ -10,9 +10,9 @@ import (
 	"github.com/gojuno/minimock/v3"
 	"github.com/stretchr/testify/require"
 
-	bttapi "live2text/internal/api/btt"
-	"live2text/internal/services"
-	"live2text/internal/utils/logger"
+	bttapi "github.com/roboloop/live2text/internal/api/btt"
+	"github.com/roboloop/live2text/internal/services"
+	"github.com/roboloop/live2text/internal/utils/logger"
 )
 
 func setupServer(

@@ -8,7 +8,7 @@ import (
 	"path"
 	"time"
 
-	"live2text/internal/services/burner"
+	"github.com/roboloop/live2text/internal/services/burner"
 )
 
 type BurnerParameters struct {

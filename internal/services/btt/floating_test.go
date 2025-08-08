@@ -9,12 +9,12 @@ import (
 	"github.com/gojuno/minimock/v3"
 	"github.com/stretchr/testify/require"
 
-	"live2text/internal/services/btt"
-	"live2text/internal/services/btt/client"
-	"live2text/internal/services/btt/storage"
-	"live2text/internal/services/btt/tmpl"
-	"live2text/internal/services/recognition"
-	"live2text/internal/utils/logger"
+	"github.com/roboloop/live2text/internal/services/btt"
+	"github.com/roboloop/live2text/internal/services/btt/client"
+	"github.com/roboloop/live2text/internal/services/btt/storage"
+	"github.com/roboloop/live2text/internal/services/btt/tmpl"
+	"github.com/roboloop/live2text/internal/services/recognition"
+	"github.com/roboloop/live2text/internal/utils/logger"
 )
 
 func TestSelectFloating(t *testing.T) {

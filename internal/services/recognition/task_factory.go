@@ -7,8 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"live2text/internal/services/audio"
-	"live2text/internal/services/recognition/components"
+	"github.com/roboloop/live2text/internal/services/audio"
+	"github.com/roboloop/live2text/internal/services/recognition/components"
 )
 
 type taskFactory struct {

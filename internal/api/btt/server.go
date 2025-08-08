@@ -3,7 +3,7 @@ package btt
 import (
 	"log/slog"
 
-	"live2text/internal/services"
+	"github.com/roboloop/live2text/internal/services"
 )
 
 type Server struct {

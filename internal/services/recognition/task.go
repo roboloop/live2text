@@ -8,10 +8,10 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"live2text/internal/services/audio"
-	"live2text/internal/services/recognition/components"
-	"live2text/internal/services/recognition/text"
-	"live2text/internal/utils"
+	"github.com/roboloop/live2text/internal/services/audio"
+	"github.com/roboloop/live2text/internal/services/recognition/components"
+	"github.com/roboloop/live2text/internal/services/recognition/text"
+	"github.com/roboloop/live2text/internal/utils"
 )
 
 type Task struct {

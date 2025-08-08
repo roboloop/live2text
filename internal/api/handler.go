@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"time"
 
-	"live2text/internal/api/btt"
-	"live2text/internal/api/core"
-	"live2text/internal/api/middleware"
-	"live2text/internal/env"
-	"live2text/internal/services"
+	"github.com/roboloop/live2text/internal/api/btt"
+	"github.com/roboloop/live2text/internal/api/core"
+	"github.com/roboloop/live2text/internal/api/middleware"
+	"github.com/roboloop/live2text/internal/env"
+	"github.com/roboloop/live2text/internal/services"
 )
 
 type Server struct {

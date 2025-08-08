@@ -9,9 +9,9 @@ import (
 	"github.com/gojuno/minimock/v3"
 	"github.com/stretchr/testify/require"
 
-	"live2text/internal/services/recognition/components"
-	"live2text/internal/services/recognition/text"
-	"live2text/internal/utils/logger"
+	"github.com/roboloop/live2text/internal/services/recognition/components"
+	"github.com/roboloop/live2text/internal/services/recognition/text"
+	"github.com/roboloop/live2text/internal/utils/logger"
 )
 
 func TestPrint(t *testing.T) {

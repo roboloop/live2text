@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"live2text/internal/services/btt/client/http"
+	"github.com/roboloop/live2text/internal/services/btt/client/http"
 )
 
 const (

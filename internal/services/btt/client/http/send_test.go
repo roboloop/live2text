@@ -12,8 +12,8 @@ import (
 
 	httpnet "net/http"
 
-	"live2text/internal/services/btt/client/http"
-	"live2text/internal/utils/logger"
+	"github.com/roboloop/live2text/internal/services/btt/client/http"
+	"github.com/roboloop/live2text/internal/utils/logger"
 )
 
 type roundTripperFunc func(request *httpnet.Request) (*httpnet.Response, error)

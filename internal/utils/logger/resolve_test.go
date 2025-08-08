@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"live2text/internal/utils/logger"
+	"github.com/roboloop/live2text/internal/utils/logger"
 )
 
 func TestResolveLevel(t *testing.T) {

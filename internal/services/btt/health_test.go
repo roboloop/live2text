@@ -6,8 +6,8 @@ import (
 	"github.com/gojuno/minimock/v3"
 	"github.com/stretchr/testify/require"
 
-	"live2text/internal/services/btt"
-	"live2text/internal/services/btt/client"
+	"github.com/roboloop/live2text/internal/services/btt"
+	"github.com/roboloop/live2text/internal/services/btt/client"
 )
 
 func TestHealth(t *testing.T) {

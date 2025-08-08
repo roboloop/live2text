@@ -4,7 +4,7 @@ package components
 
 import (
 	"context"
-	"live2text/internal/services/recognition/text"
+	"github.com/roboloop/live2text/internal/services/recognition/text"
 	"sync"
 	mm_atomic "sync/atomic"
 	mm_time "time"

@@ -12,9 +12,9 @@ import (
 	"github.com/gojuno/minimock/v3"
 	"github.com/stretchr/testify/require"
 
-	"live2text/internal/services"
-	"live2text/internal/services/btt"
-	"live2text/internal/utils/logger"
+	"github.com/roboloop/live2text/internal/services"
+	"github.com/roboloop/live2text/internal/services/btt"
+	"github.com/roboloop/live2text/internal/utils/logger"
 )
 
 type unsupportedFlusherWriter struct {

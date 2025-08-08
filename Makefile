@@ -1,5 +1,5 @@
-MAKEFILE_DIR := $(patsubst %/,%,$(dir $(realpath $(lastword $(MAKEFILE_LIST)))))
-BIN_DIR := $(MAKEFILE_DIR)/bin
+PROJECT_DIR := $(patsubst %/,%,$(dir $(realpath $(lastword $(MAKEFILE_LIST)))))
+BIN_DIR := $(PROJECT_DIR)/bin
 export PATH := $(BIN_DIR):$(PATH)
 export GOBIN := $(BIN_DIR)
 
@@ -7,7 +7,8 @@ GOLANGCI_LINT := $(BIN_DIR)/golangci-lint
 MINIMOCK := $(BIN_DIR)/minimock
 GO_COVER_TREEMAP := $(BIN_DIR)/go-cover-treemap
 
-LIVE2TEXT_APP := ./cmd/live2text/main.go
+LIVE2TEXT_APP := $(PROJECT_DIR)/cmd/live2text/main.go
+GOLANGCI_CONFIG := $(PROJECT_DIR)/.golangci.yml
 
 GOLANGCI_LINT_VERSION := v2.1.6
 MINIMOCK_VERSION := v3.4.5
@@ -47,17 +48,17 @@ generate-mocks: $(MINIMOCK)
 .PHONY: lint
 lint: $(GOLANGCI_LINT)
 	@echo "Using golangci-lint from: $(GOLANGCI_LINT)"
-	$(GOLANGCI_LINT) run ./...
+	$(GOLANGCI_LINT) run --config "$(GOLANGCI_CONFIG)" ./...
 
 .PHONY: lint-fix
 lint-fix: $(GOLANGCI_LINT)
 	@echo "Using golangci-lint from: $(GOLANGCI_LINT)"
-	$(GOLANGCI_LINT) run ./... --fix
+	$(GOLANGCI_LINT) run --config "$(GOLANGCI_CONFIG)" ./... --fix
 
 .PHONY: format
 format: $(GOLANGCI_LINT)
 	@echo "Using golangci-lint from: $(GOLANGCI_LINT)"
-	$(GOLANGCI_LINT) fmt ./...
+	$(GOLANGCI_LINT) fmt --config "$(GOLANGCI_CONFIG)" ./...
 
 .PHONY: test
 test:

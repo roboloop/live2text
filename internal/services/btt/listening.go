@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"log/slog"
 
-	"live2text/internal/services/btt/client"
-	"live2text/internal/services/btt/client/trigger"
-	"live2text/internal/services/btt/storage"
-	"live2text/internal/services/btt/tmpl"
-	"live2text/internal/services/recognition"
+	"github.com/roboloop/live2text/internal/services/btt/client"
+	"github.com/roboloop/live2text/internal/services/btt/client/trigger"
+	"github.com/roboloop/live2text/internal/services/btt/storage"
+	"github.com/roboloop/live2text/internal/services/btt/tmpl"
+	"github.com/roboloop/live2text/internal/services/recognition"
 )
 
 var (

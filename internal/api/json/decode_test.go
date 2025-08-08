@@ -10,7 +10,7 @@ import (
 
 	encodingjson "encoding/json"
 
-	"live2text/internal/api/json"
+	"github.com/roboloop/live2text/internal/api/json"
 )
 
 type testStruct struct {

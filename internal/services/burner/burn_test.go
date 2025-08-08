@@ -10,9 +10,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"live2text/internal/services/burner"
-	"live2text/internal/services/metrics"
-	"live2text/internal/utils/logger"
+	"github.com/roboloop/live2text/internal/services/burner"
+	"github.com/roboloop/live2text/internal/services/metrics"
+	"github.com/roboloop/live2text/internal/utils/logger"
 )
 
 type failingWriter struct {

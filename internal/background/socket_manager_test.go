@@ -14,8 +14,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"live2text/internal/background"
-	"live2text/internal/utils/logger"
+	"github.com/roboloop/live2text/internal/background"
+	"github.com/roboloop/live2text/internal/utils/logger"
 )
 
 func TestSocketManager(t *testing.T) {

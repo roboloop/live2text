@@ -3,7 +3,7 @@ package audio
 import (
 	"context"
 
-	audiowrapper "live2text/internal/services/audio_wrapper"
+	audiowrapper "github.com/roboloop/live2text/internal/services/audio_wrapper"
 )
 
 //go:generate minimock -g -i Audio -s _mock.go -o .

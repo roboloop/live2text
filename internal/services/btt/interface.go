@@ -3,8 +3,8 @@ package btt
 import (
 	"context"
 
-	"live2text/internal/services/btt/client/trigger"
-	"live2text/internal/services/btt/storage"
+	"github.com/roboloop/live2text/internal/services/btt/client/trigger"
+	"github.com/roboloop/live2text/internal/services/btt/storage"
 )
 
 //go:generate minimock -g -i Btt,HealthComponent,InstallingComponent,ListeningComponent,DeviceComponent,LanguageComponent,ViewModeComponent,FloatingComponent,ClipboardComponent,SettingsComponent -s _mock.go -o .

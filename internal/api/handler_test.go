@@ -7,9 +7,9 @@ import (
 	"github.com/gojuno/minimock/v3"
 	"github.com/stretchr/testify/require"
 
-	"live2text/internal/api"
-	"live2text/internal/services"
-	"live2text/internal/utils/logger"
+	"github.com/roboloop/live2text/internal/api"
+	"github.com/roboloop/live2text/internal/services"
+	"github.com/roboloop/live2text/internal/utils/logger"
 )
 
 func TestHandler(t *testing.T) {

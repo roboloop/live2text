@@ -8,8 +8,8 @@ import (
 	"strings"
 	"sync"
 
-	"live2text/internal/services/btt/client/http"
-	"live2text/internal/services/btt/client/trigger"
+	"github.com/roboloop/live2text/internal/services/btt/client/http"
+	"github.com/roboloop/live2text/internal/services/btt/client/trigger"
 )
 
 const (

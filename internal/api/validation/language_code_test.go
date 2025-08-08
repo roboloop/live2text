@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"live2text/internal/api/validation"
+	"github.com/roboloop/live2text/internal/api/validation"
 )
 
 func TestIsValidLanguageCode(t *testing.T) {

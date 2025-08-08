@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
-	"live2text/internal/api/json"
-	"live2text/internal/services/btt"
+	"github.com/roboloop/live2text/internal/api/json"
+	"github.com/roboloop/live2text/internal/services/btt"
 )
 
 func (s *Server) ToggleListening(w http.ResponseWriter, r *http.Request) {

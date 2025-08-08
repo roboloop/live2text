@@ -8,10 +8,10 @@ import (
 	"github.com/gojuno/minimock/v3"
 	"github.com/stretchr/testify/require"
 
-	"live2text/internal/api/core"
-	"live2text/internal/services"
-	"live2text/internal/services/metrics"
-	"live2text/internal/utils/logger"
+	"github.com/roboloop/live2text/internal/api/core"
+	"github.com/roboloop/live2text/internal/services"
+	"github.com/roboloop/live2text/internal/services/metrics"
+	"github.com/roboloop/live2text/internal/utils/logger"
 )
 
 func TestMetrics(t *testing.T) {

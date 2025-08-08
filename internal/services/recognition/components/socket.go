@@ -7,8 +7,8 @@ import (
 	"net"
 	"strings"
 
-	"live2text/internal/background"
-	"live2text/internal/services/recognition/text"
+	"github.com/roboloop/live2text/internal/background"
+	"github.com/roboloop/live2text/internal/services/recognition/text"
 )
 
 //go:generate minimock -g -i SocketComponent -s _mock.go -o .

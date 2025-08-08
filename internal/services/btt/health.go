@@ -3,7 +3,7 @@ package btt
 import (
 	"context"
 
-	"live2text/internal/services/btt/client"
+	"github.com/roboloop/live2text/internal/services/btt/client"
 )
 
 type healthComponent struct {

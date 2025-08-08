@@ -15,9 +15,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"live2text/internal/services/metrics"
-	speechwrapper "live2text/internal/services/speech_wrapper"
-	"live2text/internal/utils/logger"
+	"github.com/roboloop/live2text/internal/services/metrics"
+	speechwrapper "github.com/roboloop/live2text/internal/services/speech_wrapper"
+	"github.com/roboloop/live2text/internal/utils/logger"
 )
 
 type RecognizeParameters struct {

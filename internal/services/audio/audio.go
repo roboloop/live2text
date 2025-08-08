@@ -3,8 +3,8 @@ package audio
 import (
 	"log/slog"
 
-	audiowrapper "live2text/internal/services/audio_wrapper"
-	"live2text/internal/services/metrics"
+	audiowrapper "github.com/roboloop/live2text/internal/services/audio_wrapper"
+	"github.com/roboloop/live2text/internal/services/metrics"
 )
 
 type audio struct {

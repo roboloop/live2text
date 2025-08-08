@@ -27,7 +27,7 @@ type renderer struct {
 }
 
 func NewRenderer(appName string, appAddress, bttAddress string, debug bool) Renderer {
-	tmpl := template.New("templates")
+	tmpl := template.New("templates").Option("missingkey=error")
 	tmpl = template.Must(tmpl.Parse(string(common)))
 	tmpl = template.Must(tmpl.Parse(string(scripts)))
 	tmpl = template.Must(tmpl.Parse(string(metrics)))
