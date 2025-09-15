@@ -3,6 +3,7 @@ package client_test
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
 
 	"github.com/gojuno/minimock/v3"
@@ -341,6 +342,7 @@ func TestDeleteTriggers(t *testing.T) {
 		{
 			name: "triggers deleted",
 			setupMocks: func(mc *minimock.Controller, c *http.ClientMock) {
+				var mu sync.Mutex
 				expectedPayload := map[string]bool{
 					"trigger1": false,
 					"trigger2": false,
@@ -351,6 +353,7 @@ func TestDeleteTriggers(t *testing.T) {
 					require.Equal(t, "delete_trigger", method)
 					require.Nil(t, jsonPayload)
 
+					mu.Lock()
 					var uuid string
 					var ok bool
 					if uuid, ok = extraPayload["uuid"]; !ok {
@@ -363,6 +366,7 @@ func TestDeleteTriggers(t *testing.T) {
 						require.Failf(t, "called more than once for uuid: %s", uuid)
 					}
 					expectedPayload[extraPayload["uuid"]] = true
+					mu.Unlock()
 				}).
 					Return([]byte{}, nil)
 			},

@@ -62,8 +62,11 @@ format: $(GOLANGCI_LINT)
 
 .PHONY: test
 test:
-	@#go test -race ./... -v
 	go test ./... -v
+
+.PHONY: test-race
+test-race:
+	go test -race ./... -v
 
 .PHONY: clean
 clean:

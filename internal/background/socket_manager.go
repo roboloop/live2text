@@ -36,12 +36,16 @@ func (sm *SocketManager) Listen(ctx context.Context, socketPath string, fn func(
 
 	go func() {
 		go func() {
+			sm.mu.Lock()
+			ch := sm.done[socketPath]
+			sm.mu.Unlock()
+
 			select {
 			case <-ctx.Done():
 				if err := listener.Close(); err != nil {
 					sm.logger.ErrorContext(ctx, "Cannot close listener", "error", err)
 				}
-			case <-sm.done[socketPath]:
+			case <-ch:
 			}
 		}()
 
@@ -89,6 +93,8 @@ func (sm *SocketManager) CloseFor(socketPath string) error {
 }
 
 func (sm *SocketManager) Close() error {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
 	g := errgroup.Group{}
 	for _, listener := range sm.listeners {
 		g.Go(listener.Close)

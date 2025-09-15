@@ -53,10 +53,10 @@ func TestBroadcaster(t *testing.T) {
 		inputCh <- 30
 		time.Sleep(20 * time.Millisecond)
 
-		require.Len(t, testHandler.Logs, 1)
-		require.Contains(t, testHandler.Logs[0].Msg, "Message dropped")
+		require.Len(t, testHandler.Logs(), 1)
+		require.Contains(t, testHandler.Logs()[0].Msg, "Message dropped")
 
-		require.Len(t, testHandler.Logs[0].Attrs, 2)
-		require.Contains(t, testHandler.Logs[0].Attrs[1].String(), "name=test1")
+		require.Len(t, testHandler.Logs()[0].Attrs, 2)
+		require.Contains(t, testHandler.Logs()[0].Attrs[1].String(), "name=test1")
 	})
 }

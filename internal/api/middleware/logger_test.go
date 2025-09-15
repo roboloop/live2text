@@ -32,8 +32,8 @@ func TestLoggerMiddleware(t *testing.T) {
 
 		m.ServeHTTP(w, req)
 
-		require.Len(t, h.Logs, 1)
-		entry := h.Logs[0]
+		require.Len(t, h.Logs(), 1)
+		entry := h.Logs()[0]
 		require.Equal(t, slog.LevelError, entry.Level)
 		require.Equal(t, "HTTP request", entry.Msg)
 

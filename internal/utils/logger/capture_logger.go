@@ -3,11 +3,13 @@ package logger
 import (
 	"context"
 	"log/slog"
+	"sync"
 )
 
 type CaptureHandler struct {
-	Logs  []LogEntry
+	logs  []LogEntry
 	attrs []slog.Attr
+	mu    sync.Mutex
 }
 
 type LogEntry struct {
@@ -21,23 +23,31 @@ func (ch *CaptureHandler) Enabled(context.Context, slog.Level) bool {
 }
 
 func (ch *CaptureHandler) Handle(_ context.Context, r slog.Record) error {
+	ch.mu.Lock()
+	defer ch.mu.Unlock()
+
 	var attrs []slog.Attr
-	// attrs := make()
 	attrs = append(attrs, ch.attrs...)
 	r.Attrs(func(attr slog.Attr) bool {
 		attrs = append(attrs, attr)
 		return true
 	})
-	ch.Logs = append(ch.Logs, LogEntry{
+
+	entry := LogEntry{
 		Level: r.Level,
 		Msg:   r.Message,
 		Attrs: attrs,
-	})
+	}
+
+	ch.logs = append(ch.logs, entry)
 
 	return nil
 }
 
 func (ch *CaptureHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	ch.mu.Lock()
+	defer ch.mu.Unlock()
+
 	ch.attrs = append(ch.attrs, attrs...)
 	return ch
 }
@@ -47,12 +57,25 @@ func (ch *CaptureHandler) WithGroup(string) slog.Handler {
 }
 
 func (ch *CaptureHandler) GetLog(msg string) (LogEntry, bool) {
-	for _, log := range ch.Logs {
+	ch.mu.Lock()
+	defer ch.mu.Unlock()
+
+	for _, log := range ch.logs {
 		if log.Msg == msg {
 			return log, true
 		}
 	}
 	return LogEntry{}, false
+}
+
+func (ch *CaptureHandler) Logs() []LogEntry {
+	ch.mu.Lock()
+	defer ch.mu.Unlock()
+
+	logs := make([]LogEntry, len(ch.logs))
+	copy(logs, ch.logs)
+
+	return logs
 }
 
 func (e LogEntry) GetAttr(key string) (any, bool) {

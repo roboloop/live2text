@@ -107,9 +107,9 @@ func TestDeviceListener(t *testing.T) {
 		// 		m.AddBytesReadFromAudioMock.Return()
 		// 	},
 		// 	expectedLogs: func(t *testing.T, h *logger.CaptureHandler) {
-		// 		require.Len(t, h.Logs, 1)
-		// 		require.Equal(t, slog.LevelError, h.Logs[0].Level)
-		// 		require.Equal(t, "The channel is full, the segment was dropped", h.Logs[0].Msg)
+		// 		require.Len(t, h.Logs(), 1)
+		// 		require.Equal(t, slog.LevelError, h.Logs()[0].Level)
+		// 		require.Equal(t, "The channel is full, the segment was dropped", h.Logs()[0].Msg)
 		// 	},
 		// },
 		{

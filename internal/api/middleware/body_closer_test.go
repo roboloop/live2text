@@ -40,8 +40,8 @@ func TestBodyCloser(t *testing.T) {
 
 		m.ServeHTTP(w, req)
 
-		require.Len(t, h.Logs, 1)
-		require.True(t, slices.ContainsFunc(h.Logs[0].Attrs, func(attr slog.Attr) bool {
+		require.Len(t, h.Logs(), 1)
+		require.True(t, slices.ContainsFunc(h.Logs()[0].Attrs, func(attr slog.Attr) bool {
 			return attr.Key == "error" && attr.Value.String() == "dummy error"
 		}))
 	})

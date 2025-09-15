@@ -92,9 +92,9 @@ func TestTextStream(t *testing.T) {
 
 		require.Equal(t, http.StatusOK, w.Code)
 		require.Empty(t, w.Body.String())
-		require.Len(t, h.Logs, 1)
-		require.Equal(t, slog.LevelError, h.Logs[0].Level)
-		require.Equal(t, "Request context cancelled", h.Logs[0].Msg)
+		require.Len(t, h.Logs(), 1)
+		require.Equal(t, slog.LevelError, h.Logs()[0].Level)
+		require.Equal(t, "Request context cancelled", h.Logs()[0].Msg)
 	})
 
 	t.Run("error during stream", func(t *testing.T) {
@@ -116,9 +116,9 @@ func TestTextStream(t *testing.T) {
 
 		require.Equal(t, http.StatusOK, w.Code)
 		require.Contains(t, "event: failed\ndata: dummy error\n\n", w.Body.String())
-		require.Len(t, h.Logs, 1)
-		require.Equal(t, slog.LevelError, h.Logs[0].Level)
-		require.Equal(t, "Error during stream", h.Logs[0].Msg)
+		require.Len(t, h.Logs(), 1)
+		require.Equal(t, slog.LevelError, h.Logs()[0].Level)
+		require.Equal(t, "Error during stream", h.Logs()[0].Msg)
 	})
 
 	t.Run("ok", func(t *testing.T) {
@@ -141,8 +141,8 @@ func TestTextStream(t *testing.T) {
 
 		require.Equal(t, http.StatusOK, w.Code)
 		require.Contains(t, "event: message\ndata: sample text\n\n", w.Body.String())
-		require.Len(t, h.Logs, 1)
-		require.Equal(t, slog.LevelInfo, h.Logs[0].Level)
-		require.Equal(t, "TextStream channel closed", h.Logs[0].Msg)
+		require.Len(t, h.Logs(), 1)
+		require.Equal(t, slog.LevelInfo, h.Logs()[0].Level)
+		require.Equal(t, "TextStream channel closed", h.Logs()[0].Msg)
 	})
 }
