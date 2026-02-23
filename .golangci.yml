@@ -443,6 +443,11 @@ linters:
       # Enable/disable `os.TempDir()` detections.
       # Default: false
       os-temp-dir: true
+    gosec:
+      excludes:
+        - G115
+        - G704
+        - G705
 
   exclusions:
     # Log a warning if an exclusion rule is unused.

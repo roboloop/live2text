@@ -132,10 +132,10 @@ func runServe(ctx context.Context, args []string) error {
 	defer sc.Close()
 	defer aw.Close()
 
-	if err = checkPortAvailable(cfg.AppAddress); err != nil {
+	if err = checkPortAvailable(ctx, cfg.AppAddress); err != nil {
 		return fmt.Errorf("app server port check failed: %w", err)
 	}
-	if err = checkPortAvailable(cfg.PprofAddress); err != nil {
+	if err = checkPortAvailable(ctx, cfg.PprofAddress); err != nil {
 		return fmt.Errorf("pprof server port check failed: %w", err)
 	}
 
@@ -287,8 +287,9 @@ func newBtt(
 	return btt.NewBtt(hc, ic, lic, dc, lc, vmc, fc, cc)
 }
 
-func checkPortAvailable(address string) error {
-	l, err := net.Listen("tcp", address)
+func checkPortAvailable(ctx context.Context, address string) error {
+	var lc net.ListenConfig
+	l, err := lc.Listen(ctx, "tcp", address)
 	if err != nil {
 		return fmt.Errorf("address %s is occupied: %w", address, err)
 	}

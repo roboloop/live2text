@@ -84,7 +84,12 @@ func (c *client) UpdateTrigger(ctx context.Context, title trigger.Title, patch t
 		return fmt.Errorf("cannot get trigger: %w", err)
 	}
 
-	if _, err = c.httpClient.Send(ctx, "update_trigger", patch, map[string]string{"uuid": string(t.UUID())}); err != nil {
+	if _, err = c.httpClient.Send(
+		ctx,
+		"update_trigger",
+		patch,
+		map[string]string{"uuid": string(t.UUID())},
+	); err != nil {
 		return fmt.Errorf("cannot update trigger: %w", err)
 	}
 
