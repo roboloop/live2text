@@ -10,7 +10,7 @@ GO_COVER_TREEMAP := $(BIN_DIR)/go-cover-treemap
 LIVE2TEXT_APP := $(PROJECT_DIR)/cmd/live2text/main.go
 GOLANGCI_CONFIG := $(PROJECT_DIR)/.golangci.yml
 
-GOLANGCI_LINT_VERSION := v2.1.6
+GOLANGCI_LINT_VERSION := v2.10.1
 MINIMOCK_VERSION := v3.4.5
 GO_COVER_TREEMAP_VERSION := v1.5.0
 
@@ -80,12 +80,8 @@ check-portaudio:
 	fi
 
 .PHONY: show-coverage
-show-coverage: $(GO_COVER_TREEMAP)
-	@# hack that prevents multiple calls of `mktemp` command
-	@$(MAKE) _show-coverage TMP_DIR=$$(mktemp -d)
-
-.PHONY: _show-coverage
-_show-coverage:
+show-coverage:
+	$(eval TMP_DIR := $(shell mktemp -d))
 	go test -coverprofile $(TMP_DIR)/coverage.out ./...
 	grep -vE '_(mock|string)\.go' $(TMP_DIR)/coverage.out > $(TMP_DIR)/filtered.out
 	@echo "Using go-cover-treemap from: $(GO_COVER_TREEMAP)"
