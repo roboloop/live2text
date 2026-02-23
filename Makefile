@@ -80,12 +80,8 @@ check-portaudio:
 	fi
 
 .PHONY: show-coverage
-show-coverage: $(GO_COVER_TREEMAP)
-	@# hack that prevents multiple calls of `mktemp` command
-	@$(MAKE) _show-coverage TMP_DIR=$$(mktemp -d)
-
-.PHONY: _show-coverage
-_show-coverage:
+show-coverage:
+	$(eval TMP_DIR := $(shell mktemp -d))
 	go test -coverprofile $(TMP_DIR)/coverage.out ./...
 	grep -vE '_(mock|string)\.go' $(TMP_DIR)/coverage.out > $(TMP_DIR)/filtered.out
 	@echo "Using go-cover-treemap from: $(GO_COVER_TREEMAP)"
